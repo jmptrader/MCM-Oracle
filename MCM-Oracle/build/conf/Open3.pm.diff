@@ -1,0 +1,6 @@
+168,169c168,169
+< 	: close $_[0]
+< 	or croak "$Me: close($_[0]) failed: $!";
+---
+> 	: close $_[0];
+> #	or croak "$Me: close($_[0]) failed: $!";

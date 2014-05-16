@@ -1,0 +1,9 @@
+# This file contains optional login id, passwd and server info for the test
+# programs:
+# You probably don't want to have it lying around after you've made
+# sure that everything works OK.
+
+SRV=MX_ONT_SRV
+DB=mx_ont1_mon
+UID=INSTAL
+PWD=INSTALL

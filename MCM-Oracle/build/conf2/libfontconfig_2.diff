@@ -1,0 +1,29 @@
+8a9,21
+> #ifdef HAVE_MKDTEMP
+> #define fc_mkdtemp  mkdtemp
+> #else
+> char *
+> fc_mkdtemp (char *template)
+> {
+> 	if (!mktemp (template) || mkdir (template, 0700))
+> 		return NULL;
+> 
+> 	return template;
+> }
+> #endif
+> 
+38a52,54
+> #ifndef DT_DIR
+>     struct stat st;
+> #endif
+55a72,75
+> #ifndef DT_DIR
+> 	lstat(n, &st);
+> 	if (S_ISDIR(st.st_mode))
+> #else
+56a77
+> #endif
+92c113
+<     char *tmp = mkdtemp (template);
+---
+>     char *tmp = fc_mkdtemp (template);

@@ -1,0 +1,4 @@
+164c164
+< CXXFLAGS = -m64 -fno-rtti -fno-exceptions
+---
+> CXXFLAGS = -m64

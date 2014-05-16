@@ -1,0 +1,4 @@
+155c155
+< 		return $self->_flatten_hash_level($v, $delim, $flatkey);
+---
+> 		return $self->_flatten_hash_level($v, $delim, $flatkey) if %{$v};

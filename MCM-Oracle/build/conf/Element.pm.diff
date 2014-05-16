@@ -1,0 +1,4 @@
+416c416
+<         $string .= " />";
+---
+>         $string .= "></" . $self->[node_name] . ">";

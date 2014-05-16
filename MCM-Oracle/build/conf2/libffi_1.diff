@@ -1,0 +1,23 @@
+43c43
+< #define UINT128 __int128_t
+---
+> typedef struct { long int m[2]; } __int128_t;
+50c50
+<   UINT128 sse[MAX_SSE_REGS];
+---
+>   __int128_t sse[MAX_SSE_REGS];
+192,195d191
+<     case FFI_TYPE_LONGDOUBLE:
+<       classes[0] = X86_64_X87_CLASS;
+<       classes[1] = X86_64_X87UP_CLASS;
+<       return 2;
+480c476,477
+< 		  reg_args->sse[ssecount++] = *(UINT64 *) a;
+---
+>                 reg_args->sse[ssecount++].m[0] = *(UINT64 *) a;
+>                 reg_args->sse[ssecount++].m[1] = 0;
+483c480,481
+< 		  reg_args->sse[ssecount++] = *(UINT32 *) a;
+---
+>                 reg_args->sse[ssecount++].m[0] = *(UINT32 *) a;
+>                 reg_args->sse[ssecount++].m[1] = 0;

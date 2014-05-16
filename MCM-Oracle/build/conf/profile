@@ -1,0 +1,26 @@
+LOCAL_DIR=/lch/fxclear
+MXCOMMON=$LOCAL_DIR/common
+MXVERSION=2.00
+MXUSER=$LOGNAME
+export LOCAL_DIR MXCOMMON MXVERSION MXUSER
+
+PATH=$LOCAL_DIR/$MXUSER/projects/common/bin:$LOCAL_DIR/$MXUSER/projects/common/scripts:$MXCOMMON/$MXVERSION/perl/bin:$MXCOMMON/$MXVERSION/apache/bin:$MXCOMMON/$MXVERSION/git/bin:$MXCOMMON/$MXVERSION/openssl/bin:$MXCOMMON/$MXVERSION/tools/rrdtool/bin:/usr/bin:/bin:$LOCAL_DIR/$MXUSER/bin
+export PATH
+
+LD_LIBRARY_PATH=$MXCOMMON/$MXVERSION/lib:/opt/oracle/product/10.2.0.4/lib:$MXCOMMON/$MXVERSION/tools/rrdtool/lib
+export LD_LIBRARY_PATH
+
+PERL5LIB=$LOCAL_DIR/$MXUSER/projects/common/lib
+export PERL5LIB
+
+read ORACLE_HOME JAVA_HOME PROJECT_DIR LOGDIR <<< `get_config.pl ORACLE_HOME JAVA_HOME PROJECT_DIR LOGDIR`
+
+PATH=$PATH:$ORACLE_HOME/bin:$JAVA_HOME/bin
+
+export PATH ORACLE_HOME JAVA_HOME PROJECT_DIR LOGDIR
+
+alias proj="cd $PROJECT_DIR"
+alias cdl="cd $LOGDIR/today"
+
+GIT_PAGER=more
+export GIT_PAGER

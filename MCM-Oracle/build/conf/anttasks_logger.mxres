@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- <!DOCTYPE log4j:configuration (View Source for full doctype...)> -->
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%-5p][%c] - %m%n"/>
+        </layout>
+    </appender>
+
+
+   <appender name="murex.appenders.ant.logfile" class="org.apache.log4j.FileAppender">
+           <param name="File" value="logs/anttask.log"/>
+           <param name="Append" value="true"/>
+             <layout class="org.apache.log4j.PatternLayout">
+               <param name="ConversionPattern" value="%d [%t] %c : %p - %m%n"/>
+            </layout>
+    </appender>
+
+    <root>
+        <level value="INFO"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="murex.appenders.ant.logfile"/>
+    </root>
+	
+	<logger name="murex.apps.middleware.client.core.server">
+        <level value="OFF"/>
+        <appender-ref ref="STDOUT"/>
+  </logger>
+    
+  <logger name="console">
+    <level value="INFO"/>
+  </logger>
+
+	<logger name="org.apache.tools.ant">
+    <level value="INFO"/>
+  </logger>
+
+</log4j:configuration>

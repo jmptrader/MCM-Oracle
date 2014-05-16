@@ -1,0 +1,4 @@
+821c821
+< @OS_UNIX_TRUE@private_LDFLAGS = -pthread
+---
+> @OS_UNIX_TRUE@private_LDFLAGS =

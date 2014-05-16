@@ -1,0 +1,4 @@
+1993c1993
+<     die "Incorrect parameter" unless $itself =~/^\d$/;
+---
+>     die "Incorrect parameter" unless $itself =~/^\d+$/;

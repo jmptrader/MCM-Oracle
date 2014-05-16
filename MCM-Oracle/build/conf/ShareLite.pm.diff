@@ -1,0 +1,13 @@
+178c178
+<   $self->_initialize( $args );
+---
+>   return unless $self->_initialize( $args );
+226,228c226,229
+<   $self->{share}
+<    = new_share( $self->{key}, $self->{size}, $self->{flags} )
+<    or croak "Failed to create share";
+---
+>   unless ( $self->{share} = new_share( $self->{key}, $self->{size}, $self->{flags} ) ) {
+>     carp "Failed to create share: $!";
+>     return 0;
+>   }
