@@ -1,0 +1,43 @@
+<ul id="nav">
+  <li>
+    <a href="#" style="background: #CC0033;"><% $ENV{MXENV} %></a>
+  </li>
+  <li>
+    <a href="#" onmouseover="mopen('m1')" onmouseout="mclosetime()">Users</a>
+    <div id="m1" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="users.html">List</a>
+      <a href="user_search.html">Search</a>
+      <a href="user_insert.html" right="auth_master">Insert new user</a>
+    </div>
+  </li>
+  <li>
+    <a href="#" onmouseover="mopen('m2')" onmouseout="mclosetime()">Groups</a>
+    <div id="m2" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="groups.html">List</a>
+      <a href="group_search.html">Search</a>
+      <a href="group_insert.html" right="auth_master">Insert new group</a>
+    </div>
+  </li>
+  <li>
+    <a href="#" onmouseover="mopen('m3')" onmouseout="mclosetime()">Rights</a>
+    <div id="m3" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="rights.html">List</a>
+      <a href="right_search.html">Search</a>
+      <a href="right_insert.html" right="auth_master">Insert new right</a>
+    </div>
+  </li>
+  <li>
+    <a href="#" onmouseover="mopen('m4')" onmouseout="mclosetime()">Environments</a>
+    <div id="m4" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="environments.html">List</a>
+      <a href="environment_search.html">Search</a>
+      <a href="environment_insert.html" right="auth_master">Insert new environment</a>
+    </div>
+  </li>
+  <li>
+    <a href="/mx/home.html" right="mon_login">Dashboard</a>
+  </li>
+  <li>
+    <a href="logout.html">Logout</a>
+  </li>
+</ul> 

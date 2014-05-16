@@ -1,0 +1,706 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('#tiptip_holder').css( 'display', 'none' );
+  installModal();
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+  $('#table_form').submit( function() {
+    popupWindow( '', 'TABLE', '1600', '1000', 'yes', 'center' );
+    this.target = 'TABLE';
+  } );
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var sessionid  = $('#dummytrigger').attr('sessionid');
+  var filterid   = $('#dummytrigger').attr('filterid');
+  var pid        = $('#dummytrigger').attr('pid');
+  var mx_pid     = $('#dummytrigger').attr('mx_pid');
+  var hostname   = $('#dummytrigger').attr('hostname');
+  var path       = $('#dummytrigger').attr('path');
+  var action     = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_mxtiming' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showMXTiming( sessionid, pid, mx_pid, hostname );
+  }
+  else if ( action == 'show_stdout' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showSTDOUT( sessionid );
+  }
+  else if ( action == 'show_mms' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showMMS( sessionid );
+  }
+  else if ( action == 'show_sql' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showSQL( sessionid );
+  }
+  else if ( action == 'show_rdbtrace' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showRDBTrace( sessionid );
+  }
+  else if ( action == 'show_rdbio' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showRDBIO( sessionid );
+  }
+  else if ( action == 'show_memory' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showMemory( sessionid );
+  }
+  else if ( action == 'show_sybase' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showSybase( sessionid );
+  }
+  else if ( action == 'show_dtrace' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showDtrace( sessionid );
+  }
+  else if ( action == 'show_dm' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showDM( filterid, sessionid );
+  }
+  else if ( action == 'show_xml' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showXML( path );
+  }
+  else if ( action == 'show_core' ) {
+    $('#jqmTitleText').text( 'session #' + sessionid );
+    $modal.jqmShow();
+    showCore( sessionid );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showMXTiming( sessionid, pid, mx_pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_timings2.html',
+    data:     { 'session_id': sessionid, 'pid': pid, 'mx_pid': mx_pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="90%">';
+    html[++h] = '<tr><th>TIMESTAMP</th><th>ID</th><th>CONTEXT</th><th>COMMAND</th><th>ELAPSED</th><th>CPU</th><th>RDB+COM</th></tr>';
+    for ( var i = 0; i < data.timings.length; i++ ) {
+      var row = data.timings[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td align="center">' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[3] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[4] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[5] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[6] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '<tr><td></td><td></td><td></td><td></td>';
+    html[++h] = '<td align="right"><b>'  + data.total_elapsed + '</b>&nbsp;</td>';
+    html[++h] = '<td align="right"><b>'  + data.total_cpu + '</b>&nbsp;</td>';
+    html[++h] = '<td align="right"><b>'  + data.total_rdb + '</b>&nbsp;</td>';
+    html[++h] = '</tr>';
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showSTDOUT( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_stdout2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br>' + data.data;
+    }
+  } );
+}
+
+function showMMS( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_mms2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = data.data;
+    }
+  } );
+}
+
+function showSQL( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_sql2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1500px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<span style="float: left; padding: 10px;"># Statements: ' + data.nr_statements + '</span>';
+    html[++h] = '<span style="float: left; padding: 10px;">Total Duration: ' + data.total + '</span>';
+    html[++h] = '<span style="float: left; padding: 10px;">Max Duration: ' + data.max + '</span>';
+    html[++h] = '<div style="clear: both"></div>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center">';
+    html[++h] = '<tr><th>TIMESTAMP</th><th>DATABASE</th><th>TIME</th><th>SQL</th></tr>';
+    for ( var i = 0; i < data.data.length; i++ ) {
+      var row = data.data[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td align="center" nowrap>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="center" nowrap>' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td>' + row[3] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showRDBTrace( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_trace2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1500px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="75%">';
+    html[++h] = '<tr><th>NAME</th><th>DATABASE</th><th>TYPE</th><th>TOT DURATION</th><th>AVG DURATION</th><th>COUNT</th><th>PERCENTAGE</th></tr>';
+    for ( var i = 0; i < data.data.length; i++ ) {
+      var row = data.data[i];
+      html[++h] = '<tr>';
+      var table = row[0]; var db = row[1]; var is_table = row[2];
+      if ( is_table == 1 && db != 'tempdb' && db != 'master' ) {
+        html[++h] = '<td nowrap>&nbsp;<a href="#" onclick="showTable( \'' + table + '\', \'' + db + '\', ' + sessionid + ' );">' + table + '</a></td>';
+      }
+      else {
+        html[++h] = '<td nowrap>&nbsp;' + table + '</td>';
+      }
+      html[++h] = '<td align="center" nowrap>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td nowrap>&nbsp;' + row[3] + '</td>';
+      html[++h] = '<td align="right" nowrap>' + row[4] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[5] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[6] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[7] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '<tr>';
+    html[++h] = '<td></td><td></td><td></td>';
+    html[++h] = '<td align="right"><b>' + data.total_duration + '</b></td>';
+    html[++h] = '<td></td>';
+    html[++h] = '<td align="right"><b>' + data.total_count + '</b></td>';
+    html[++h] = '<td align="right"><b>' + data.total_percentage + '</b></td>';
+    html[++h] = '</tr>';
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showTable( name, db_name, sessionid ) {
+  $("#table_name").val( name );
+  $("#table_db_name").val( db_name );
+  $("#table_session_id").val( sessionid );
+  $('#table_form').submit();
+}
+
+function showLogging( project, dir, name ) {
+  $("#logging_project").val( project );
+  $("#logging_dir").val( dir );
+  $("#logging_name").val( name );
+  $('#logging_form').submit();
+}
+
+function showRDBIO( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_io2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1500px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="75%">';
+    html[++h] = '<tr><th>NAME</th><th>DATABASE</th><th>LOGICAL</th><th>PHYSICAL</th></tr>';
+    for ( var i = 0; i < data.data.length; i++ ) {
+      var row = data.data[i];
+      html[++h] = '<tr>';
+      var table = row[0]; var db = row[1];
+      if ( db != 'tempdb' && db != 'master' ) {
+        html[++h] = '<td nowrap>&nbsp;<a href="#" onclick="showTable( \'' + table + '\', \'' + db + '\', ' + sessionid + ' );">' + table + '</a></td>';
+      }
+      else {
+        html[++h] = '<td nowrap>&nbsp;' + table + '</td>';
+      }
+      html[++h] = '<td align="center" nowrap>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[3] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '<tr>';
+    html[++h] = '<td></td><td></td>';
+    html[++h] = '<td align="right"><b>' + data.total_logical + '</b>&nbsp;</td>';
+    html[++h] = '<td align="right"><b>' + data.total_physical + '</b>&nbsp;</td>';
+    html[++h] = '</tr>';
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showMemory( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_memory2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align="center">';
+    html[++h] = '<span style="padding: 10px;">Last Virtual Size: ' + data.vsize + '</span>';
+    html[++h] = '<span style="padding: 10px;">Last Resident Set Size: ' + data.rss + '</span>';
+    html[++h] = '<span style="padding: 10px;">Last Anonymous Size: ' + data.anon + '</span>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+    html[++h] = '<div style="clear: both"></div>';
+    html[++h] = '<div align="center"><img src="' + data.path + '"></div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showSybase( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_sybase2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '950px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align="center"><img src="' + data.cpu_path + '"></div>';
+    html[++h] = '<br>';
+    html[++h] = '<div align="center"><img src="' + data.io_path + '"></div>';
+    html[++h] = '<br>';
+    html[++h] = '<div align="center"><img src="' + data.mem_path + '"></div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showDtrace( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_dtrace2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1500px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<table class="center" width="75%">';
+    html[++h] = '<tr><th>LIBRARY</th><th>FUNCTION</th><th>COUNT</th><th>CPU TIME</th><th>ELAPSED</th></tr>';
+    for ( var i = 0; i < data.data.length; i++ ) {
+      var row = data.data[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td nowrap>' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td nowrap>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[3] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[4] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showDM( filterid, sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_dm2.html',
+    data:     { 'id': filterid, 'session_id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '600px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<br>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="70%">';
+    html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+    for ( var i = 0; i < data.length; i++ ) {
+      html[++h] = '<tr><td class="description" width="20%" nowrap>' + data[i].name +  '</td><td>' + data[i].value + '</td></tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showXML( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/xmlfile2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+
+function showCore( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/core_pstack2.html',
+    data:     { 'session_id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+</script>
+
+<H2>Session #<% $session_id %></H2>
+
+<div id="dummytrigger" sessionid="" filterid="" pid="" mx_pid="" hostname="" path="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<form id="table_form" action="/mx/sybase_tables3.html" method="post">
+  <input type="hidden" name="name" id="table_name" value="">
+  <input type="hidden" name="no_navigation" value="1">
+  <input type="hidden" name="db_name" id="table_db_name" value="">
+  <input type="hidden" name="session_id" id="table_session_id" value="">
+</form>
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="project" id="logging_project" value="">
+  <input type="hidden" name="dir" id="logging_dir" value="">
+  <input type="hidden" name="name" id="logging_name" value="">
+</form>
+
+<table class="center" width="70%">
+  <TR><TH>Name</TH><TH>Value</TH></TR>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</TABLE>
+<BR>
+% if ( $linked_dm_filter ) {
+<input type="button" class="table_button" value="DM Details" onclick="$('#dummytrigger').attr( 'filterid', <% $linked_dm_filter %> ); $('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_dm' ); $('#modalWindow').jqmShow();">
+% }
+% if ( $show_scanners ) {
+<input type="button" class="table_button" value="Show Scanners" onclick="mnavigate('histsessions.html', { ab_session_id:<% $session_id %>, go_back:1, hist_url:'histsession_details.html', 'session_id':<% $session_id %> });">
+% }
+% if ( $show_timings ) {
+<input type="button" class="table_button" value="Show Timings" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'pid', <% $pid %> ); $('#dummytrigger').attr( 'mx_pid', <% $mx_pid %> ); $('#dummytrigger').attr( 'hostname', '<% $hostname %>' );$('#dummytrigger').attr( 'action', 'show_mxtiming' ); $('#modalWindow').jqmShow();">
+% }
+% if ( $show_statements ) {
+<input type="button" class="table_button" value="Show Statements" onclick="mnavigate('histlist.html', { object:'histstatement', session_id:<% $session_id %>, hist_url:'histsession_details.html' }, { <% join ',', @nav_args %> });">
+% }
+% my $sqltracedir = $config->retrieve('SQLTRACEDIR');
+% if ( -f "$sqltracedir/$session_id.trc" ) {
+<input type="button" class="table_button" value="RDB Trace" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_sql' ); $('#modalWindow').jqmShow();">
+<input type="button" class="table_button" value="RDB Summary" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_rdbtrace' ); $('#modalWindow').jqmShow();">
+<input type="button" class="table_button" value="RDB IO" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_rdbio' ); $('#modalWindow').jqmShow();">
+% }
+% if ( $nick =~ /DEBUG$/ ) {
+<input type="button" class="table_button" value="Show Memory" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_memory' ); $('#modalWindow').jqmShow();">
+<input type="button" class="table_button" value="Show Sybase" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_sybase' ); $('#modalWindow').jqmShow();">
+% }
+% if ( $nr_queries ) {
+<input type="button" class="table_button" value="Show Dtrace" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> ); $('#dummytrigger').attr( 'action', 'show_dtrace' ); $('#modalWindow').jqmShow();">
+% }
+% if ( -f $mmsfile ) {
+<input type="button" class="table_button" value="Messages" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> );$('#dummytrigger').attr( 'action', 'show_mms' ); $('#modalWindow').jqmShow();">
+% }
+% if ( -f $stdoutfile ) {
+<input type="button" class="table_button" value="STDOUT/STDERR" onclick="$('#dummytrigger').attr( 'sessionid', <% $session_id %> );$('#dummytrigger').attr( 'action', 'show_stdout' ); $('#modalWindow').jqmShow();">
+% }
+% if ( $scriptname !~ /^\s*$/  ) {
+<input type="button" class="table_button" value="Compare" onclick="mnavigate('histsessions.html', { mx_scripttype:'<% $scripttype %>', mx_scriptname:'<% $scriptname %>', entity:'<% $entity %>', runtype:'<% $runtype %>', hist_url:'histsession_details.html' }, { <% join ',', @nav_args %> });">
+% }
+<input type="button" class="table_button" value="Go Back" onclick="mgoback('<% $hist_url %>', { <% join ',', @nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'session_id' or $k eq 'ab_session_id' or $k eq 'pid' or $k eq 'mx_pid' or $k eq 'reverse';
+  push @nav_args, "'$k':'$v'";
+}
+
+my @table;
+my $process = $db_audit->retrieve_session( id => $session_id );
+
+my $scripttype = $process->[7];
+
+my @linked_reports;
+if ( $scripttype eq 'batch' ) {
+  @linked_reports = $db_audit->retrieve_linked_reports( session_id => $session_id );
+}
+
+my @linked_feedertables; my $linked_dm_filter;
+if ( $scripttype eq 'dm_batch' ) {
+  @linked_feedertables = $db_audit->retrieve_linked_feedertables( session_id => $session_id );
+  $linked_dm_filter    = $db_audit->retrieve_linked_dm_filter( session_id => $session_id );
+}
+
+my $hostname = $process->[1];
+$pid = $process->[18];
+push @table, 'Hostname'         , $hostname;           
+push @table, 'PID'              , $pid;
+
+my $cmdline = $process->[2];
+my $show_scanners = ( $cmdline =~ /\s+\/scanner\s+/ ) ? 1 : 0;
+my $show_timings  = ( $cmdline =~ /\s+\/TIMER\s+/ ) ? 1 : 0;
+$cmdline =~ s/(\s+\/\w+)(?=[ :])/<b>$1<\/b>/g;
+
+my $pattern = $config->retrieve('LOGDIR') . '/';
+$cmdline =~ s/:($pattern\S+?\.xml)/:<a href="#" onclick="\$('#dummytrigger').attr( 'path', '$1' );\$('#dummytrigger').attr( 'action', 'show_xml' );\$('#modalWindow').jqmShow();">$1<\/a>/g;
+$pattern = $config->retrieve('PROJECT_NFSDATADIR') . '/';
+#$cmdline =~ s/($pattern\S+\.xml)/<a href="#" onclick="\$('#dummytrigger').attr( 'path', '$1' );\$('#dummytrigger').attr( 'action', 'show_xml' );\$('#modalWindow').jqmShow();">$1<\/a>/;
+
+push @table, 'Full commandline'   , $cmdline;
+push @table, 'Request Start Time' , Mx::Util->convert_time( $process->[3] );
+push @table, 'Murex Start Time'   , Mx::Util->convert_time( $process->[4] );
+push @table, 'Murex End Time'     , Mx::Util->convert_time( $process->[5] );
+push @table, 'Request End Time'   , Mx::Util->convert_time( $process->[6] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $process->[24] ) );
+push @table, 'Start Delay'        , scalar( Mx::Util->convert_seconds( $process->[29] ) );
+push @table, 'Remote Delay'       , scalar( Mx::Util->convert_seconds( $process->[32] ) );
+my $scriptname = $process->[8];
+push @table, 'Script Type'        , $scripttype;
+push @table, 'Script Name'        , $scriptname;
+my $nick = $process->[25];
+push @table, 'Nick'               , $nick;
+
+my $win_user  = $process->[9];
+my $full_name = $full_names{$win_user};
+if ( $full_name ) {
+  push @table, 'Windows User', '<a class="select" href="#" onclick="mnavigate(\'/mx-auth/user_details.html\', { name:\'' . $win_user . '\', hist_url:\'histsession_details.html\' }, { ' . ( join ',', @nav_args ) . ' });">' . $full_name . '</a>';
+}
+else {
+  push @table, 'Windows User', $win_user;
+}
+
+  push @table, 'Murex User'         , $process->[10];
+  push @table, 'Murex Group'        , $process->[11];
+  push @table, 'Client Host'        , $process->[12];
+  push @table, 'Exit Code'          , $process->[13];
+  push @table, '# Reruns'           , $process->[27];
+
+  if ( $process->[14] ) {
+    push @table, 'Parent Session'   , '<a class="select" href="#" onclick="mnavigate(\'histsession_details.html\', { session_id:' . $process->[14] . ', go_back:1, hist_url:\'histsession_details.html\' }, { ' . ( join ',', @nav_args ) . ' });">' . $process->[14] . '</a>';
+  }
+
+  if ( @linked_reports ) {
+    push @table, '# Reports'        , '<a class="select" href="#" onclick="mnavigate(\'histlist.html\', { object:\'histreport\', session_id:' . $session_id . ', go_back:1, hist_url:\'histsession_details.html\' }, { ' . ( join ',', @nav_args ) . ' });">' . scalar( @linked_reports ) . '</a>';
+  }
+
+  if ( @linked_feedertables ) {
+    push @table, '# Feeder Tables'  , '<a class="select" href="#" onclick="mnavigate(\'histlist.html\', { object:\'histfeedertable\', session_id:' . $session_id . ', go_back:1, hist_url:\'histsession_details.html\' }, { ' . ( join ',', @nav_args ) . ' });">' . scalar( @linked_feedertables ) . '</a>';
+  }
+
+  push @table, 'Elapsed Time'       , scalar(Mx::Util->convert_seconds( $process->[15] ));
+  push @table, 'CPU Time'           , scalar(Mx::Util->convert_seconds( $process->[16] ));
+  push @table, 'IO Time'            , scalar(Mx::Util->convert_seconds( $process->[17] ));
+  push @table, '# CPU Seconds'      , Mx::Util->separate_thousands( $process->[30] );
+  push @table, 'Memory Size'        , Mx::Util->convert_bytes( $process->[31] * 1024 );
+  my $nr_queries = $process->[33];
+  push @table, '# DB queries'       , Mx::Util->separate_thousands( $nr_queries );
+  push @table, 'Core File'          , '<a class="select" href="#" onclick="$(\'#dummytrigger\').attr( \'sessionid\', ' . $session_id . ' );$(\'#dummytrigger\').attr( \'action\', \'show_core\' );$(\'#modalWindow\').jqmShow();">' . $process->[19] . '</a>' if $process->[19];
+  my $jobstream    = $process->[20];
+  my $businessdate = $process->[23];
+  my $project      = $process->[26];
+  push @table, 'TWS Jobstream'      , $jobstream;
+  push @table, 'Project'            , $project;
+  my $entity  = $process->[21];
+  my $runtype = $process->[22];
+  push @table, 'Entity'             , $entity;
+  push @table, 'Run Type'           , $runtype;
+  push @table, 'Business Date'      , $businessdate;
+  if ( $jobstream =~ /\S+/ && $businessdate =~ /\S+/ && $project =~ /\S+/ ) {
+      push @table, 'Logfile'        , '<a class="select" href="#" onclick="showLogging(\'' . $project . '\', \'' . $businessdate . '\', \'' . $jobstream . '.log\')">' . $jobstream . '.log</a>';
+  }
+
+  my $show_statements = $db_audit->session_has_statements( session_id => $session_id );
+
+my $mmsfile    = $config->MMSDIR . '/'. $session_id . '.txt';
+my $stdoutfile = $config->MXENV_ROOT . '/logs/sessions/' . $session_id . '.stdout';
+</%init>
+
+<%args>
+$session_id
+$pid => 0
+$mx_pid => 0
+$hist_url
+</%args>

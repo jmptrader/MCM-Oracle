@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE XmlMonitorScript>
+<XmlMonitorScript>
+    <MonitorUser>
+            <Name>ADMIN</Name>
+            <Password>__ADMIN:PASSWORD__</Password>
+    </MonitorUser>
+    <MonitorCommands>
+            <!-- Stop services  -->
+            <MonitorCommand Type="KILLALL">
+              <Service>
+                    <PlatformName>MX</PlatformName>
+                    <InstallationCode>LAUNCHER_ACTIVITIES</InstallationCode>
+                    <NickName>MXCONTRIBUTION.ACTIVITY.FEEDER.ALL</NickName>
+                    <Force>N</Force>
+		    <EndManagement>
+		         <ErrorFile></ErrorFile>
+		    </EndManagement>
+              </Service>
+            </MonitorCommand>
+     </MonitorCommands>
+</XmlMonitorScript>

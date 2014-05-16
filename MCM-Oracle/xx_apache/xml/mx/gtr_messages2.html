@@ -1,0 +1,52 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $gtr_url  = 'https://formacion.regis-tr.com:8082/regis_tr_xml_load/services/regis_tr_xml_load';
+my $gtr_user = 'KBCSOAP01';
+my $gtr_pass = 'we3uCh5t';
+
+my $webservice = Mx::Webservice::GTR->new( url => $gtr_url, gtr_user => $gtr_user, gtr_password => $gtr_pass, config => $config, logger => $logger, debug => $debug );
+
+$xml_date =~ s/-//g;
+
+my ( $rv, $list, $debug_data ) = $webservice->get_xml_list( date => $xml_date );
+
+my @messages;
+if ( $rv > 0 ) {
+  foreach my $xml_name ( @{$list} ) {
+    if ( my ( $account, $code, $date, $time, $index ) = $xml_name =~ /^([^_]+)_([^_]+)_(\d+)_(\d+)_(\d+)\.XML$/ ) {
+        $date = substr( $date, 0, 4 ) . '-' . substr( $date, 4, 2 ) . '-' . substr( $date, 6, 2);
+        $time = substr( $time, 0, 2 ) . ':' . substr( $time, 2, 2 ) . ':' . substr( $time, 4, 2);
+        push @messages, {
+          0 => $account,
+          1 => $code,
+          2 => $date,
+          3 => $time,
+          4 => $index,
+          5 => $xml_name,
+          DT_RowId => $xml_date . '+' . $xml_name
+        }
+    }
+    else {
+        push @messages, {
+          0 => '',
+          1 => '',
+          2 => '',
+          3 => '',
+          4 => '',
+          5 => $xml_name,
+          DT_RowId => $xml_date . '+' . $xml_name
+        }
+    }
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@messages }, debug => $debug_data } );
+</%init>
+
+<%args>
+$xml_date
+$debug => 0
+</%args>

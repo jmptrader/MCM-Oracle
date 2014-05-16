@@ -1,0 +1,22 @@
+<%perl>
+my $nick = 'MX';
+
+TRY: {
+  my %session_count = $db_audit->retrieve_user_session_counts();
+
+  my $min_session_count = 9999; 
+  foreach my $handle ( @handles ) {
+    my $hostname = $handle->short_hostname;
+    my $handicap = $handle->session_handicap;
+
+    my $session_count = $session_count{ $hostname } + $handicap;
+
+    if ( $session_count < $min_session_count ) {
+      $min_session_count = $session_count;
+      $nick = $handle->session_nick;
+    }
+  }
+}
+
+return $nick;
+</%perl>

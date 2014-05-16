@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reportingOperations xmlns="http://regis-tr.com/schema/2012/1.1.0/Reporting">
+%if ( ! $result->size ) {
+<endOfData>NO MORE DATA</endOfData>
+%}
+%while ( my %row = $result->next_hash ) {
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<reportingOperation>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Modification' ) {
+<reportingModification>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<reportingBackloading>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'TradeTermination' ) {
+<reportingTradeTermination>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'FullTermination' ) {
+<reportingFullTermination>
+%}
+<header>
+<transactionReference><% $row{'MSG_ID'} %></transactionReference>
+<tradeType><% $row{'TRD_TYPE_REGIS'} %></tradeType>
+<sentBy><% $row{'SENT_BY'} %></sentBy>
+<sentTo><% $row{'SENT_TO'} %></sentTo>
+<creationTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'REP_TIMESTAMP'} ) %></creationTimestamp>
+</header>
+<trade>
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Modification' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Modification' ) {
+<tradeId><% $row{'UTI'} %></tradeId>
+%}
+%$m->comp( 'TRD_counterpartyData_block.xml', row => \%row, prop_regis => $prop_regis  );
+%if ( $row{'EMIR_REP'} eq 'FULL' ) {
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+%$m->comp( 'TRD_counterpartyData_onbehalf_TP_block.xml', row => \%row, prop_regis => '' );
+%}
+%else {
+%$m->comp( 'TRD_counterpartyData_onbehalf_RP_block.xml', row => \%row, prop_regis => '' );
+%}
+%}  #end if EMIR_REP = FULL
+%$m->comp( 'TRD_commonData_block.xml', row => \%row );
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Modification' ) {
+<modifications>
+<actionType><% $row{'EVT_TYPE_ESMA'} %></actionType>
+%if ( $row{'ACTION_TYPE'} ) {
+<actionDetails><% $row{'ACTION_TYPE'} %></actionDetails>
+%}
+</modifications>
+%}  #end if TRD_TYPE_REGIS =  Modification
+%}  #end if TRD_TYPE_REGIS = ReportedTrade, Modification, Backloading
+%else {
+<tradeId><% $row{'UTI'} %></tradeId>
+%if ( $row{'TRD_TYPE_REGIS'} eq 'TradeTermination' ) {
+<executionTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'EXEC_DATETIME'} ) %></executionTimestamp>
+%}
+%$m->comp( 'TRD_counterpartyData_block_termination.xml', row => \%row );
+%if ( $row{'EMIR_REP'} eq 'FULL' ) {
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+%$m->comp( 'TRD_counterpartyData_onbehalf_TP_block_termination.xml', row => \%row, prop_regis => '' );
+%}
+%else {
+%$m->comp( 'TRD_counterpartyData_onbehalf_RP_block_termination.xml', row => \%row, prop_regis => '' );
+%}
+%}  #end if EMIR_REP = FULL
+%if ( $row{'TRD_TYPE_REGIS'} eq 'TradeTermination' ) {
+%if ( $row{'TERM_DATE'} ) {
+<terminationDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'TERM_DATE'} ) %></terminationDate>
+%}
+%if ( $row{'EVT_TYPE_ESMA'} ) {
+<actionType><% $row{'EVT_TYPE_ESMA'} %></actionType>
+%}
+%}
+%}  #end if TRD_TYPE_REGIS = TradeTermination, FullTermination
+</trade>
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+</reportingOperation>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Modification' ) {
+</reportingModification>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+</reportingBackloading>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'TradeTermination' ) {
+</reportingTradeTermination>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'FullTermination' ) {
+</reportingFullTermination>
+%}
+%$update_result = $sybase_rep->do( statement => $update_query, logger => $logger, values => [ $row{'MSG_ID'}, $macc_label, $prop_label ] );
+%}  #end while rows available
+</reportingOperations>
+<%init>
+if ( $output eq 'file' ) {
+  my $fh;
+  unless ( $fh = IO::File->new( $filename, '>' ) ) {
+  }
+
+  $m->out_method( sub { print $fh @_ } );
+}
+$config->set_project_variables( 'bo_gtr' );
+my $sql_library = Mx::SQLLibrary->new( file => $config->KBC_SQLDIR.'/gtr_gen_TRD.sql', logger => $logger );
+$config->set_project_variables( 'common' );
+my ( $query, $update_query, $update_result );
+if ( $size eq 'ALL' ) {
+    $query = $sql_library->query( 'get_all_trades_from_final_msg_table' );
+}
+else {
+    $query = $sql_library->query( 'get_trades_from_final_msg_table' );
+}
+$update_query = $sql_library->query( 'update_msg_to_status_generated' );
+$query =~ s/__ENTITY__/$entity/g;
+$query =~ s/__SIZE__/$size/g;
+$update_query =~ s/__ENTITY__/$entity/g;
+my $result = $sybase_rep->query( query => $query, logger => $logger, values => [ $macc_label, $prop_label ] );
+</%init>
+<%once>
+my $sybase_rep = Mx::Sybase2->new( dsquery => $config->DSQUERY, database => $config->DB_REP, username => $account->name, password => $account->password, config => $config, logger => $logger );
+$sybase_rep->open();
+</%once>
+<%args>
+$output     => 'screen'
+$filename   => ''
+$size       => 1
+$entity     => 'CG'
+$macc_label => 'CBC'
+$prop_label => 'CBC'
+$prop_regis => 'RPTEST'
+</%args>

@@ -1,0 +1,139 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var path   = $('#dummytrigger').attr('path');
+  var action = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_keyfile' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showKeyfile( path );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showKeyfile( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/transfer_keyfile2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<br><div align=center>';
+    html[++h] = '<table class="center" width="70%">';
+    html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+    for ( var i = 0; i < data.length; i++ ) {
+      html[++h] = '<tr><td class="description" width="20%" nowrap>' + data[i].name +  '</td><td>' + data[i].value + '</td></tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showLogging( path ) {
+  $("#logging_path").val( path );
+  $('#logging_form').submit();
+}
+</script>
+
+<h2>Transfer #<% $transfer_id %></h2>
+
+<div id="dummytrigger" path="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr><td class="description" width="20%" nowrap><font color="#FFFFFF"><% $key %>&nbsp;</font></td><td><% ( defined $value ) ? $value : '&nbsp;' %></td></tr>
+% }
+</table>
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onClick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="path" id="logging_path" value="">
+</form>
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "'$k':'$v'";
+}
+push @nav_args, "hist_url:'histtransfer_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $transfer = $db_audit->retrieve_transfer( id => $transfer_id );
+my @table;
+my $cmdline = $transfer->[14];
+$cmdline =~ s/\s+-(\S+)\s+([^- ]\S+)/ -$1 <B>$2<\/B>/g;
+push @table, 'Commandline'        , $cmdline;
+push @table, 'Hostname'           , $transfer->[1];
+push @table, 'PID'                , $transfer->[15];
+push @table, 'CD PID'             , $transfer->[16];
+push @table, 'Unix User'          , $transfer->[17];
+push @table, 'Start Time'         , Mx::Util->convert_time( $transfer->[7] );
+push @table, 'End Time'           , Mx::Util->convert_time( $transfer->[8] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $transfer->[9] ) );
+push @table, 'Exit Code'          , $transfer->[11];
+push @table, 'Project'            , $transfer->[2];
+push @table, 'Entity'             , $transfer->[4];
+push @table, 'Jobstream'          , $transfer->[3];
+push @table, 'Number of records'  , $transfer->[10];
+push @table, 'Business Date'      , $transfer->[18];
+push @table, 'Logfile'            , '<a href="#" onclick="showLogging(\'' . $transfer->[19] . '\');">' . $transfer->[19] . '</a>';
+push @table, 'CD keyfile'         , '<a href="#" onclick="$(\'#dummytrigger\').attr( \'path\', \'' . $transfer->[20] . '\' ); $(\'#dummytrigger\').attr( \'action\', \'show_keyfile\' ); $(\'#modalWindow\').jqmShow(); ">' . $transfer->[20] . '</a>';
+</%init>
+
+<%args>
+$transfer_id
+</%args>

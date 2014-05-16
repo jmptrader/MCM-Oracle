@@ -1,0 +1,21 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $kill_flag = $config->GLOBAL_SESSION_KILL_FLAG;
+$logger->info("creating global session kill flag ($kill_flag)");
+open FH, "> $kill_flag";
+close(FH);
+sleep $config->CPU_SECONDS_POLL_INTERVAL;
+unlink( $kill_flag );
+
+my $total_nr_killed = 0;
+map { $_->full_kill_async } @handles;
+foreach my $handle ( @handles ) {
+  my ( $nr_killed ) = $handle->poll_async;
+  $total_nr_killed += $nr_killed;
+  $logger->info("$nr_killed processes killed on " . $handle->hostname);
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => "$total_nr_killed process(es) killed" } );
+</%init>

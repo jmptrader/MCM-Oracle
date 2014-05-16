@@ -1,0 +1,84 @@
+% for ( my $i = 0; $i <= $#servers; $i++ ) {
+%   my $server = $servers[$i];
+  <H2>Application Server <% $i %></H2>
+  <TABLE class="center" WIDTH="70%">
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Hostname</FONT></TD><TD><% $server->{hostname} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">IP</FONT></TD><TD><% $server->{ip} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Platform</FONT></TD><TD><% $server->{platform} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">User</FONT></TD><TD><% $server->{username} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">OS Version</FONT></TD><TD><% $server->{os_version} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">CPU Type</FONT></TD><TD><% $server->{cpu_type} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"># CPU's</FONT></TD><TD><% $server->{nr_cpus} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"># Cores</FONT></TD><TD><% $server->{nr_cores} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Physical Memory</FONT></TD><TD><% $server->{memory_gb} %> GB</TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Swap Size</FONT></TD><TD><% $server->{swap_gb} %> GB</TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Date</FONT></TD><TD><% $server->{date} %></TD></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Uptime</FONT></TD><TD><% $server->{uptime} %></TD></TR>
+  </TABLE>
+
+  <TABLE class="center" WIDTH="70%">
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP>&nbsp;</TD><TH>Size</TH><TH>Used</TH><TH>Available</TH><TH>% Used</TH></TR>
+%   my @filesystems = ( $i == 0 ) ? @nfs_filesystems : ();
+%   push @filesystems, @{$local_filesystems{ $server->{hostname} }};
+%   foreach my $fs ( @filesystems ) {
+    <TR>
+      <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $fs->name %></FONT></TD>
+%     if ( $fs->status eq $Mx::Filesystem::STATUS_OK ) {
+      <TD ALIGN="right" WIDTH="20%"><% sprintf "%.2f", $fs->size / 1024 / 1024 %> GB</TD>
+      <TD ALIGN="right" WIDTH="20%"><% sprintf "%.2f", $fs->used / 1024 / 1024 %> GB</TD>
+      <TD ALIGN="right" WIDTH="20%"><% sprintf "%.2f", $fs->available / 1024 / 1024 %> GB</TD>
+      <TD ALIGN="right" STYLE="background-color: <% ( $fs->percent_used < 80 ) ? '#70C070' : '#FF9900' %>;"><% $fs->percent_used %> %</TD>
+%     }
+%     else {
+      <TD COLSPAN=4>Not OK</TD>
+%     }
+    </TR>
+%   }
+  </TABLE>
+  <BR>
+% }
+
+<BR>
+
+<H2>Schema Sizes</H2>
+
+<TABLE class="center" WIDTH="70%">
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TH>Size</TH><TH>Used</TH><TH>Available</TH><TH>% Used</TH></TR>
+% foreach my $schema ( keys %dbsizes ) {
+%  my $dbsize = $dbsizes{$schema};
+  <TR>
+    <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $schema %></FONT></TD>
+    <TD ALIGN="right" WIDTH="20%"><% $dbsize->{total} %> GB</TD>
+    <TD ALIGN="right" WIDTH="20%"><% $dbsize->{used} %> GB</TD>
+    <TD ALIGN="right" WIDTH="20%"><% $dbsize->{free} %> GB</TD>
+%   my $percentage = sprintf "%.2f", ( 1 - $dbsize->{free} / $dbsize->{total} ) * 100;
+    <TD ALIGN="right" STYLE="background-color: <% ( $percentage < 80 ) ? '#70C070' : '#FF9900' %>;"><% $percentage %> %</TD>
+  </TR>
+% }
+</TABLE>
+
+<%init>
+my @nfs_filesystems = Mx::Filesystem->retrieve_all( type => $Mx::Filesystem::TYPE_NFS, logger => $logger, config => $config );
+
+map { $_->local_filesystems_async } @handles;
+map { $_->update } @nfs_filesystems;
+
+my %local_filesystems = ();
+foreach my $handle ( @handles ) {
+  $local_filesystems{ $handle->hostname } = [ $handle->poll_async ];
+}
+
+map { $_->system_info_async } @handles;
+
+my %dbsizes = ();
+foreach my $db ( $oracle_fin, $oracle_rep, $oracle_mon ) {
+  my $schema = $db->schema;
+  my %size   = $db->size_info;
+  $dbsizes{ $schema } = \%size;
+}
+
+my @servers = ();
+foreach my $handle ( @handles ) {
+  push @servers, $handle->poll_async;
+}
+</%init>

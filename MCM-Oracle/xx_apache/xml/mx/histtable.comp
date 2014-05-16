@@ -1,0 +1,28 @@
+<table class="center draggable" id="table2csv" width="<% $width %>">
+<thead>
+  <tr>
+  <% map { Mx::Mason::HTML->th( object => $object, column => $_, url => $url, filter => \@filters, sort => $sort, reverse => $reverse ) } @columns %>
+  </tr>
+</thead>
+<tbody>
+% my $i = 1;
+% foreach my $result ( @results ) {
+%   my $class = ( $i++ % 2 == 0 ) ? 's_even' : 's_odd';
+  <tr class="<% $class %>" align=center>
+  <% map { Mx::Mason::HTML->td( result => $result, column => $_, nav_args => $nav_args ) } @columns %>
+  </tr>
+% }
+</tbody>
+</table>
+
+<%args>
+$url => 'histlist.html'
+$object
+@columns
+@results
+@filters
+$sort
+$reverse
+$width
+$nav_args
+</%args>

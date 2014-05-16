@@ -1,0 +1,25 @@
+<BODY>
+<CENTER>
+<BR><BR>
+% if ( $rc == 0 ) {
+    <H2>Message broadcasted</H2>
+% } else {
+    <H2><FONT COLOR="#FF0000">Broadcast failed/FONT></H2>
+% } 
+<INPUT TYPE="button" VALUE=" Close " onClick="window.close()">
+</CENTER>
+</BODY>
+
+<%init> 
+my $template = $config->XMLDIR . '/broadcast_message.xml';
+
+my $rc = 1;  
+if ( my $script = Mx::Ant->new( name => 'broadcast_message', template => $template, target => 'broadcastMessage', cfghash => { __MESSAGE__ => $message }, config => $config, logger => $logger, no_extra_logdir => 1, no_audit => 1 ) ) {
+    $script->run();
+    $rc = $script->exitcode;
+}
+</%init> 
+
+<%args>
+$message
+</%args>

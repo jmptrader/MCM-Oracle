@@ -1,0 +1,32 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $task = $mxml_tasks{$taskname};
+
+my @mxml_messages = Mx::MxML::Message->retrieve_all( task => $task, fromdate => $fromdate, todate => $todate, status_taken => $status_taken, logger => $logger, config => $config, oracle => $oracle, library => $library );
+
+if ( $include_archive && ( my $archive = $config->retrieve( 'MXML_ARCHIVE', 1 ) ) ) {
+  push @mxml_messages, Mx::MxML::Message->retrieve_all( task => $task, fromdate => $fromdate, todate => $todate, status_taken => $status_taken, archived => 1, logger => $logger, config => $config, oracle => $oracle, library => $library );
+}
+
+my @list = (); my %lookup = ();
+foreach my $message ( @mxml_messages ) {
+  $message = $message->TO_JSON;
+  my $node_id = $message->{9};
+  unless ( $message->{9} = $lookup{$node_id} ) {
+      my $node = $mxml_nodes{$node_id};
+      $lookup{$node_id} = $message->{9} = $node->taskname . ':' . $node->nodename;
+  }
+  push @list, $message;
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list } } );
+</%init>
+<%args>
+$taskname
+$fromdate
+$todate
+$status_taken
+$include_archive => 0
+</%args>

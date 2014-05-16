@@ -1,0 +1,40 @@
+<h2>Selection Criteria</h2>
+<form onsubmit="return msubmit(this, 'sessiongraph.html')">
+<table class="center" width="70%">
+% foreach my $entry ( @columns ) {
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF"><% $entry->{description} %>&nbsp;</FONT></TD>
+    <TD>
+%   if ( $entry->{type} eq 'free' ) {
+      <INPUT TYPE="text" NAME="<% $entry->{column} %>" SIZE="<% $entry->{length} %>" MAXLENGTH="<% $entry->{length} %>">
+%   }
+%   elsif ( $entry->{type} eq 'list' ) {
+      <SELECT NAME="<% $entry->{column} %>">
+%     my @values = $db_audit->get_distinct_values( column => $entry->{column}, table => 'sessions' );
+%     foreach my $value ( sort { $b <=> $a } @values ) {
+        <OPTION><% $value %></OPTION>
+%     }      
+      </SELECT>
+%   }
+%   elsif ( $entry->{type} eq 'multilist' ) {
+%     my @values = $db_audit->get_distinct_values( column => $entry->{column}, table => 'sessions' );
+%     foreach my $value ( sort { $b <=> $a } @values ) {
+        <INPUT TYPE="checkbox" NAME="<% $entry->{column} %>:<% $value %>"><% $value %></INPUT><BR>
+%     }      
+%   }
+    </TD>
+  </TR>
+% }
+</table>
+<br>
+<INPUT TYPE="submit" CLASS="table_button" VALUE=" Search ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onClick="mgoback('home.html')">
+</form>
+
+<%init>
+my @columns = (
+    { column => 'mx_scripttype',   description => 'Script Type',    type => 'multilist' },
+    { column => 'project',         description => 'Project',        type => 'multilist' },
+    { column => 'business_date',   description => 'Business Date',  type => 'list' },
+);
+</%init>

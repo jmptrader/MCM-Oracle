@@ -1,0 +1,204 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('.tiptip').tipTip();
+} );
+</script>
+
+<TABLE class="center">
+  <TR>
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: 'scriptname',  action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;">Name</A></TH>
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: 'entity',      action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;">Entity</A></TH>
+% foreach my $date ( @dates ) {
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: '<% $date %>', action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;"><% $date %></A></TH>
+% }
+% unless ( $milestones ) {
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: 'average',     action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;">Average</A></TH>
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: 'success',     action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;">Success</A></TH>
+    <TH NOWRAP><A HREF="#" onclick="mnavigate( 'runtimes.html', { sort: 'fail',        action: '<% $action %>', dates: '<% $dates %>' } )" STYLE="color: #FFFFFF;">Fail</A></TH>
+% }
+  </TR>
+
+% foreach my $key ( @keys ) {
+%   my $hash = $runtimes{$key};
+%   my $sla_name = $hash->{scriptname} . '_' . $hash->{entity};
+%   my $sla = $sla{$sla_name};
+  <TR>
+%   if ( $milestones && $sla ) {
+    <TD NOWRAP><a class="tiptip" href="#" title="SLA warning: <% scalar( Mx::Util->convert_seconds( $sla->warning_value ) ) %>  SLA breach: <% scalar( Mx::Util->convert_seconds( $sla->breach_value ) ) %>"><% $hash->{scriptname} %></a></TD>
+%   }
+%   else {
+    <TD NOWRAP><% $hash->{scriptname} %></TD>
+%   }
+    <TD NOWRAP><% $hash->{entity} %></TD>
+
+%   foreach my $date ( @dates ) {
+%     if ( $milestones ) {
+%       my $value = Mx::Util->convert_time_short( $hash->{$date} );
+%       unless ( $value ) {
+    <TD>&nbsp;</TD> 
+%           next;
+%       }
+%       if ( $sla ) {
+%           my $outcome = $sla->check( value => $value );
+%           if ( $outcome == $Mx::SLA::OK ) {
+    <TD ALIGN="right" STYLE="background-color: #33FF00;" NOWRAP><% $value %></TD>
+%           }
+%           elsif ( $outcome == $Mx::SLA::WARNING ) {
+    <TD ALIGN="right" STYLE="background-color: #FF9900;" NOWRAP><% $value %></TD>
+%           }
+%           elsif ( $outcome == $Mx::SLA::BREACHED ) {
+    <TD ALIGN="right" STYLE="background-color: #FF3300;" NOWRAP><% $value %></TD>
+%           }
+%           else {
+    <TD ALIGN="right" NOWRAP><% $value %></TD>
+%           } 
+%       }
+%       else {
+    <TD ALIGN="right" NOWRAP><% $value %></TD>
+%       }
+%     } 
+%     else {
+%       my $runtime = $hash->{$date};
+%       if ( $runtime == -999999 ) {
+    <TD ALIGN=CENTER STYLE="background-color: #FF9900;">?</TD>
+%       }
+%       elsif ( $runtime < 0 ) {
+    <TD ALIGN=CENTER STYLE="background-color: #FF9900;"><% -1 * $runtime %></TD> 
+%       }
+%       elsif ( ! defined $runtime ) {
+    <TD>&nbsp;</TD>
+%       }
+%      else {
+    <TD ALIGN="right" NOWRAP><% scalar( Mx::Util->convert_seconds( $runtime ) ) %></TD>
+%       }
+%     }
+%   }
+%   unless ( $milestones ) {
+    <TD ALIGN="right" NOWRAP><B><% scalar( Mx::Util->convert_seconds( $hash->{average} ) ) %></B></TD>
+    <TD ALIGN="right" NOWRAP><% $hash->{success} %></TD>
+    <TD ALIGN="right" NOWRAP><% $hash->{fail} %></TD>
+%   }
+  </TR>
+% }
+% unless ( $milestones ) {
+  <TR>
+    <TD><B># Batches</B></TD>
+    <TD>&nbsp;</TD>
+% foreach my $date ( @dates ) {
+    <TD ALIGN="right" NOWRAP><B><% $totals_count{$date} %></B></TD>
+% }
+    <TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD>
+  </TR>
+  <TR>
+    <TD><B>Total Time</B></TD>
+    <TD>&nbsp;</TD>
+% foreach my $date ( @dates ) {
+    <TD ALIGN="right" NOWRAP><B><% scalar( Mx::Util->convert_seconds( $totals_time{$date} ) ) %></B></TD>
+% }
+    <TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD>
+  </TR>
+  <TR>
+    <TD><B>Total CPU</B></TD>
+    <TD>&nbsp;</TD>
+% foreach my $date ( @dates ) {
+    <TD ALIGN="right" NOWRAP><B><% scalar( Mx::Util->convert_seconds( $totals_cpu_seconds{$date} ) ) %></B></TD>
+% }
+    <TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD>
+  </TR>
+  <TR>
+    <TD><B>Total Memory</B></TD>
+    <TD>&nbsp;</TD>
+% foreach my $date ( @dates ) {
+    <TD ALIGN="right" NOWRAP><B><% scalar( Mx::Util->convert_bytes( $totals_vsize{$date} * 1024 ) ) %></B></TD>
+% }
+    <TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD>
+  </TR>
+  <TR>
+    <TD><B>Score</B> (Time/#Batch)</TD>
+    <TD>&nbsp;</TD>
+% foreach my $date ( @dates ) {
+%   if ( $totals_count{$date} > 0 ) {    
+    <TD ALIGN="right" NOWRAP><B><% sprintf "%.2f", $totals_time{$date}/$totals_count{$date} %></B></TD>
+%   }
+%   else {
+    <TD>&nbsp;</TD>
+%   }
+% }
+    <TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD>
+  </TR>
+% }
+</TABLE>
+
+<%init>
+my %runtimes = ();
+my %totals_time = ();
+my %totals_count = ();
+my %totals_cpu_seconds = ();
+my %totals_vsize = ();
+
+my $milestones = 0; my $scripttypes = [ 'dm_batch' ] ; my $runtypes = [ 'O' ]; my %sla = ();
+if ( $action =~ /milestone/i ) {
+  $milestones  = 1; 
+  $scripttypes =  [ 'milestone' ];
+  $runtypes    = undef;
+
+  %sla = Mx::SLA->retrieve_all( type => 'milestone', logger => $logger, config => $config );
+}
+
+my @dates =  split ',', $dates;
+
+foreach my $date ( @dates ) {
+  my @sessions = $db_audit->retrieve_sessions3( business_date => $date, scripttypes => $scripttypes, runtypes => $runtypes );
+
+  foreach my $session ( @sessions ) {
+
+    my $key = $session->{scriptname} . ':' . $session->{entity};
+    my $hash = $runtimes{$key} || { scriptname => $session->{scriptname}, entity => $session->{entity} };
+
+    if ( $session->{exitcode} != 0 ) {
+        $hash->{$date} = -1 * $session->{exitcode};
+        $hash->{fail}++;
+    }
+    elsif ( $session->{starttime} && ! $session->{endtime} ) {
+        $hash->{$date} = -999999;
+    }
+    else {
+        if ( $milestones ) {
+            $hash->{$date} = $session->{endtime};
+        }
+        else {
+            my $runtime = $session->{endtime} - $session->{starttime};
+            $hash->{$date} = $runtime;
+            $hash->{total_time} += $runtime;
+            $hash->{total_count} ++;
+            $totals_time{$date} += $runtime;
+            $totals_count{$date}++;
+            $totals_cpu_seconds{$date} += $session->{cpu_seconds};
+            $totals_vsize{$date} += $session->{vsize};
+            $hash->{success}++;
+        }
+    }
+    $runtimes{$key} = $hash;
+  }
+}
+
+foreach my $key ( keys %runtimes ) {
+    my $hash = $runtimes{$key};
+    $hash->{average} = $hash->{total_time} / $hash->{total_count} if $hash->{total_count} > 0;
+}
+
+my @keys;
+if ( $sort eq 'scriptname' or $sort eq 'entity' ) {
+    @keys = sort { $runtimes{$a}->{$sort} cmp $runtimes{$b}->{$sort} } keys %runtimes;
+}
+else {
+    @keys = sort { $runtimes{$b}->{$sort} <=> $runtimes{$a}->{$sort} } keys %runtimes;
+}
+
+</%init>
+
+<%args>
+$dates
+$sort => 'scriptname'
+$action => ''
+</%args>

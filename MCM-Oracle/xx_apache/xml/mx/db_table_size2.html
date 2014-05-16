@@ -1,0 +1,131 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string;
+
+$table = uri_unescape( $table ) if $table;
+
+my @timestamps = (); my @reserved_data = (); my @reserved_tables = (); my @nr_rows_data = (); my @nr_rows_tables = ();
+
+if ( $action eq 'reserved' or $action eq 'both' ) {
+  @reserved_tables = ( $table ) ? ( split ',', $table ) : $db_audit->top_mxtables( count => $nr_tables, criterium => 'reserved', schema => $schema );
+
+  my ( $lowest_timestamp, $highest_timestamp ) = $db_audit->mxtable_timestamp_range ( name => $reserved_tables[0], schema => $schema );
+  @timestamps = ( $lowest_timestamp );
+  my $timestamp = $lowest_timestamp;
+
+  while ( $timestamp < $highest_timestamp ) {
+    my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+    my ( $next_year, $next_month, $next_day ) = Add_Delta_Days( $year, $month, $day, 1 );
+    $timestamp = sprintf "%04d%02d%02d", $next_year, $next_month, $next_day;
+    push @timestamps, $timestamp;
+  }
+
+  foreach my $table ( @reserved_tables ) {
+    my @result = $db_audit->mxtable_sizes( name => $table, criterium => 'reserved', schema => $schema );
+
+    my %values = ();
+    foreach my $result ( @result ) {
+        my ( $timestamp, $value ) = @{$result};
+        $values{ $timestamp } = $value;
+    }
+
+    my @values = (); my $previous_value = 0; my $i = 0;
+    foreach my $timestamp ( @timestamps ) {
+        $previous_value = $values{ $timestamp } if $values{ $timestamp };
+        my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+        push @values, [ "$year-$month-$day", $previous_value ];
+    }
+
+    push @reserved_data, [ @values ];
+  }
+}
+
+if ( $action eq 'nr_rows' or $action eq 'both' ) {
+  @nr_rows_tables  = ( $table ) ? ( split ',', $table ) : $db_audit->top_mxtables( count => $nr_tables, criterium => 'nr_rows', schema => $schema );
+
+  unless ( $action eq 'both' ) {
+    my ( $lowest_timestamp, $highest_timestamp ) = $db_audit->mxtable_timestamp_range ( name => $nr_rows_tables[0], schema => $schema );
+
+    @timestamps = ( $lowest_timestamp );
+    my $timestamp = $lowest_timestamp;
+
+    while ( $timestamp < $highest_timestamp ) {
+      my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+      my ( $next_year, $next_month, $next_day ) = Add_Delta_Days( $year, $month, $day, 1 );
+      $timestamp = sprintf "%04d%02d%02d", $next_year, $next_month, $next_day;
+      push @timestamps, $timestamp;
+    }
+  } 
+
+  foreach my $table ( @nr_rows_tables ) {
+    my @result = $db_audit->mxtable_sizes( name => $table, criterium => 'nr_rows', schema => $schema );
+
+    my %values = ();
+    foreach my $result ( @result ) {
+        my ( $timestamp, $value ) = @{$result};
+        $values{ $timestamp } = $value;
+    }
+
+    my @values = (); my $previous_value = 0;
+    foreach my $timestamp ( @timestamps ) {
+        $previous_value = $values{ $timestamp } if $values{ $timestamp };
+        my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+        push @values, [ "$year-$month-$day", $previous_value ];
+    }
+
+    push @nr_rows_data, [ @values ];
+  }
+}
+
+if ( $action eq 'total' ) {
+  my @result = $db_audit->total_mxtables( schema => $schema );
+
+  my ( $lowest_timestamp, $highest_timestamp )  = ( $result[0]->[0], $result[-1]->[0] );
+
+  @timestamps = ( $lowest_timestamp );
+  my $timestamp = $lowest_timestamp;
+
+  while ( $timestamp < $highest_timestamp ) {
+    my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+    my ( $next_year, $next_month, $next_day ) = Add_Delta_Days( $year, $month, $day, 1 );
+    $timestamp = sprintf "%04d%02d%02d", $next_year, $next_month, $next_day;
+    push @timestamps, $timestamp;
+  }
+
+  my %values = ();
+  foreach my $result ( @result ) {
+      my ( $timestamp, $value ) = @{$result};
+      $values{ $timestamp } = $value * 1;
+  }
+
+  my @values = (); my $previous_value = 0; my $i = 0;
+  foreach my $timestamp ( @timestamps ) {
+      $previous_value = $values{ $timestamp } if $values{ $timestamp };
+      my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+      push @values, [ "$year-$month-$day", $previous_value ];
+  }
+
+  push @reserved_data, [ @values ];
+  push @reserved_tables, 'TOTAL';
+}
+
+if ( $action eq 'reserved' or $action eq 'total' ) {
+  $json_string = $coder->encode( { status => 'OK', data => \@reserved_data, labels => \@reserved_tables } );
+}
+elsif ( $action eq 'nr_rows' ) {
+  $json_string = $coder->encode( { status => 'OK', data => \@nr_rows_data, labels => \@nr_rows_tables } );
+}
+elsif ( $action eq 'both' ) {
+  $json_string = $coder->encode( { status => 'OK', reserved_data => \@reserved_data, nr_rows_data => \@nr_rows_data } );
+}
+</%init>
+
+<%args>
+$nr_tables => 10
+$table => ''
+$schema
+$action
+</%args>

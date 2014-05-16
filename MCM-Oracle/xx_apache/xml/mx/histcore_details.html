@@ -1,0 +1,114 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var sessionid = $('#dummytrigger').attr('sessionid');
+  var action    = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_pstack' ) {
+    $('#jqmTitleText').text();
+    $modal.jqmShow();
+    showPstack( sessionid );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showPstack( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/core_pstack2.html',
+    data:     { 'session_id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+</script>
+
+<div id="dummytrigger" sessionid="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<H2>Core #<% $core->[0] %></H2>
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr><td class="description" width="20%" nowrap><font color="#FFFFFF"><% $key %>&nbsp;</font></td><td><% ( defined $value ) ? $value : '&nbsp;' %></td></tr>
+% }
+</table>
+<br>
+<input type="button" class="table_button" value=" Go Back " onClick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'hist_url';
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histcore_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $core = $db_audit->retrieve_core( id => $core_id );
+my @table;
+push @table, 'Stack Trace'          , '<A CLASS="select" HREF="#" onclick="$(\'#dummytrigger\').attr( \'sessionid\', ' . $core->[1] . ' );$(\'#dummytrigger\').attr( \'action\', \'show_pstack\' );$(\'#modalWindow\').jqmShow();">' . $core->[2] . '</A>';
+push @table, 'Memory Map'           , $core->[3];
+push @table, 'Core File '           , $core->[4];
+push @table, 'Hostname '            , $core->[5];
+push @table, 'Size'                 , Mx::Util->convert_bytes( $core->[6] );
+push @table, 'Timestamp'            , Mx::Util->convert_time( $core->[7] );
+push @table, 'Corresponding Session', '<A CLASS="select" HREF="#" onclick="mnavigate(\'histsession_details.html\', { session_id:' . $core->[1] . ' }, { ' . $nav_args . ' })">' . $core->[1] . '</A>';
+my $win_user  = $core->[8];
+my $full_name = $full_names{$win_user};
+if ( $full_name ) {
+  push @table, 'Windows User', '<A CLASS="select" HREF="#" onclick="mnavigate(\'/mx-auth/user_details.html\', { name:\'' . $win_user . '\' }, { ' . $nav_args . ' })">' . $full_name . '</A>';
+}
+else {
+  push @table, 'Windows User', $win_user;
+}
+push @table, 'Murex User'           , $core->[9];
+push @table, 'Murex Group'          , $core->[10];
+push @table, 'Nick'                 , $core->[11];
+push @table, 'Function'             , $core->[12];
+push @table, 'Business Date'        , $core->[13];
+</%init>
+
+<%args>
+$core_id
+</%args>

@@ -1,0 +1,4 @@
+%return( $date.'Z' );
+<%args>
+$date => ''
+</%args>

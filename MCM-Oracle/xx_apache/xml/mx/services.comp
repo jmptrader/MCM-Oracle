@@ -1,0 +1,48 @@
+<%init>
+if ( $name ) {
+  if ( my $handle = $handles[$location] ) {
+    if ( my ( $service ) = $handle->soaphandle->mservice( names => [ $name ] )->result ) {
+      $service->unprepare_for_serialization( logger => $logger, config => $config );
+      return $service;
+    }
+  }
+}
+else {
+  my @names2 = ();
+  foreach my $service ( @services ) {
+    if ( @names ) {
+      my $name = $service->name;
+      next unless grep /^$name$/, @names;
+    }
+
+    if ( $handles[ $service->location ] ) {
+      push @{$names2[ $service->location ]}, $service->name;
+    }
+  }
+
+  foreach my $handle ( @handles ) {
+    if ( my $names = $names2[ $handle->instance ] ) {
+      $handle->mservice_async( names => $names );
+    }
+  }
+
+  my @services2 = ();
+  foreach my $handle ( @handles ) {
+    if ( my $names = $names2[ $handle->instance ] ) {
+      push @services2, $handle->poll_async;
+    }
+  }
+
+  map { $_->unprepare_for_serialization( logger => $logger, config => $config ) } @services2;
+
+  @services2 = sort { $a->{order} <=> $b->{order} } @services2;
+
+  return \@services2;
+}
+</%init>
+
+<%args>
+@names    => ()
+$name     => ''
+$location => ''
+</%args>

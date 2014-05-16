@@ -1,0 +1,8 @@
+<commonData>
+<transactionDetails>
+<tradeId><% $row{'UTI'} %></tradeId>
+</transactionDetails>
+</commonData>
+<%args>
+%row
+</%args>

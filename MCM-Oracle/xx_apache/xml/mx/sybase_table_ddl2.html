@@ -1,0 +1,16 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $ddl = $oracle->table_ddl( table => $table, schema => $schema );
+
+my @data = ( { 0 => $ddl } );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => \@data } );
+</%init>
+
+<%args>
+$table
+$schema
+</%args>

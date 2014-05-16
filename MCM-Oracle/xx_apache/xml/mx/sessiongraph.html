@@ -1,0 +1,208 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('.tiptip').tipTip();
+  $('.tiptip').mousemove(function(e) { $("#tiptip_holder").css('margin',0).css('position','absolute').css('left', 20).css('top', e.pageY - 80); });
+} );
+</script>
+
+% if ( @displayed_sessions ) {
+  <H2>Session Graph - <% $business_date %></H2>
+  <P>
+  <IMG SRC="<% $filename %>?<% time() %>" USEMAP="#sessions" BORDER="0">
+  <MAP NAME="sessions">
+%   my $i = 0;
+%   foreach my $session ( @displayed_sessions ) {
+%     my $y1 = $OFFSET_TOP + $i * ( $BAR_WIDTH + $BAR_SPACING );
+%     my $y2 = $y1 + $BAR_WIDTH;
+%     my $title = '<table>';
+%     $title .= '<tr><th align=left>id:</th><th align=right>' . $session->{id} . '</th></tr>';
+%     $title .= '<tr><th align=left>type:</th><th align=right>' . $session->{type} . '</th></tr>';
+%     $title .= '<tr><th align=left>name:</th><th align=right>' . $session->{name} . '</th></tr>';
+%     $title .= '<tr><th align=left>entity:</th><th align=right>' . $session->{entity} . '</th></tr>';
+%     $title .= '<tr><th align=left>delay:</th><th align=right>' . Mx::Util->convert_seconds( $session->{remote_delay} ) . '</th></tr>';
+%     $title .= '<tr><th align=left>start:</th><th align=right>' . Mx::Util->convert_time_short( $session->{starttime} ) . '</th></tr>';
+%     $title .= '<tr><th align=left>end:</th><th align=right>' . Mx::Util->convert_time_short( $session->{endtime} ) . '</th></tr>';
+%     $title .= '<tr><th align=left>duration:</th><th align=right>' . Mx::Util->convert_seconds( $session->{duration} ) . '</th></tr>';
+%     $title .= '</table>';
+    <AREA SHAPE="rect" COORDS="0,<% $y1 %>,<% $TOTAL_WIDTH %>,<% $y2 %>" HREF="#" onclick="$('#tiptip_holder').remove(); mnavigate( 'histsession_details.html', { session_id: <% $session->{id} %> }, { <% $nav_args %> } );" CLASS="tiptip" TITLE="<% $title %>">
+%     $i++; 
+%   }
+  </MAP>
+% }
+% else { 
+  <H2>No sessions found.</H2>
+% }
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "'$k':'$v'";
+}
+push @nav_args, "hist_url:'sessiongraph.html'";
+my $nav_args = join ',', @nav_args;
+
+my $TOTAL_WIDTH   = 1500 * $zoom;
+my $BAR_WIDTH     =   14 * $zoom;
+my $BAR_SPACING   =    4 * $zoom;
+my $OFFSET_TOP    =   12 * $zoom;
+my $OFFSET_BOTTOM =   30 * $zoom;
+
+my @mx_scripttypes = (); my @projects = ();
+foreach my $key ( keys %ARGS ) {
+  if ( $key =~ /^mx_scripttype:(.+)$/ ) {
+    push @mx_scripttypes, $1;
+  }
+  elsif ( $key =~ /^project:(.+)$/ ) {
+    push @projects, $1;
+  }
+
+}
+
+my $filename  = "/tmp/sessiongraph_${business_date}.png";
+
+our $tz_correction = $config->TZ_CORRECTION * 3600;
+
+my $today = Mx::Util->epoch_to_iso();
+my ( $year, $month, $day ) = $business_date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+$month--;
+my $starttime = timelocal( 0, 0, 0, $day, $month, $year );
+my $endtime   = timelocal( 59, 59, 23, $day, $month, $year );
+
+my @sessions; my @displayed_sessions =(); my @labels = ();
+if ( @sessions = $db_audit->retrieve_sessions2( starttime => $starttime, endtime => $endtime, types => \@mx_scripttypes, projects => \@projects ) ) {
+ 
+  my $offset = $sessions[0]->{starttime};
+
+  #
+  # take the nearest hour
+  #
+  $offset = int( $offset / 3600 ) * 3600;
+
+  #
+  # calculate the offset since midnight
+  #
+  our $midnight_offset = $offset % 86400; 
+ 
+  my @remote_starttimes = (); my @starttimes = (); my $nr_sessions = 0; my @endtimes_ok = (); my @endtimes_nok = (); my @endtimes_busy = (); my $y_max_value = 0;
+  foreach my $session ( @sessions ) {
+    if ( ! $session->{endtime} ) {
+        if ( $business_date == $today ) {
+            $session->{endtime}  = time();
+            $session->{exitcode} = -1;
+        }
+        else {
+            next;
+        }
+    }
+
+    push @displayed_sessions, $session;
+    $nr_sessions++;
+
+    my $label;
+    if ( $session->{name} !~ /^\s*$/ ) {
+        $label = $session->{name};
+        if ( $session->{entity} !~ /^\s*$/ ) {
+            $label .= ' (' . $session->{entity} . ' - ' . $session->{id} . ')';
+        }
+        else { 
+            $label .= ' (' . $session->{id} . ')';
+        }
+    }
+    else {
+        $label = $session->{nick};
+        if ( $session->{user} !~ /^\s*$/ ) {
+            $label .= ' (' . $session->{user} . ' - ' . $session->{id} . ')';
+        }
+        else { 
+            $label .= ' (' . $session->{id} . ')';
+        }
+    }
+
+    if ( $session->{exitcode} != 0 ) {
+        $label = "*** $label";
+    }
+
+    push @labels, $label;
+       
+    my $starttime = $session->{starttime} - $offset;
+    my $remote_delay = $session->{remote_delay} || 0;
+    my $remote_starttime = ( $remote_delay ) ? $starttime - $remote_delay : $starttime;
+    $starttime = $remote_delay;
+    my $endtime   = $session->{endtime} - $session->{starttime} ;
+    my $y_max     = $session->{endtime} - $offset;
+    $y_max_value = $y_max if $y_max > $y_max_value;
+
+    push @remote_starttimes, $remote_starttime;
+    push @starttimes, $starttime;
+
+    if ( $session->{exitcode} == 0 ) {
+        push @endtimes_ok, $endtime;
+        push @endtimes_nok, 0;
+        push @endtimes_busy, 0;
+    }
+    elsif ( $session->{exitcode} == -1 ) {
+        push @endtimes_ok, 0;
+        push @endtimes_nok, 0;
+        push @endtimes_busy, $endtime;
+    }
+   
+    else {
+        push @endtimes_ok, 0;
+        push @endtimes_nok, $endtime;
+        push @endtimes_busy, 0;
+    }
+  }
+
+  #
+  # take the nearest hour for y_max
+  #
+  $y_max_value = int( $y_max_value / 3600 ) * 3600 + 3600;
+
+  my $data = GD::Graph::Data->new( [ [ @labels ], [ @remote_starttimes ], [ @starttimes ], [ @endtimes_ok ], [ @endtimes_nok ], [ @endtimes_busy ] ] );
+
+  my $TOTAL_HEIGHT = $nr_sessions * ( $BAR_WIDTH + $BAR_SPACING ) + $OFFSET_TOP + $OFFSET_BOTTOM;
+  $TOTAL_HEIGHT = 100 if $TOTAL_HEIGHT < 100;
+ 
+  my $graph = GD::Graph::hbars->new( $TOTAL_WIDTH, $TOTAL_HEIGHT );
+ 
+  $graph->set(
+    y_max_value     => $y_max_value,
+    y_tick_number   => int( $y_max_value / 3600 ),
+    y_number_format => \&y_label,
+    bar_width       => $BAR_WIDTH,
+    cumulate        => 1,
+    labelclr        => 'black',
+    axislabelclr    => 'black',
+    textclr         => 'black',
+    fgclr           => 'black',
+    dclrs           => [ undef, 'yellow', 'green', 'red', 'blue' ],
+    borderclrs      => [ undef, 'black', 'black', 'black', 'black' ],
+    bar_spacing     => 3,
+    transparent     => 1,
+    long_ticks      => 1,
+  );
+
+  my $gd = $graph->plot( $data ) or die $graph->error;
+ 
+  open( IMG, ">$filename" );
+  print IMG $gd->png;
+  close(IMG);
+
+  sub y_label {
+    my ( $seconds ) = @_;
+
+    $seconds += $midnight_offset + $tz_correction;
+    my $hours = int($seconds / 3600);
+    $hours = $hours % 24;
+    $seconds = $seconds % 3600;
+    my $minutes = int($seconds / 60);
+    sprintf "%02d:%02d", $hours, $minutes;
+  }
+}
+
+</%init>
+
+<%args>
+$business_date
+$zoom => 1
+</%args>

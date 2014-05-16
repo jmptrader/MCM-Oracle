@@ -1,0 +1,15 @@
+<%perl>
+$m->comp( "group_details.html", id => $group_id );
+</%perl>
+
+<%init>
+$right_ids = [ $right_ids ] unless ref($right_ids) eq 'ARRAY';
+my $group = Mx::Auth::Group->new( id => $group_id, db => $auth_db, config => $config, logger => $logger );
+$group->set_rights( right_ids => $right_ids, environment_ids => [ $environment_id ] );
+</%init>
+
+<%args>
+$group_id
+$environment_id
+$right_ids => []
+</%args>

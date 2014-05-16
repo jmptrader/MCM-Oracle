@@ -1,0 +1,23 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $message = 'failed';
+if ( my $collector = $m->comp( 'collectors.comp', name => $name ) ) {
+  if ( $collector->status eq 'stopped' or $collector->status eq 'disabled' ) {
+    $message = 'already stopped';
+  }
+  elsif ( my $handle = $handles[ $collector->location ] ) {
+    $logger->info("stopping collector $name");
+    if ( $handle->soaphandle->stop_collector( $collector->name ) ) {
+      $message = 'stopped';
+    }
+  }
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => $message } );
+</%init>
+
+<%args>
+$name
+</%args>

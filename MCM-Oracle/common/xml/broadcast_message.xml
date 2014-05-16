@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<project name="broadcastMessage" basedir="." default="sample">
+  <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#AUTHENTICATION" MxAnchorType="Include"/>
+  <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#BROADCAST_MESSAGE" MxAnchorType="Include"/>
+  <target name="broadcastMessage" description="broadcast message">
+    <murex.middleware.access.authentication user="ADMIN" password="__ADMIN:PASSWORD__" crypted="Y"/>
+    <murex.middleware.access.broadcastMessage message="__MESSAGE__"/>
+  </target>
+</project>
+

@@ -1,0 +1,75 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    <% $title %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="form" class="grid_12">
+    <form action="group_action.html" method="POST">
+% if ( $id ) { 
+    <input type="hidden" name="id" value="<% $id %>">
+% }
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+    <tr>
+      <td class="description">Name</td>
+      <td class="entryfield"><input type="text" name="name" value="<% $name %>" size="30"></td>
+    </tr>
+    <tr>
+      <td class="description">Type</td>
+      <td>
+        <select name="type">
+%  foreach my $ctype ( @types ) {
+          <option <% ( $type eq $ctype ) ? 'selected' : '' %>><% $ctype %></option>
+%  }
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="description">Description</td>
+      <td class="entryfield"><input type="text" name="description" value="<% $description %>" size="30"></td>
+    </tr>
+    <tr>
+      <td class="description">Config Data</td>
+      <td class="entryfield"><input type="text" name="config_data" value="<% $config_data %>" size="50"></td>
+    </tr>
+    </table>
+
+    <input type="submit" class="button" right="auth_master" name="action" value=" <% $name ? 'Update' : 'Insert' %> ">
+    <input type="button" class="button" value=" Cancel " onClick="history.back()">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my ($name, $type, $description, $config_data);
+  if ( $id ) {
+    my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $group->retrieve;
+    $name          = $group->name;
+    $type          = $group->type;
+    $description   = $group->description;
+    $config_data   = $group->config_data;
+  }
+  my @types = Mx::Auth::Group->types;
+
+  my $title = ( $id ) ? "Update group $name": "Insert new group";
+</%init>
+
+<%args>
+$id => 0
+</%args>

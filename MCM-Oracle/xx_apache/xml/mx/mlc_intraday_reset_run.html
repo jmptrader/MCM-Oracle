@@ -1,0 +1,50 @@
+<BODY>
+<& navigation.comp &>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<CENTER>
+
+%my $task;
+%unless ( $task = MLC::Task->new( name => 'limit_comp_intraday', template => $xml, sched_jobstream => 'mlc_intraday_fw', project => 'xx_mlc', config => $config, logger => $logger ) ) {
+%}
+
+%$task->run( move_logfiles => $move_logfiles, exclusive => 0 );
+%my $exitcode = $task->exitcode;
+%if ( $exitcode != 0 and $exitcode % 256 == 0 ) {
+%    $exitcode++;
+%}
+
+%if ( $exitcode == 0 ) {
+%    $task->mail( address => $mail ) if $mail;
+     <TD ALIGN=CENTER STYLE="background-color: #CCFFFF">Success.</TD>
+     <BR><BR>
+%}
+%else {
+     <TD ALIGN=CENTER STYLE="background-color: #FFCCCC">Failure.</TD>
+     <BR><BR>
+%    if ( $mail && $mail_nok ) {
+%        $mail .= ",$mail_nok";
+%    }
+%    elsif ( $mail_nok ) {
+%        $mail = $mail_nok;
+%    }
+%    $task->mail( address => $mail ) if $mail;
+%}
+
+</TABLE>
+<FORM ACTION="mlc_intraday_reset.html" METHOD=POST>
+  <INPUT TYPE="submit" CLASS="button" VALUE=" Go Back ">
+</FORM>
+</CENTER>
+</BODY>
+
+<%init>
+my ( $mail, $mail_nok, $xml, $move_logfiles );
+$move_logfiles = 'True';
+$config->set_project_variables( 'xx_mlc' );
+$xml = $config->KBC_XMLDIR . '/' .'mlc_limit_comp_intraday_v2.xml';
+
+</%init>

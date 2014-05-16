@@ -1,0 +1,67 @@
+<H2>Compare Runtimes</H2>
+<BR>
+<TABLE class="center" WIDTH="150px">
+  <TR>
+    <TH WIDTH="10px"><FORM><INPUT TYPE="checkbox" ID="checkbox" CHECKED onClick="toggleAllCheckboxes('checkbox');"></FORM</TH>
+    <TH>Business Date</TH>
+  </TR>
+% my $i = 1;
+% foreach my $date ( @business_dates ) {
+%   my $date_string = shift @business_date_strings;
+  <TR>
+    <TD>
+      <FORM>
+      <INPUT TYPE="checkbox" ID="checkbox<% $i++ %>" CHECKED VALUE="<% $date %>">
+      </FORM>
+    </TD> 
+    <TD ALIGN="right"><% $date_string %></TD>
+  </TR>
+% }
+</TABLE>
+
+<BR>
+
+<TABLE class="center" WIDTH="150px">
+  <TR>
+    <TH WIDTH="10px"><FORM><INPUT TYPE="checkbox" ID="_checkbox" CHECKED onClick="toggleAllCheckboxes('_checkbox');"></FORM</TH>
+    <TH>Run Type</TH>
+  </TR>
+% my $j = 1;
+% foreach my $runtype ( 'O', '1', 'V', 'X', 'N' ) {
+  <TR>
+    <TD>
+      <FORM>
+      <INPUT TYPE="checkbox" ID="_checkbox<% $j++ %>" CHECKED VALUE="<% $runtype %>">
+      </FORM>
+    </TD> 
+    <TD ALIGN="right"><% $runtype %></TD>
+  </TR>
+% }
+</TABLE>
+
+<BR>
+
+<form onSubmit="getCheckboxValues('checkbox', 'dateList'); getCheckboxValues('_checkbox', 'runtypeList'); return msubmit(this, 'runtimes.html', [ { name: 'action', value: $('#action1').val() } ]);">
+  <INPUT TYPE="hidden" NAME="dates" ID="dateList" VALUE="all">
+  <INPUT TYPE="hidden" NAME="runtypes" ID="runtypeList" VALUE="all">
+  <input type="hidden" id="action1" value="">
+  <INPUT TYPE="submit" CLASS="table_button" VALUE=" Compare DM Batches " onclick="$('#action1').val(' Compare DM Batches ');">
+  <INPUT TYPE="submit" CLASS="table_button" VALUE=" Compare Batches "    onclick="$('#action1').val(' Compare Batches ');">
+  <INPUT TYPE="submit" CLASS="table_button" VALUE=" Compare Milestones " onclick="$('#action1').val(' Compare Milestones ');">
+</form>
+
+<%init>
+my @business_date_strings = ();
+my @business_dates = $db_audit->get_distinct_values( column => 'business_date', table => 'sessions' );
+@business_dates = sort { $b <=> $a } @business_dates;
+foreach my $date ( @business_dates ) {
+  my ( $year, $month, $day ) = $date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+  
+  my $epoch          = timelocal( 0, 0, 0, $day, $month - 1, $year );
+  my $weekday        = ( localtime( $epoch ) )[6];
+  my $weekday_string = qw( Sun Mon Tue Wed Thu Fri Sat )[ $weekday ];
+  my $month_string   = qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)[ $month - 1 ];
+  
+  push @business_date_strings, "$weekday_string $day $month_string $year";
+}
+</%init>

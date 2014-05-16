@@ -1,0 +1,11 @@
+<% $logurl %>
+<%init>
+my $webcmd_id = $db_audit->record_webcommand_start( cmdline => $command, starttime => time(), win_user => $m->session->{username} );
+my $logurl  = '/weblog/' . $webcmd_id . '.log';
+my $logfile = $config->WEBLOGDIR . '/' . $webcmd_id . '.log';
+Mx::Process->background_run( command => $command, logger => $logger, config => $config, ignore_child => 1, env => { MXWEBLOG => $logfile } );
+sleep 2;
+</%init>
+<%args>
+$command
+</%args>

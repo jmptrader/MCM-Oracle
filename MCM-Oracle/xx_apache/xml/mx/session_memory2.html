@@ -1,0 +1,41 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @memory = $db_audit->retrieve_memory( session_id => $id );
+
+my @timestamps = map { Mx::Util->convert_time_short( $_->[1] ) } @memory;
+my @vsize      = map { $_->[2] } @memory;
+my @rss        = map { $_->[3] } @memory;
+my @anon       = map { $_->[4] } @memory;
+
+my $last_vsize = Mx::Util->convert_bytes( $vsize[-1] * 1024 );
+my $last_rss   = Mx::Util->convert_bytes( $rss[-1]   * 1024 );
+my $last_anon  = Mx::Util->convert_bytes( $anon[-1]  * 1024 );
+
+my @data   = ( \@timestamps, \@vsize, \@rss, \@anon );
+my @legend = ( 'Virtual Size', 'Resident Set Size', 'Anonymous Size' );
+
+my $graph = GD::Graph::lines->new(1000, 700);
+
+my $x_label_skip = int ( scalar(@timestamps) / 12 );
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => \&y_label, legend_spacing => 10 );
+$graph->set_text_clr('black');
+$graph->set_legend( @legend );
+
+my $file = "/tmp/memory_${id}.png";
+
+my $fh = IO::File->new( $file, '>' );
+print $fh $graph->plot(\@data)->png;
+$fh->close;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { path => $file, vsize => $last_vsize, rss => $last_rss, anon => $last_anon } );
+
+sub y_label {
+  return Mx::Util->convert_bytes( $_[0] * 1024 );
+}
+</%init>
+<%args>
+$id
+</%args>

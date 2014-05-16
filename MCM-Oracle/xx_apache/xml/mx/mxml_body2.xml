@@ -1,0 +1,16 @@
+% if ( $raw ) {
+% $r->content_type('text/xml');
+<% $xml %>
+% }
+% else {
+% $r->content_type('text/html');
+<& display_xml.comp, xml => $xml &>
+% }
+<%init>
+my $xml = Mx::MxML::Message->retrieve_body( body_id => $body_id, logger => $logger, config => $config, oracle => $oracle, library => $library );
+</%init>
+<%args>
+$body_id
+$raw => 1
+$archived
+</%args>

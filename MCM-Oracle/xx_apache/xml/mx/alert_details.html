@@ -1,0 +1,60 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function showLogging( path ) {
+  $("#logging_path").val( path );
+  $('#logging_form').submit();
+}
+</script>
+
+<H2>Alert #<% $alert->[0] %></H2>
+<TABLE class="center" width="70%">
+  <TR>
+    <TH>Name</TH>
+    <TH>Value</TH>
+  </TR>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</TABLE>
+<BR>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('alerts.html', { <% join ',', @nav_args %> })">
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="path" id="logging_path" value="">
+</form>
+
+<%init>
+my $alert = $db_audit->retrieve_alert( id => $alert_id );
+my @table;
+push @table, 'Name'                 , $alert->[2];
+push @table, 'Item'                 , $alert->[3];
+push @table, 'Category'             , $alert->[4];
+push @table, 'Level'                , $alert->[5];
+push @table, 'Message'              , $alert->[6];
+push @table, 'Business Date'        , $alert->[7];
+push @table, 'Acknowledge Received' , $alert->[8];
+push @table, 'Acknowledge Time'     , Mx::Util->convert_time( $alert->[9] );
+push @table, 'Acknowledge User'     , $alert->[10];
+push @table, '# Triggers'           , $alert->[11];
+push @table, 'First Trigger Time'   , Mx::Util->convert_time( $alert->[1] );
+push @table, 'Last Trigger Time'    , Mx::Util->convert_time( $alert->[12] );
+push @table, 'Logfile'              , '<a href="#" onclick="showLogging(\'' . $alert->[13] . '\');">' . $alert->[13] . '</a>';
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'alert_id' or $k eq 'reverse';
+  push @nav_args, "$k:'$v'";
+}
+</%init>
+
+<%args>
+$alert_id
+</%args>

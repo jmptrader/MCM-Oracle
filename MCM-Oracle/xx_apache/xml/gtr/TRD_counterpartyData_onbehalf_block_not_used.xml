@@ -1,0 +1,81 @@
+<counterpartyData>
+<partyDetails>
+<partyIdType><% $row{'OP_EMIR_ID_TYPE'} %></partyIdType>
+<partyId><% $row{'OP_EMIR_ID'} %></partyId>
+%if ( $prop_regis ) {
+<accountId><% $prop_regis %></accountId>
+%}
+%if ( $row{'OP_OFFICE_NAME'} ) {
+<name><% $row{'OP_OFFICE_NAME'} %></name>
+%}
+%if ( $row{'OP_OFFICE_ADDRESS'} ) {
+<domicile><% $row{'OP_OFFICE_ADDRESS'} %></domicile>
+%}
+%if ( $row{'OP_EMIR_SECT'} ) {
+<corporateSector><% $row{'OP_EMIR_SECT'} %></corporateSector>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'OP_FINANCIAL'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<financialSector><% $row{'OP_FINANCIAL'} %></financialSector>
+%}
+</partyDetails>
+<counterpartyDetails>
+<counterpartyIdType><% $row{'RP_EMIR_ID_TYPE'} |h %></counterpartyIdType>
+<counterpartyId><% $row{'RP_EMIR_ID'} %></counterpartyId>
+</counterpartyDetails>
+<otherDetails>
+%if ( $row{'OP_BROKER_ID_TYPE'} ) {
+<brokerIdType><% $row{'OP_BROKER_ID_TYPE'} %></brokerIdType>
+%}
+%if ( $row{'OP_BROKER_ID'} ) {
+<brokerId><% $row{'OP_BROKER_ID'} %></brokerId>
+%}
+%if ( $row{'RP_EMIR_ID_TYPE'} ) {
+<reportingEntityIdType><% $row{'RP_EMIR_ID_TYPE'} |h %></reportingEntityIdType>
+%}
+%if ( $row{'RP_EMIR_ID'} ) {
+<reportingEntityId><% $row{'RP_EMIR_ID'} %></reportingEntityId>
+%}
+%if ( $row{'OP_CL_MEMBER_ID_TYPE'} ) {
+<clearingMemberIdType><% $row{'OP_CL_MEMBER_ID_TYPE'} |h %></clearingMemberIdType>
+%}
+%if ( $row{'OP_CL_MEMBER_ID'} ) {
+<clearingMemberId><% $row{'OP_CL_MEMBER_ID'} %></clearingMemberId>
+%}
+%if ( $row{'OP_BENEF_ID_TYPE'} ) {
+<beneficiaryIdType><% $row{'OP_BENEF_ID_TYPE'} |h %></beneficiaryIdType>
+%}
+%if ( $row{'OP_BENEF_ID'} ) {
+<beneficiaryId><% $row{'OP_BENEF_ID'} %></beneficiaryId>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'OP_TRD_CAPACITY'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<tradingCapacity><% $row{'OP_TRD_CAPACITY'} %></tradingCapacity>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'OP_BUYSELL'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<counterpartySide><% $row{'OP_BUYSELL'} %></counterpartySide>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'OP_NON_EEA'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<nonEuropeanCounterparty><% $row{'OP_NON_EEA'} %></nonEuropeanCounterparty >
+%}
+%if ( $row{'OP_EMIRHED'} ) {
+<commercialActivity><% $row{'OP_EMIRHED'} %></commercialActivity>
+%}
+%if ( $row{'OP_EMIRTHRES'} ) {
+<clearingThreshold><% $row{'OP_EMIRTHRES'} %></clearingThreshold>
+%}
+</otherDetails>
+<exposures>
+%if ( $row{'OP_COLL_TYPE'} ) {
+<collateralisation><% $row{'OP_COLL_TYPE'} %></collateralisation>
+%}
+%if ( $row{'OP_COLL_PTF_YN'} ) {
+<collateralPortfolio><% $row{'OP_COLL_PTF_YN'} %></collateralPortfolio>
+%}
+%if ( $row{'OP_COLL_PTF_CODE'} ) {
+<collateralPortfolioCode><% $row{'OP_COLL_PTF_CODE'} %></collateralPortfolioCode>
+%}
+</exposures>
+</counterpartyData>
+<%args>
+%row
+$prop_regis => ''
+</%args>

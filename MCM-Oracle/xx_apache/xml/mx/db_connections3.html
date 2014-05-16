@@ -1,0 +1,431 @@
+<script type="text/javascript">
+var oTable; var tid1; var doRefresh = false; var killing = false; var schemas = []; var refresh_footer = true;
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) {
+        schemas = Object.keys( json.schemas ).sort();
+        refresh_footer = true;
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        $('.tiptip').tipTip();
+        checkRights(); 
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cfti',
+    "oColVis":      { "aiExclude": [ 14,15 ] },
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/db_connections2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "600px",
+    "sScrollX":     "100%",
+	"aaSorting":    [[8,'asc'],[9,'asc']],
+
+    "fnFooterCallback": function( nRow, aaData, iStart, iEnd, aiDisplay ) {
+      if ( refresh_footer ) {
+        var nCells = nRow.getElementsByTagName('th');
+
+        nCells[0].innerHTML = CreateSelect( schemas, "schema_filter" );
+
+        $("#schema_filter").change( function () {
+          oTable.fnFilter( $(this).val(), 0 );
+        } );
+
+        refresh_footer = false;
+      }
+    },
+
+    "aoColumnDefs": [
+      { "fnRender": function ( o, val ) {
+        if ( o.aData[17] == '' ) {
+          return o.aData[3];
+        }
+        return '<a class="tiptip" href="#" title="' + o.aData[17] + '">' + o.aData[3] + '</a>';
+        }, "aTargets": [ 3 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_cpu %>" );
+        }, "aTargets": [ 11 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_reads %>" );
+        }, "aTargets": [ 12 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_reads %>" );
+        }, "aTargets": [ 13 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_writes %>" );
+        }, "aTargets": [ 14 ] },
+
+      { "sClass": "center",       "aTargets": [ 1,5,7,8,16,19 ] },
+      { "sClass": "ralign",       "aTargets": [ 9,11,12,13,14,15 ] },
+
+      { "bVisible": false,        "aTargets": [ 17,18,19 ] },
+
+      { "sWidth": "40px",         "aTargets": [ 1,5 ] },
+      { "sWidth": "50px",         "aTargets": [ 11,14,15 ] },
+      { "sWidth": "60px",         "aTargets": [ 4,16 ] },
+      { "sWidth": "85px",         "aTargets": [ 12,13 ] },
+      { "sWidth": "90px",         "aTargets": [ 3,8,10 ] },
+      { "sWidth": "100px",        "aTargets": [ 9 ] },
+      { "sWidth": "120px",        "aTargets": [ 7 ] },
+      { "sWidth": "130px",        "aTargets": [ 0,2 ] },
+      { "sWidth": "150px",        "aTargets": [ 6 ] },
+
+      { "sType": "html",          "aTargets": [ 3 ] },
+      { "sType": "numeric",       "aTargets": [ 1,4 ] },
+      { "sType": "formatted-num", "aTargets": [ 9,11,12,13,14,15 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 11,12,13,14,15 ] }
+    ]
+  } );
+
+  installHover();
+
+  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#refresh').live( "click", function() {
+    refresh();
+  } );
+
+  $('#select').live( "click", function() {
+    $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
+  } );
+
+  $('#unselect').live( "click", function() {
+    $('#result tbody tr').removeClass('row_selected');
+  } );
+
+  $('#kill').live( "click", function() {
+    var connections = selectedConnections();
+
+    if ( connections.length == 0 ) {
+      jAlert('No connections selected.', 'Kill Connections');
+      return;
+    }
+
+    jConfirm('Number of connections selected: ' + connections.length + '. Are you sure?', 'Kill Connections', function(r) {
+      if ( r == true ) {
+        $('#jqmTitleText').text( 'kill connections' );
+        $('#modalWindow').jqmShow();
+        $('#jqmContent').css( 'width', '600px' );
+        $('#jqmContent').css( 'height', '200px' );
+        $('.jqmWindow').css( 'display', 'block' );
+        killing = true;
+        killConnections( connections );
+      }
+    } );
+  } );
+
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('|');
+      var schema    = result[0];
+      var sid       = result[1];
+      var serial    = result[2];
+      var hostname  = result[3];
+      var pid       = result[4];
+      $('#dummytrigger').attr( 'schema', schema );
+      $('#dummytrigger').attr( 'sid', sid );
+      $('#dummytrigger').attr( 'serial', serial );
+      $('#dummytrigger').attr( 'hostname', hostname );
+      $('#dummytrigger').attr( 'pid', pid );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var schema     = $('#dummytrigger').attr('schema');
+  var sid        = $('#dummytrigger').attr('sid');
+  var serial     = $('#dummytrigger').attr('serial');
+  var hostname   = $('#dummytrigger').attr('hostname');
+  var pid        = $('#dummytrigger').attr('pid');
+  var action     = $('#dummytrigger').attr('action');
+
+  var name = 'connection #' + sid;
+
+  if ( action == 'show_statements' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showStatements( schema, sid, serial );
+  }
+  else if ( action == 'show_plan' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showPlan( schema, sid, serial );
+  }
+  else if ( action == 'kill_connection' ) {
+    jConfirm('Kill ' + name + '. Are you sure?', 'Kill Connection', function(r) {
+      if ( r == true ) {
+          $('#jqmTitleText').text( 'kill connection' );
+          $modal.jqmShow();
+          $('#jqmContent').css( 'width', '600px' );
+          $('#jqmContent').css( 'height', '200px' );
+          $('.jqmWindow').css( 'display', 'block' );
+          killing = true;
+          killConnections( [ { 'schema': schema, 'sid': sid, 'serial': serial, 'pid': pid, 'hostname': hostname } ] );
+      }
+      else {
+        $modal.jqmHide();
+      }
+    } );
+  }
+}
+
+function unloadModal( hash ) {
+  if ( killing == true ) {
+    jConfirm('Do you want to interrupt the kill sequence?', 'Kill Connection', function(r) {
+      if ( r == true ) {
+        killing = false;
+      }
+    } );
+  }
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  if ( doRefresh ) {
+    doRefresh = false;
+    refresh();
+  }
+}
+
+function showStatements( schema, sid, serial ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/db_statements2.html',
+    data:     { 'schema': schema, 'sid': sid, 'serial': serial },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br>' + data.data;
+    }
+  } );
+}
+
+function showPlan( schema, sid, serial ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/db_plan2.html',
+    data:     { 'schema': schema, 'sid': sid, 'serial': serial },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<pre>' + data.data + '</pre>';
+    }
+  } );
+}
+
+function killConnections( connections ) {
+  var connection;
+  if ( ( killing == true ) && ( connection = connections.shift() ) ) {
+    var schema = connection.schema;
+    var sid    = connection.sid;
+	var serial = connection.serial;
+
+    $('#jqmContent').append( 'sid ' + sid + '...' );
+    $('#modalWindow').scrollTop(
+      $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+    );
+
+    tid1 = setInterval( displayWaitString, 300 );
+
+    var request = $.ajax({
+      type:     'POST',
+      dataType: 'json',
+      url:      '/mx/kill_connection.html',
+      data:     { 'schema': schema, 'sid': sid, 'serial': serial },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        alert( textStatus + ': ' + errorThrown );
+      }
+    } );
+
+    request.done( function( data ) {
+      clearInterval(tid1);
+      $('#jqmContent').append( data.message + '<br>' );
+      $('#modalWindow').scrollTop(
+            $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+      );
+      killConnections( connections );
+    } );
+  }
+  else {
+    killing = false;
+  }
+
+  doRefresh = true;
+}
+
+function displayWaitString() {
+  $('#jqmContent').append( '. ' );
+}
+
+function selectedConnections() {
+  var connections = [];
+  $('table#result tbody tr.row_selected').each( function( i, row ) {
+    var data = oTable.fnGetData( this );
+
+    var el = { schema: data[0], sid: data[1], serial: data[16], hostname: data[4], pid: data[5] };
+    connections.push( el );
+  } );
+
+  return connections;
+}
+
+function CreateSelect( aData, filter_id ) {
+  var r = '<select id="' + filter_id + '"><option value=""></option>', i, iLen = aData.length;
+
+  for ( i = 0; i < iLen; i++ ) {
+    r += '<option value="' + aData[i] + '">' + aData[i] + '</option>';
+  }
+
+  return r + '</select>';
+}
+</script>
+
+<div id="title">DB Connections on <% $config->MXENV %></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh:</div>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#show_statements">Show Statements</a>
+  </li>
+  <li>
+    <a href="#show_plan">Show Plan</a>
+  </li>
+  <li>
+    <a href="#kill_connection" right="kill_connection">Kill Connection</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" schema="" sid="" serial="" hostname="" pid="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>SCHEMA</th>
+  <th>SID</th>
+  <th>USER</th>
+  <th>OS USER</th>
+  <th>HOSTNAME</th>
+  <th>PID</th>
+  <th>PROGRAM NAME</th>
+  <th>LOGIN TIME</th>
+  <th>STATUS</th>
+  <th># SEC (IN)ACTIVE</th>
+  <th>COMMAND</th>
+  <th class="tiptip" title="MAX: <% $max_cpu %>">CPU</th>
+  <th class="tiptip" title="MAX: <% $max_reads %>">LOGICAL READS</th>
+  <th class="tiptip" title="MAX: <% $max_reads %>">PHYSICAL READS</th>
+  <th class="tiptip" title="MAX: <% $max_writes %>">WRITES</th>
+  <th>WAIT</th>
+  <th>BLOCKED BY</th>
+  <th>WIN USER</th>
+  <th>SESSION ID</th>
+  <th>SERIAL#</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+<tfoot>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+</tfoot>
+</table>
+
+<br>
+
+<button class="table_button" id="refresh"> Refresh </button>
+<button class="table_button" id="select"> Select All </button>
+<button class="table_button" id="unselect"> Unselect All </button>
+<button class="table_button" id="kill" right="kill_connection"> Kill Selected </button>
+
+<%init>
+my $max_cpu    = "100,000";
+my $max_reads  = "10,000,000";
+my $max_writes = "10,000,000";
+</%init>

@@ -1,0 +1,42 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @files = ();
+if ( opendir( DH, $path ) ) {
+  while ( my $name = readdir(DH) ) {
+    next if $name eq '.' or $name eq '..';
+
+    my $filepath = $path . '/' . $name;
+
+    my $type = ( -d $filepath ) ? 'd' : 'f';
+    my ( $size, $timestamp ) = ( stat( $filepath ) )[7,9];
+
+    my $extension = 'none';
+    if ( $type eq 'f' ) {
+      ( $extension ) = $name =~ /\.(\w+)$/;
+    }
+    else {
+       $size = '';
+    }
+
+    push @files, {
+      0 => $type,
+      1 => lc( $extension ),
+      2 => $name,
+      3 => Mx::Util->separate_thousands( $size ),
+      4 => Mx::Util->convert_time_short( $timestamp ),
+      DT_RowId => $filepath
+    };
+  }
+
+  closedir(DH);
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@files } } );
+</%init>
+
+<%args>
+$path
+</%args>

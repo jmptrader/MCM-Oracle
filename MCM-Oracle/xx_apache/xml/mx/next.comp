@@ -1,0 +1,18 @@
+<form action="<% $url %>" method=POST>
+  <input type="hidden" name="sort" value="<% $sort %>">
+  <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+  <input type="hidden" name="page_nr" value="<% $page_nr + 1 %>">
+% while ( my ( $column, $value ) = each %{$where_hash} ) {
+%   $value =~ s/^"(.*)"$/$1/;
+  <input type="hidden" name="<% $column %>" value="<% $value %>">
+% }
+  <input type="submit" class="button" value=" Next ">
+</form>
+
+<%args>
+$url
+$sort
+$recs_per_page
+$page_nr
+$where_hash => {}
+</%args>

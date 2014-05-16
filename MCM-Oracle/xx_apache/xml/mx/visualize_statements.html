@@ -1,0 +1,144 @@
+<H2>Statement Collector Statistics</H2>
+<P>
+<IMG SRC="<% $count_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $duration_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $time_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $read_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $pread_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $lock_count_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $lock_duration_file %>?<% time() %>">
+<P>
+
+<%init>
+my @statistics = $db_audit->statement_statistics;
+
+my @dates      = map { $_->[0] } @statistics;
+my @count      = map { $_->[1] } @statistics;
+my @duration   = map { $_->[2] } @statistics;
+my @wait       = map { $_->[3] } @statistics;
+my @cpu        = map { $_->[4] } @statistics;
+my @physical   = map { $_->[5] } @statistics;
+my @logical    = map { $_->[6] } @statistics;
+
+my @lock_statistics = $db_audit->lock_statistics;
+
+my @lock_dates    = map { $_->[0] } @lock_statistics;
+my @lock_count    = map { $_->[1] } @lock_statistics;
+my @lock_duration = map { $_->[2] } @lock_statistics;
+
+my ( @data, @legend, $graph, $gd, $fh );
+
+my $x_label_skip = int ( scalar(@dates) / 40 );
+
+@data = ( \@dates, \@count );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Count', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_legend( '# captured statements' );
+$graph->set_text_clr('black');
+
+my $count_file = "/tmp/statement_count.png";
+
+$fh = IO::File->new( $count_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@dates, \@duration );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Duration', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_legend( 'total duration (s)' );
+$graph->set_text_clr('black');
+
+my $duration_file = "/tmp/statement_duration.png";
+
+$fh = IO::File->new( $duration_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@dates, \@wait, \@cpu );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( cumulate => 1, x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Time', dclrs => [ 'green', 'red' ], textclr => 'red' );
+$graph->set_legend( 'wait time', 'cpu time' );
+$graph->set_text_clr('black');
+
+my $time_file = "/tmp/statement_time.png";
+
+$fh = IO::File->new( $time_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@dates, \@logical, \@physical );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( cumulate => 1, x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Reads', dclrs => [ 'green', 'red' ], textclr => 'red' );
+$graph->set_legend( 'logical reads', 'physical reads' );
+$graph->set_text_clr('black');
+
+my $read_file = "/tmp/statement_read.png";
+
+$fh = IO::File->new( $read_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@dates, \@physical );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Reads', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_legend( 'physical reads' );
+$graph->set_text_clr('black');
+
+my $pread_file = "/tmp/statement_pread.png";
+
+$fh = IO::File->new( $pread_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@lock_dates, \@lock_count );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Blockers', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_legend( '# Blockers' );
+$graph->set_text_clr('black');
+
+my $lock_count_file = "/tmp/lock_count.png";
+
+$fh = IO::File->new( $lock_count_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@lock_dates, \@lock_duration );
+
+$graph = GD::Graph::bars->new(1500, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%12d", title => 'Blocker Duration', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_legend( 'Total Blocker Duration' );
+$graph->set_text_clr('black');
+
+my $lock_duration_file = "/tmp/lock_duration.png";
+
+$fh = IO::File->new( $lock_duration_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+</%init>

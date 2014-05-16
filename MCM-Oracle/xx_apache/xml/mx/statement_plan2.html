@@ -1,0 +1,19 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $path = $config->SHOWPLANDIR . '/' . $statement_id . '.sp';
+my @data = ();
+if ( open FH, $path ) {
+  while ( my $line = <FH> ) {
+    chomp($line);
+    push @data, $line;
+  }
+  close(FH);
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@data );
+</%init>
+<%args>
+$statement_id
+</%args>

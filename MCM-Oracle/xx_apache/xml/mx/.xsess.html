@@ -1,0 +1,16 @@
+<html>
+<body>
+Starting your Xceed environment...<br>
+% printf "Remote IP address: $ENV{'REMOTE_ADDR'}"; 
+<br>
+</body>
+</html>
+
+<%init>
+my $ip=$ENV{'REMOTE_ADDR'};
+my $command="/usr/bin/bash -c \'DISPLAY=${ip}:0\; export DISPLAY\;/usr/dt/bin/Xsession &\'";
+my $logfile = $config->LOGDIR . '/xsess.log';
+Mx::Process->background_run( command => $command, logger => $logger, config => $config, ignore_child => 1 );
+</%init>
+<%args>
+</%args>

@@ -1,0 +1,128 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    <% $title %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="form" class="grid_12">
+    <form action="environment_action.html" method="POST">
+% if ( $id ) { 
+    <input type="hidden" name="id" value="<% $id %>">
+% }
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+    <tr>
+      <td class="description">Name</td>
+      <td class="entryfield"><input type="text" name="name" value="<% $name %>" size="8"></td>
+    </tr>
+    <tr>
+      <td class="description">Description</td>
+      <td class="entryfield"><input type="text" name="description" value="<% $description %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Pillar</td>
+      <td>
+        <select name="pillar">
+%  foreach my $cpillar ( @pillars ) {
+          <option <% ( $pillar eq $cpillar ) ? 'selected' : '' %>><% $cpillar %></option>
+%  }
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="description">Samba Read UNC</td>
+      <td class="entryfield"><input type="text" name="samba_read" value="<% $samba_read %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Samba Write UNC</td>
+      <td class="entryfield"><input type="text" name="samba_write" value="<% $samba_write %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Config Data</td>
+      <td class="entryfield"><input type="text" name="config_data" value="<% $config_data %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Disabled</td>
+      <td class="entryfield"><input type="checkbox" name="disabled" <% $disabled ? 'checked' : '' %> ></td>
+    </tr>
+    <tr>
+      <td class="description">Sybase version</td>
+      <td class="entryfield"><input type="text" name="sybversion" value="<% $sybversion %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">DB version</td>
+      <td class="entryfield"><input type="text" name="dbversion" value="<% $dbversion %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Binary version</td>
+      <td class="entryfield"><input type="text" name="binversion" value="<% $binversion %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Responsible Contact</td>
+      <td class="entryfield">
+        <!--<input type="text" name="contactid" value="<% $contactid %>" size="50">-->
+        <select name="contactid">
+% foreach my $group ( @groups ) {
+          <option value="<% $group->[1] %>" <% ($group->[1] eq $contactid) ? 'selected' : '' %>><% $group->[2] %></option>
+% }
+% foreach my $user ( @users ) {
+          <option value="<% $user->[1] %>" <% ($user->[1] eq $contactid) ? 'selected' : '' %>><% $user->[3] . ' ' . $user->[4] %></option>
+% }
+        </select>
+      </td>
+    </tr>
+    </table>
+
+    <input type="submit" class="button" right="auth_master" name="action" value=" <% $name ? 'Update' : 'Insert' %> ">
+    <input type="button" class="button" value=" Cancel " onClick="history.back()">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my ($name, $description, $pillar, $samba_read, $samba_write, $config_data, $disabled);
+  my ($sybversion, $dbversion, $binversion, $contactid);
+  my (@groups, @users);
+  if ( $id ) {
+    my $environment = Mx::Auth::Environment->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $environment->retrieve;
+    $name          = $environment->name;
+    $description   = $environment->description;
+    $pillar        = $environment->pillar;
+    $samba_read    = $environment->samba_read;
+    $samba_write   = $environment->samba_write;
+    $config_data   = $environment->config_data;
+    $disabled      = $environment->disabled;
+    $environment->retrieve_extended;
+    $sybversion    = $environment->sybversion;
+    $dbversion     = $environment->dbversion;
+    $binversion    = $environment->binversion;
+    $contactid     = $environment->contactid;
+
+    my $db = $environment->{db};
+    @groups = $db->retrieve_groups();
+    @users = $db->retrieve_users( sort => 'first_name', recs_per_page => 5000 );
+  }
+
+  my $title = ( $id ) ? "Update environment $name": "Insert new environment";
+
+  my @pillars = Mx::Auth::Environment->pillars;
+</%init>
+
+<%args>
+$id => 0
+</%args>

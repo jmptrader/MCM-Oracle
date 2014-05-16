@@ -1,0 +1,16 @@
+<h3><% $file %></h3>
+% if ( open FH, $file ) {
+%   while ( <FH> ) {
+<% $_ %><br>
+%   }
+%   close(FH);
+% }
+% else {
+Cannot open <% $file %>: <% $! %>
+% }
+<%init>
+my $file = $config->TWSDIR . '/' . $id . '.stdout';
+</%init>
+<%args>
+$id
+</%args>

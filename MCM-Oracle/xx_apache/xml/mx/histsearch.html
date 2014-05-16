@@ -1,0 +1,54 @@
+<script type="text/javascript">
+var $selectize_rw; var $selectize_ro;
+$(document).ready( function() {
+  $selectize_rw = $('.selectize_rw').selectize({
+    create: true,
+    plugins: [ 'remove_button' ]
+  });
+  $selectize_ro = $('.selectize_ro').selectize({
+    plugins: [ 'remove_button' ]
+  });
+});
+
+function clearForm() {
+  $.each( $selectize_ro, function() { this.selectize.clear(); } );
+  $.each( $selectize_ro, function() { this.selectize.refreshItems(); } );
+  $.each( $selectize_rw, function() { this.selectize.clear(); } );
+  $.each( $selectize_rw, function() { this.selectize.refreshItems(); } );
+}
+</script>
+
+<h1>Search <% $description %></h1>
+
+<form onsubmit="return msubmit(this, 'histlist.html')">
+  <input type='hidden' name='object' value='<% $object %>'>
+
+  <table class="center" border=0 cellspacing=1 cellpadding=1 width="70%" bgcolor="#000066">
+% foreach my $column ( @columns ) {
+    <% Mx::Mason::HTML->tr_search( column => $column, table_name => $table_name, db_audit => $db_audit ) %>
+% }
+    <tr>
+      <td class="description" style="color: #FFFFFF;">Records per Page&nbsp;</td>
+      <td><input type="text" name="recs_per_page" size=3 value="50"></td>
+    </tr>
+  </table>
+
+  <p>
+  <input type="submit" class="table_button" name="action" value=" Search ">
+  <input type="button" class="table_button" onClick="clearForm()" value=" Reset Form ">
+  <input type="button" class="table_button" onClick="mnavigate('histlist.html', { <% $nav_args %> })" value=" Cancel ">
+</form>
+
+<%init>
+$callbacks{ $object }->( 'Mx::Mason::Config::' . $object, %ARGS );
+
+my @nav_args = (); my $nav_args = '';
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+$nav_args = join ',', @nav_args;
+</%init>
+
+<%args>
+$object
+</%args>

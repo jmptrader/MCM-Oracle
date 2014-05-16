@@ -1,0 +1,145 @@
+% if ( $path ) {
+%   eval { $parser->parsefile( $path ) };
+% }
+% else {
+%   eval { $parser->parse( $xml ) };
+% }
+% if ( $@ ) {
+<CENTER>
+<H2>Not a valid XML file.</H2>
+<% '(' . $@ . ')' %>
+<% $xml %>
+</CENTER>
+% }
+
+<%once>
+my $parser = new XML::Parser(
+    Handlers => {
+        Init       => \&init,
+        Start      => \&start,
+        End        => \&end,
+        Char       => \&char,
+        Proc       => \&proc,
+        Comment    => \&comment,
+        CdataStart => \&cdstart,
+        CdataEnd   => \&cdend,
+    }
+);
+
+my $cdata;
+
+my $style = <<'_CSS_';
+body {
+    background-color: #FFFFCC;
+    font-family: Verdana, Arial;
+    font-size: 10px;
+}
+
+.element {
+    color: brown;
+    font-weight: bold;
+}
+
+.attrname {
+    font-weight: bold;
+    font-style: italic;
+    color: green;
+}
+
+.placeholder {
+    color: magenta;
+}
+
+.attrvalue {
+    font-style: italic;
+    color: olive;
+}
+
+.comment {
+    color: blue;
+}
+
+.proc {
+    color: green;
+    font-weight: bold;
+}
+
+.cdata {
+    color: violet;
+}
+
+
+_CSS_
+
+
+sub init  {
+    print qq'<style type="text/css"
++>$style'
+                  . '</style>'
+}
+
+sub start {
+    my ( $p, $e, %a ) = @_;
+
+    print("<ul>");
+    print(qq'&lt;<span class="element">$e</span>');
+    foreach ( sort keys %a ) {
+		$a{$_} =~ s/(@\w+@)/<span class="placeholder">$1<\/span>/g;
+        print qq' <span class="attrname">$_=</span>'
+            . qq'<span class="attrvalue">"$a{$_}"</span>';
+    }
+    print '&gt;';
+}
+
+sub end {
+    my ( $p, $e ) = @_;
+
+    print qq'&lt;/<span class="element">$e</span>&gt;';
+    print '</ul>';
+}
+
+sub char {
+    my ( $p, $s ) = @_;
+
+    $s =~ s/\s+/ /g;
+
+    if ($cdata){
+        $s =~ s/&/&amp;/gs;
+        $s =~ s/</&lt;/gs;
+        $s =~ s/>/&gt;/gs;
+        $s =~ s/"/&quot;/gs;
+    }    
+    print "$s";
+}
+
+sub proc {
+    my ( $e, $t, $d ) = @_;
+
+    print '<ul>';
+    print qq'&lt;<span class="proc">?$t</b> $d<b>?</b>&gt;';
+    print "</span></ul>";
+}
+
+sub comment {
+    my ( $e, $d ) = @_;
+
+    print '<ul><span class="comment">';
+    print "&lt!-- $d --&gt;";
+    print '</span></ul>';
+}
+
+sub cdstart {
+    print '<ul>&lt;![CDATA[<span class="cdata">';
+    $cdata++;
+}
+
+sub cdend {
+    print '</span>]]&gt;</ul>';
+    $cdata--;
+}
+</%once>
+
+<%args>
+$xml  => ''
+$path => ''
+</%args>

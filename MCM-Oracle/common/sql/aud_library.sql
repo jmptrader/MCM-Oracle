@@ -1,0 +1,192 @@
+[contract_to_trade]
+select
+  A.M_CONTRACT,
+  B.M_VERSION,
+  A.M_NB,
+  A.M_TRN_STATUS,
+  B.M_STP_STATUS,
+  B.M_STP_STAT_0,
+  B.M_STP_STAT_2,
+  C.M_LABEL,
+  A.M_TRN_FMLY,
+  A.M_TRN_GRP,
+  A.M_TRN_TYPE,
+  A.M_TRN_TYPO,
+  D.M_LABEL,
+  case
+    when A.M_BSTRATEGY <> '' then A.M_BSTRATEGY
+    else A.M_SSTRATEGY
+  end as STRATEGY,
+  A.M_TRN_DATE,
+  A.M_BRW_SDTE,
+  A.M_TRN_EXP,
+  case
+    when A.M_COMMENT_BS = 'S' then A.M_SPFOLIO
+    else A.M_BPFOLIO
+  end as PORTFOLIO,
+  A.M_BRW_NOM1,
+  A.M_BRW_NOMU1,
+  A.M_BRW_NOM2,
+  A.M_BRW_NOMU2,
+  A.M_BRW_STRK,
+  A.M_MKT_INDEX,
+  E.M_LABEL,
+  A.M_COMMENT_BS,
+  case
+    when A.M_COMMENT_BS = 'S' then A.M_STRADER
+    else A.M_BTRADER
+  end as TRADER
+from TRN_HDR_DBF A, CONTRACT_DBF B, TRN_CPDF_DBF C, TYPOLOGY_DBF D, TRN_PLIN_DBF E
+where A.M_CONTRACT = B.M_REFERENCE
+and A.M_COUNTRPART = C.M_ID
+and A.M_TYPOLOGY = D.M_REFERENCE
+and A.M_INSTRUMENT = E.M_REFERENCE
+and B.M_REFERENCE = ?
+
+[stpfc_1]
+select
+  STATUS_DATE,
+  STATUS_TIME,
+  STP_LAST_VALIDATION_DATE,
+  STP_LAST_VALIDATION_TIME,
+  STP_LAST_VALIDATOR,
+  STP_LAST_VALIDATOR_GROUP,
+  'WORKFLOW',
+  'Space Update',
+  '',
+  '',
+  '',
+  '',
+  STP_STATUS_VALIDATION_LEVEL,
+  STP_STATUS,
+  STP_STATUS1,
+  STP_STATUS2,
+  STP_STATUS3,
+  STP_STATUS4,
+  AUDIT
+from STPFC_ENTRY_TABLE
+where FC_ID = ?
+
+[stpfc_2]
+select
+  M_DATE_CMP,
+  M_TIME_CMP,
+  '',
+  '',
+  M_USR_NAME,
+  M_USR_GROUP,
+  M_TYPE,
+  case
+    when M_ACT_COM3 <> '' then ACT_COM3
+    else M_ACTION
+  end,
+  M_ACT_COM0,
+  M_ACT_COM1,
+  M_ACT_COM2,
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  AUDIT
+from TRN_AUD_DBF where M_ACT_NB0 = ?
+
+[stpfc_3]
+select
+  M_DATE_CMP,
+  M_TIME_CMP,
+  '',
+  '',
+  M_USR_NAME,
+  M_USR_GROUP,
+  M_TYPE, 
+  M_ACTION,
+  M_ACT_COM0,
+  M_ACT_COM1,
+  M_ACT_COM2,
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  AUDIT
+from AUD_VAL_DBF where M_ACT_NB0 = ? and M_TYPE = 'VAL_TRN'
+
+[stpdlv]
+select
+  A.DLV_FLOW_ORIGIN_ID,
+  A.DLV_FLOW_ID, 
+  A.DLV_FLOW_VERSION,
+  B.M_ORIG_PROD,
+  B.M_PROD_VER,
+  B.M_PRODUCER,
+  A.DLV_RELEASE_DATE,
+  A.DLV_VALUE_DATE,
+  A.DLV_QUANTITY_UNIT,
+  A.DLV_QUANTITY,
+  A.DLV_SEND_RECEIVE,
+  A.STP_STATUS_VALIDATION_LEVEL,
+  B.M_REV_STS,
+  A.DLV_FLOW_TYPOLOGY, 
+  A.DLV_BENEFICIARY_PARTY,
+  A.FC_TYPOLOGY,
+  A.PRODUCER_CLASS_ID,
+  C.M_SETT_STS,
+  C.M_SETT_DATE,
+  B.M_P_START_DT,
+  B.M_P_END_DT,
+  AUDIT
+from STPDLV_ENTRY_TABLE A, DLV_CASH_DBF B, DLV_EXT_DBF C
+where A.DLV_FLOW_ID = B.M_REFERENCE
+and A.DLV_FLOW_ID = C.M_FLOW_REF
+and A.FC_ID = ?
+order by A.DLV_RELEASE_DATE, A.DLV_VALUE_DATE
+
+[stpdoc]
+select
+  REFERENCE_ID,
+  DOC_ID,
+  FC_ID,
+  STP_STATUS,
+  STP_UDF1,
+  STP_UDF2,
+  STP_UDF3,
+  JOB_DESCRIPTION,
+  STP_UDF8,
+  STP_STATUS_VALIDATION_LEVEL,
+  QUEUENAME,
+  '',
+  '',
+  NEXT_CHASING_DATE,
+  STPDOC_TEMPLATE_NAME,
+  STPDOC_TEMPLATE_TYPE,
+  AUDIT
+from STPDOC_ENTRY_TABLE
+where STATUS_TAKEN = 'N'
+and FC_ID = ?
+
+[stpevt]
+select
+  B.M_VERSION,
+  A.FC_CID,
+  A.EVT_CLASS_ID,
+  A.STP_STATUS_VALIDATION_LEVEL,
+  B.M_EVT_OR,
+  B.M_EVT_VS,
+  B.M_EVT_REF,
+  B.M_ACTION,
+  B.M_DATE,
+  B.M_LOGIN_DATE,
+  B.M_ACT_DATE,
+  A.EVT_USER,
+  B.M_STP_STATUS,
+  A.AUDIT
+from STPEVT_ENTRY_TABLE A, TRN_EXT_DBF B
+where A.EVT_ID = B.M_EVT_REF
+and A.STATUS_TAKEN = 'N'
+and B.M_ORIG_TRADE = ?
+where A.EVT_ID = B.REFERENCE_ID

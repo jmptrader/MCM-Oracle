@@ -1,0 +1,63 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    Right: <% $name %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="table" class="grid_12">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr>
+      <td class="description"><% $key %></td>
+      <td><% $value %></td>
+    </tr>
+% }
+    </table>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="actions" class="grid_8">
+    <input type="button" class="button" value=" Go Back " onClick="history.back()">
+    <form action="right_insert.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Update ">
+    </form>
+    <form action="right_action.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="hidden" name="name" value="<% $name %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Delete " onClick="return confirm('Are you sure?')">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my $right = Mx::Auth::Right->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+  $right->retrieve;
+  my $name = $right->name;
+  my @table;
+  push @table, 'Name'           , $right->name;
+  push @table, 'Type'           , $right->type;
+  push @table, 'Description'    , $right->description;
+</%init>
+
+<%args>
+$id
+</%args>

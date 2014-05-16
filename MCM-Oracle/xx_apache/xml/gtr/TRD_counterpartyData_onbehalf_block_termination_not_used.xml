@@ -1,0 +1,9 @@
+<counterpartyData>
+<partyIdType><% $row{'OP_EMIR_ID_TYPE'} |h %></partyIdType>
+<partyId><% $row{'OP_EMIR_ID'} |h %></partyId>
+<reportingEntityIdType><% $row{'RP_EMIR_ID_TYPE'} %></reportingEntityIdType>
+<reportingEntityId><% $row{'RP_EMIR_ID'} %></reportingEntityId>
+</counterpartyData>
+<%args>
+%row
+</%args>

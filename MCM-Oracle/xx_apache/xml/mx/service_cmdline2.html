@@ -1,0 +1,22 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my ( $service ) = grep { ( $_->name eq $name ) && ( $_->location == $location ) } @services;
+
+if ( my $handle = $handles[$location] ) {
+  ( $service ) = $handle->soaphandle->mservice( names => [ $name ] )->result;
+}
+
+my @cmdline = ( 'service is not running' );
+if ( my $process = $service->process( descriptor => $descriptor ) ) {
+  @cmdline = $process->cmdline_array;
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@cmdline );
+</%init>
+<%args>
+$name
+$location
+$descriptor
+</%args>

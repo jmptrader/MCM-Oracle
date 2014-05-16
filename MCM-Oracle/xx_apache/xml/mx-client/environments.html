@@ -1,0 +1,52 @@
+<h2>Overview Murex Mainstream Environments</h2>
+
+<br>
+
+<table class="center" width="90%">
+  <tr>
+    <th STYLE="color: #FFFFFF;">Name</th>
+    <th STYLE="color: #FFFFFF;">Description</th>
+    <th STYLE="color: #FFFFFF;">Contact</th>
+    <th STYLE="color: #FFFFFF;">DB</th>
+    <th STYLE="color: #FFFFFF;">Binary</th>
+    <th STYLE="color: #FFFFFF;">Sybase</th>
+    <th STYLE="color: #FFFFFF;">Status</th>
+  </tr>
+% foreach my $db_environment ( @rows ) {
+  <tr>
+%   my $appl_srv = $environments->{$db_environment->[2]}->{WEB_HOST};
+%   my $web_port = $environments->{$db_environment->[2]}->{WEB_PORT};
+    <!-- <td><a href="http://<% $appl_srv %>:<% $web_port %>/mx/"><% $db_environment->[2] %></a></td> -->
+    <td><a href="/mx-auth/environment_details.html?id=<% $db_environment->[1] %>"><% $db_environment->[2] %></a></td>
+    <td><% $db_environment->[3] %></td>
+    <td><% $db_environment->[9] %></td>
+    <td><% $db_environment->[10] %></td>
+    <td><% $db_environment->[11] %></td>
+    <td><% $db_environment->[7] %></td>
+% if ( $db_environment->[8] eq 'Y' ) {
+    <td class="warning2">Disabled</td>
+% } else {
+    <td>Enabled</td>
+% }
+  </tr>
+% }
+</table>
+
+<%init>
+my $sybase = $auth_db->{sybase};
+my $query = 'select id, id, name, description, pillar, samba_read, samba_write, sybase_version, e.disabled, ';
+$query = $query . 'ec.contact_id, db_version, binary_version from environments e, environment_info ei, environment_contacts ec ';
+$query = $query . 'where e.id=ei.environment_id and e.id=ec.environment_id';
+my $result = $sybase->query( query => $query );
+my @rows = $result->all_rows;
+foreach my $row ( @rows ) {
+  my $result2;
+  if ($row->[9] > 10000) {
+    $result2 = $sybase->query( query => "select name, description from groups where id=" . $row->[9] );
+  } else {
+    $result2 = $sybase->query( query => "select name, first_name+' '+last_name as description from users where id=" . $row->[9] );
+  }
+  my @val = $result2->next();
+  $row->[9] = $val[1];
+}
+</%init>

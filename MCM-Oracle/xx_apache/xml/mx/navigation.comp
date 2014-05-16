@@ -1,0 +1,158 @@
+<DIV ID="topdiv">
+<UL ID="nav">
+  <li><a href="#" onclick="mnavigate('home.html')" style="background: #CC0033;"><% $ENV{MXENV} %></a></li>
+  <li><a href="#" onclick="mnavigate('config.html')">System Info</a></li>
+  <li>
+    <a href="#" onmouseover="mopen('m1')" onmouseout="mclosetime()">Status</a>
+    <div id="m1" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('status.html')">Dates</a>
+      <a href="#" onclick="mnavigate('alerts.html')">Alerts</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histcore' })">Cores</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histmessage' })">Messages</a>
+      <a href="#" onclick="mnavigate('insert_message.html')" right="send_message">Send Message</a>
+      <a href="#" onclick="mnavigate('visualize_fs_usage.html')">Filesystem Usage</a>
+      <a href="#" onclick="mnavigate('visualize_limits.html')">Database Usage</a>
+    </div>
+  </li>
+  <li>
+    <a href="#" onmouseover="mopen('m2')" onmouseout="mclosetime()">Services</a>
+    <div id="m2" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('services3.html')">Services</a>
+      <a href="#" onclick="mnavigate('xmlservices3.html')">XML Services</a>
+      <a href="#" onclick="mnavigate('histservices.html')">Service Events</a>
+      <a href="#" onclick="mnavigate('collectors3.html')">Collectors</a>
+    </div>
+  </li>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m3')" onmouseout="mclosetime()">Sessions</A>
+    <DIV ID="m3" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('sessions3.html')">Live Sessions</a>
+      <a href="#" onclick="mnavigate('histsessions.html')">Historical Sessions</a>
+      <a href="#" onclick="mnavigate('histsession_search.html')">Historical Sessions - Search</a>
+      <a href="#" onclick="mnavigate('scripts3.html')">Live Scripts</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histscript' })">Historical Scripts</a>
+      <a href="#" onclick="mnavigate('sessiongraph_search.html')">Session Graph</a>
+      <A HREF="#" onclick="mnavigate('runtimes_search.html')">Batch Runtimes</A>
+      <A HREF="#" onclick="mnavigate('runtimes3_search.html')">Batch Runtimes 2</A>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histwebcommand' })">Web Commands</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m4')" onmouseout="mclosetime()">Scheduling</A>
+    <DIV ID="m4" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <A HREF="#" onclick="mnavigate('ctrlm_jobs3.html')">C^M Job Definitions</A>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m6')" onmouseout="mclosetime()">MxML</A>
+    <DIV ID="m6" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('mxml_tasks3.html')">Tasks</a>
+      <a href="#" onclick="mnavigate('mxml_nodes3.html')">Nodes</a>
+      <a href="#" onclick="mnavigate('mxml_queries3.html')">Queries</a>
+      <a href="#" onclick="mnavigate('mxml_zombie_nodes.html')">Zombie Nodes</a>
+      <a href="#" onclick="mnavigate('mxml_nr_messages_search.html')">Messages</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m7')" onmouseout="mclosetime()">Database</A>
+    <DIV ID="m7" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('db_connections3.html')">Connections</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histstatement' })">Statements</a>
+      <a href="#" onclick="mnavigate('statements_tables3.html')">Statement Deviations</a>
+      <a href="#" onclick="mnavigate('visualize_statements.html')">Statement Statistics</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histblocker' })">Blockers</a>
+      <a href="#" onclick="mnavigate('db_locks3.html')">Locks</a>
+      <a href="#" onclick="mnavigate('db_indexes3.html')">Indexes</a>
+      <a href="#" onclick="mnavigate('db_tables3.html')">Tables</a>
+      <a href="#" onclick="mnavigate('visualize_sybase_tables.html')">Table Size Evolution</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m8')" onmouseout="mclosetime()">Reports</A>
+    <DIV ID="m8" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histdmreport' })">DM Reports</a>
+      <a href="#" onclick="mnavigate('histlist.html', { object: 'histfeedertable' })">Feeder Tables</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m9')" onmouseout="mclosetime()">Performance</A>
+    <DIV ID="m9" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('visualize_global_perf.html')">Application Servers</a>
+      <a href="#" onclick="mnavigate('visualize_global_gsyb_perf.html')">Database Server</a>
+      <a href="#" onclick="mnavigate('visualize_global_gsyb_perf2.html')">Database Server II</a>
+      <a href="#" onclick="mnavigate('visualize_global_syb_perf.html')">Database</a>
+      <a href="#" onclick="mnavigate('visualize_dblogins.html')">Database Login Time</a>
+      <a href="#" onclick="mnavigate('visualize_env.html')">Environments</a>
+      <a href="#" onclick="mnavigate('visualize_services.html')">Services</a>
+      <a href="#" onclick="mnavigate('visualize_sessions.html')">Sessions</a>
+      <a href="#" onclick="mnavigate('visualize_resources.html')">Resources</a>
+      <a href="#" onclick="mnavigate('delay_search.html')">Delays</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m10')" onmouseout="mclosetime()">Logs</A>
+    <DIV ID="m10" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('log_extracts.html')">Murex Logs</a>
+      <a href="#" onclick="mnavigate('logdates.html')">Common Logs</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m11')" onmouseout="mclosetime()">Users</A>
+    <DIV ID="m11" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('mxusers3.html')">Murex Users</a>
+      <a href="/mx-auth/users.html" right="maf_login">Authorization Framework</a>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m12')" onmouseout="mclosetime()">Projects</A>
+    <DIV ID="m12" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <TABLE><TR ID="projtab">
+% my $counter = 0;
+% foreach my $project ( @projects ) {
+%   if ($counter++ % 2 ) {
+      <TD><a href="#" onclick="mnavigate('logdates.html', { project: '<% $project->name %>' })"><% $project->name %></A></TD></TR><TR ID="projtab">
+%   }
+%   else {
+      <TD><a href="#" onclick="mnavigate('logdates.html', { project: '<% $project->name %>' })"><% $project->name %></A></TD>
+%   }
+% }
+      </TR></TABLE>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m13')" onmouseout="mclosetime()">Links</A>
+    <DIV ID="m13" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <A HREF="filebrowser.html">File Browser</A>
+      <a href="#" onclick="mnavigate('/mx-client/environments.html')">Environments</a>
+% foreach my $name ( sort keys %{$environments} ) {
+%   my $web_host = $environments->{$name}->{WEB_HOST};
+%   my $web_port = $environments->{$name}->{WEB_PORT};
+%   if ( $ENV{MXENV} eq $name ) {
+      <A style="color: #FFFFFF; background: #5970B2;" HREF="http://<% $web_host %>:<% $web_port %>/mx/login.html" TARGET="_blank"><% $name %></A>
+%   } else {
+      <A HREF="http://<% $web_host %>:<% $web_port %>/mx/login.html" TARGET="_blank"><% $name %></A>
+%   }
+% }
+    </DIV>
+  </LI>
+% if ( substr($ENV{MXENV},0,4) eq 'MX3O' ) {
+  <LI>
+    <A HREF="#" onmouseover="mopen('m14')" onmouseout="mclosetime()">Development</A>
+    <DIV ID="m14" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('murexstarter.html')">MurexStarter</a>
+      <A HREF="https://s08983du.servers.kbc.be:6083/svn/wmx/" target="_blank">Subversion repository</A>
+      <A HREF="#" onclick="$('#table2csv').table2CSV()">Export 2 CSV</A>
+    </DIV>
+  </LI>
+  <LI>
+    <A HREF="#" onmouseover="mopen('m15')" onmouseout="mclosetime()">MLC</A>
+    <DIV ID="m15" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
+      <a href="#" onclick="mnavigate('mlc_intraday_reset.html')">MLC Intraday Reset</a>
+    </DIV>
+  </LI>
+% }
+  <LI><A HREF="logout.html">Logout</A></LI>
+</UL>
+</DIV>
+<BR>
+<BR>

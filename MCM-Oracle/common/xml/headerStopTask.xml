@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!DOCTYPE ProcessingScriptQuery>
+<ProcessingScriptQuery>
+ <!-- Stops all tasks -->
+ <!-- -->
+ <!-- Stops task word -->
+ <!-- <wf:taskCode>word</wf:taskCode> -->
+</ProcessingScriptQuery>

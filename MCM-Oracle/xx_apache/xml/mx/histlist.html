@@ -1,0 +1,113 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('.tiptip').tipTip();
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+
+  var id  = $('#dummytrigger').attr('object_id');
+  var url = $('#dummytrigger').attr('url');
+
+  $('#jqmContent').css( 'width', '1000px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      url,
+    data:     { 'id': id },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = data;
+  } );
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+</script>
+
+<& 'results.comp', description => $description, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr &>
+<div style="margin-left:auto; margin-right:auto; width:<% $table_width %>; text-align:right;"><a class="tiptip" title="convert table to a .csv file" href="#" onclick="$('#table2csv').table2CSV()"><img src="..\..\images\icon_csv2.gif"/></a></div>
+<& 'histtable.comp', object => $object, columns => \@columns, results => \@results, filters => \@filters, sort => $sort, reverse => $m->session->{$session_var}, width => $table_width, nav_args => $nav_args &>
+
+<& 'pager.comp', object => $object, search => $search_button, go_back => $go_back_button, go_back_url => $hist_url, refresh => $refresh_button, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash, nav_args => $nav_args &>
+
+<div id="dummytrigger" object_id="" url=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<%init>
+$callbacks{ $object }->( 'Mx::Mason::Config::' . $object, %ARGS );
+
+my $session_var = $object . '_reverse';
+$m->session->{$session_var} = ! $m->session->{$session_var} if $reverse;
+
+my %where_hash = (); my @filters = ();
+foreach my $column ( @columns ) {
+  my $name = $column->{name};
+  if ( my $entry = $ARGS{$name} ) {
+    my @values;
+    if ( ref $entry eq 'ARRAY' ) {
+      @values = @{$entry};
+    }
+    elsif ( $entry =~ /,/ ) {
+      @values = split /,/, $entry;
+    }
+    else {
+      @values = ( $entry );
+    }
+    foreach my $value ( @values ) {
+      push @{$where_hash{$name}}, (( $column->{numeric} ) ? $value : "\"$value\"");
+      push @filters, "$name=$value";
+    }
+  }
+}
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'reverse';
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histlist.html'";
+my $nav_args = join ',', @nav_args;
+
+my $result = $list_method->( $db_audit, sort => { $sort => $m->session->{$session_var} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+my @results = @{$result};
+my $nr_results = @results ? $results[0][0] : 0;
+</%init>
+
+<%args>
+$object
+$recs_per_page => 50
+$page_nr       => 1
+$sort          => 'id'
+$reverse       => 0
+$hist_url      => 'home.html' 
+</%args>

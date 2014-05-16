@@ -1,0 +1,76 @@
+<%perl>
+my $status = 'NOK'; my $message = '';
+
+TRY: {
+  unless ( $key ) {
+    $message = 'no key specified';
+    last TRY;
+  }
+
+  unless ( $win_user ) {
+    $message = 'no windows user specified';
+    last TRY;
+  }
+
+  unless ( $filename ) {
+    $message = 'no filename specified';
+    last TRY;
+  }
+
+  my $dest_dir;
+  if ( $key eq 'csob_options' ) {
+    my $env = $ENV{MXENV};
+    $dest_dir = "/data2/$env/fo_dealimport/data/OPT/received";
+  }
+  else {
+    $message = 'unhknown key specified ($key)';
+    last TRY;
+  }
+
+  unless ( -d $dest_dir ) {
+    $message = "destination directory ($dest_dir) does not exist";
+    last TRY;
+  }
+
+  unless ( $xml ) {
+    $message = 'XML is empty';
+    last TRY;
+  }
+
+  unless ( open FH, ">$dest_dir/$filename" ) {
+    $message = "cannot open the destination file: $!";
+    last TRY;
+  }
+
+  my $decoded_xml = decode_base64url( $xml );
+
+  my $uncompressed_xml;
+  unless ( gunzip \$decoded_xml => \$uncompressed_xml ) {
+    $message = "unzip failed: $GunzipError";
+    last TRY;
+  }
+
+  print FH $uncompressed_xml;
+
+  close FH;
+
+  $message = "upload OK";
+  $status  = 'OK';
+} 
+
+$logger->info("webservice answer");
+$logger->info("-- status: $status");
+$logger->info("-- message: $message");
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { status => $status, message => $message } );
+
+return $json_string;
+</%perl>
+
+<%args>
+$key
+$xml
+$filename
+$win_user
+</%args>

@@ -1,0 +1,50 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @data = (); my $max = 0; my $total = 0; my $nr_statements = 0;
+my $file = $config->retrieve('SQLTRACEDIR') . '/' . $id . '.trc';
+if ( my $fh = IO::File->new( $file, '<' ) ) {
+  my $sql = '';
+  while ( my $line = <$fh> ) {
+    if ( $line =~ /^ServerName: \w+ ServerType: \w+ DatabaseName: (\w+) RDBMSAccess: NATIVE_\w+ ConnectionName: \w+ ConnectionNo: \d+  Date: \d{4}-\d{2}-\d{2} (.+)$/ ) {
+      my $database  = $1;
+      my $timestamp = $2;
+      $line = <$fh>;
+	  if ( $line =~ /^Statistics:/ ) {
+        $line = <$fh>;
+      }
+      chomp( $line );
+      if ( $line =~ /^\s*Murex execution time\s*:\s+(\d\d):(\d\d):(\d\d)\s+(\d+) ms/ ) {
+        my $duration = $1 * 3600000 + $2 * 60000 + $3 * 1000 + $4;
+        $max = $duration if $duration > $max;
+        $total += $duration;
+        if ( $sql ) {
+          $nr_statements++;
+          push @data, [ $database, $timestamp, $duration, $sql ];
+          $sql = '';
+        }
+      }
+      else {
+        if ( ! $table || $line =~ /\W$table\W/ ) {
+          $sql = $line;
+        }
+      }
+    }
+  }
+
+  $fh->close();
+
+  $max           = Mx::Util->separate_thousands( $max );
+  $total         = Mx::Util->separate_thousands( $total );
+  $nr_statements = Mx::Util->separate_thousands( $nr_statements );
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => \@data, max => $max, total => $total, nr_statements => $nr_statements } );
+</%init>
+
+<%args>
+$id
+$table => ''
+</%args>

@@ -1,0 +1,61 @@
+<BODY>
+<CENTER>
+<BR>
+<H2>DM Details</H2>
+<TABLE BORDER=0 CELLSPACING=1 CELLPADDING=3 BGCOLOR="#000066">
+  <TR>
+    <TH>Name</TH>
+    <TH>Value</TH>
+  </TR>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</TABLE>
+</CENTER>
+</BODY>
+
+<%init>
+  my $filter = $db_audit->retrieve_dm_filter( id => $id );
+  my @table;
+  push @table, 'Batch Name'         , $filter->[2];
+  $filter->[3] =~ s/:/<BR>/g; 
+  push @table, 'Dates'              , $filter->[3];
+  $filter->[4] =~ s/:/<BR>/g; 
+  push @table, 'Market Data Sets'   , $filter->[4];
+  $filter->[5] =~ s/:/<BR>/g; 
+  push @table, 'Product Filter'     , $filter->[5];
+  $filter->[6] =~ s/:/<BR>/g; 
+  push @table, 'Portfolio Filter'   , $filter->[6];
+
+  my $expression = '';
+  my $expression_label = $filter->[7];
+  if ( $expression_label !~ /^\s*$/ ) {
+    my $sql_library = Mx::SQLLibrary->new( file => $config->DM_BATCH_SQLFILE, logger => $logger );
+    $expression = $sql_library->query( $expression_label, undef, 1 );
+  }
+  push @table, 'Expression Filter'       , $expression;
+
+  if ( my @info = $db_audit->retrieve_scanner_info( session_id => $session_id ) ) {
+    push @table, 'Number of Engines'      , $info[0];
+    push @table, 'Batch Size'             , $info[1];
+    push @table, 'Max Number of Retries'  , $info[2];
+    push @table, 'Number of Batches'      , $info[3];
+    push @table, 'Number of Items'        , Mx::Util->separate_thousands( $info[4] );
+    push @table, 'Number of Missing Items', $info[5];
+    if ( $info[5] ) {
+        push @table, 'Missing Items'      , join ',', @{$info[6]};
+    }
+    push @table, 'Number of Dynamic Table Records', Mx::Util->separate_thousands( $info[7] );
+    push @table, 'Total Elapsed Time'     , scalar(Mx::Util->convert_seconds( $info[8] ));
+    push @table, 'Total CPU Time'         , scalar(Mx::Util->convert_seconds( $info[9] ));
+    push @table, 'Total IO Time'          , scalar(Mx::Util->convert_seconds( $info[10] ));
+    push @table, 'Total # CPU Seconds'    , Mx::Util->separate_thousands( $info[11] );
+  }
+</%init>
+
+<%args>
+$id
+$session_id
+</%args>

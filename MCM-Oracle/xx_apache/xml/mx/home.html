@@ -1,0 +1,70 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  checkRights();
+});
+</script>
+
+<table class="center_nb" width="800">
+<tr>
+  <td>
+    Welcome to the <% $app_name %> site.
+    <br><br>
+    You are logged in as <B><% $m->session->{username} %></B><BR>
+    <p>
+% if ( $auth_replicator_type eq 'master' ) {
+      <a href="#" onClick="window.open('password.html', 'password', 'resizable,width=400,height=250')">Click here to change your password</a>
+% }
+    <br><br><br>
+    <b><u>Important !</u></b>
+    <br>
+    Make sure to log out when finished.
+    This will save resources on the server.
+    <br><br><br><br>
+  </td>
+</tr>
+</table>
+<p>
+<table class="center_nb" width="800">
+  <tr><td width="20%" nowrap valign='top'>Murex Binary Version:</td><td><% $binary_version %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>Murex DB Version:</td><td><% $db_version->{version} %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>Murex DB Build:</td><td><% $db_version->{build} %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>Murex DB Date:</td><td><% $db_version->{timestamp} %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>Oracle Version:</td><td><% $oracle_version %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>OS Version:</td><td><% $os_version %></td></tr>
+  <tr><td width="20%" nowrap valign='top'>Java Version:</td><td><% $java_version %></td></tr>
+<table>
+
+<%init>
+my $binary_version = $m->cache->get( 'binary_version');
+unless ( $binary_version ) {
+  $binary_version = Mx::Murex->binary_version( logger => $logger, config => $config );
+  $m->cache->set( binary_version => $binary_version );
+}
+
+my $db_version = $m->cache->get( 'db_version');
+unless ( $db_version ) {
+  my %db_version = Mx::Murex->db_version( oracle => $oracle, library => $library, logger => $logger, config => $config );
+  $db_version = \%db_version;
+  $m->cache->set( db_version => $db_version );
+}
+
+my $os_version = $m->cache->get( 'os_version');
+unless ( $os_version ) {
+  $os_version = $system->os_version();
+  $m->cache->set( os_version => $os_version );
+} 
+
+my $java_version = $m->cache->get( 'java_version');
+unless ( $java_version ) {
+  $java_version = $system->java_version();
+  $m->cache->set( java_version => $java_version );
+} 
+
+my $oracle_version = $m->cache->get( 'oracle_version');
+unless ( $oracle_version ) {
+  $oracle_version = $oracle->version();
+  $m->cache->set( oracle_version => $oracle_version );
+}
+
+my $auth_replicator_type = $config->AUTH_REPLICATOR_TYPE;
+</%init>

@@ -1,0 +1,13 @@
+*{ font: 9pt Verdana, Arial }
+h1{ font-size:150% }
+tr{ background-color:white }
+td{ padding: 3px }
+a{ text-decoration:none; color:blue }
+a:hover{ color:red; }
+iframe{ width:900px; height:650px; overflow:hidden }
+#key{ padding-left:275px; }
+#menu{ width:275px; height:600px; overflow:auto; float:left }
+#details0{ width:300px; height:600px; float:left; overflow:auto; }
+#details1{ width:300px; height:600px; float:left; overflow:auto }
+.title{ font-weight:bold; background:#e7e7e7 }
+

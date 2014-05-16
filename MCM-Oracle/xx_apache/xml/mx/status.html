@@ -1,0 +1,158 @@
+<H2>General status of <% $ENV{MXENV} %></H2>
+
+<table class="center" width="50%">
+  <TR><TH></TH><TH>BUSINESS DATE</TH></TR>
+  <TR><TD CLASS="description" style=" width: 20%; white-space: nowrap;"><FONT COLOR="#FFFFFF">BUSINESS DATE</FONT></TD><TD>&nbsp;<% $business_date %></TD></TR>
+</table>
+
+<p>
+
+<table class="center" width="50%">
+  <TR><TH>DESK</TH><TH>FO DATE</TH></TR>
+% foreach my $label ( sort @desks ) {
+%   my $date = Mx::Murex->date(type => 'FO', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+  <TR><TD CLASS="description" style=" width: 20%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD><TD <% ( $date != $business_date ) ? 'CLASS="warning"' : '' %>>&nbsp;<% $date %></TD></TR>
+% } 
+</table>
+
+<P>
+
+<table class="center" width="50%">
+  <TR><TH>PLCC</TH><TH>MO DATE</TH></TR>
+% foreach my $label ( sort @plccs ) {
+%   next if $label eq 'PLCC_KURT';
+%   my $date = Mx::Murex->date(type => 'MO', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+%   $plcc_date{ $label } = $date;
+  <TR><TD CLASS="description" style=" width: 20%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD><TD <% ( $date != $business_date ) ? 'CLASS="warning"' : '' %>>&nbsp;<% $date %></TD></TR>
+% } 
+</table>
+
+<p>
+
+<table class="center" width="50%">
+  <TR><TH>PC</TH><TH>BO DATE</TH></TR>
+% foreach my $label ( sort @pcs ) {
+%   my $date = Mx::Murex->date(type => 'BO', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+  <TR><TD CLASS="description" style=" width: 20%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD><TD <% ( $date != $business_date ) ? 'CLASS
+="warning"' : '' %>>&nbsp;<% $date %></TD></TR>
+% } 
+</table>
+
+<p>
+
+<table class="center" width="50%">
+  <TR><TH COLSPAN=2>ENTITY</TH><TH>ACC DATE</TH></TR>
+% foreach my $label ( sort @entities ) {
+%   next if grep /^$label$/, @entities_to_skip;
+%   my $date = Mx::Murex->date(type => 'ACC', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+  <TR>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $entity_set{ $label } %></FONT></TD>
+    <TD <% ( $date != $business_date ) ? 'CLASS ="warning"' : '' %>>&nbsp;<% $date %></TD>
+  </TR>
+% } 
+</table>
+
+<p>
+
+<table class="center" width="50%">
+% if ( $grace ) {
+  <TR><TH COLSPAN=2>ENTITY</TH><TH>ENTITY DATE</TH><TH>CALENDAR</TH><TH>GRACE PERIOD</TH></TR>
+%   foreach my $label ( sort @entities ) {
+%     next if grep /^$label$/, @entities_to_skip;
+%     my $date = Mx::Murex->date(type => 'ENT', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+%     my $entity_set = $entity_set{ $label };
+%     my $plcc = $plcc{ $entity_set };
+%     my $calendar = $calendar{ $entity_set };
+%     my $plcc_date = $plcc_date{ $plcc };
+%     my @date_range = Mx::Util->date_range( $date, $plcc_date );
+%     my $nr_days = @date_range;
+%     my $nr_holidays = Mx::Murex->is_holiday( date => \@date_range, calendar => $calendar, oracle => $oracle, library => $library, config => $config, logger => $logger);
+%     my $grace_period = $nr_days - $nr_holidays;
+  <TR>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><% $entity_set{ $label } %></FONT></TD>
+    <TD>&nbsp;<% $date %></TD>
+    <TD>&nbsp;<% $calendar %></TD>
+    <TD>&nbsp;<% $grace_period . '  (' . $nr_days . ' - ' . $nr_holidays . ')' %></TD>
+  </TR>
+%   }
+% }
+% else {
+<table class="center" width="50%">
+  <TR><TH COLSPAN=2>ENTITY</TH><TH>ENTITY DATE</TH></TR>
+%   foreach my $label ( sort @entities ) {
+%     next if grep /^$label$/, @entities_to_skip;
+%     my $date = Mx::Murex->date(type => 'ENT', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+%     my $entity_set = $entity_set{ $label };
+  <TR>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><% $entity_set{ $label } %></FONT></TD>
+    <TD>&nbsp;<% $date %></TD>
+  </TR>
+%   }
+% }
+</table>
+
+<p>
+
+<table class="center" width="50%">
+  <TR><TH COLSPAN=2>ENTITY</TH><TH>CONSOLIDATION DATE</TH></TR>
+% foreach my $label ( sort @entities ) {
+%   next if grep /^$label$/, @entities_to_skip;
+%   my $date = Mx::Murex->date(type => 'CONS', label => $label, shift => 0, oracle => $oracle, library => $library, config => $config, logger => $logger);
+  <TR>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $entity_set{ $label } %></FONT></TD>
+    <TD>&nbsp;<% $date %></TD>
+  </TR>
+% } 
+</table>
+
+<p>
+
+<table class="center" width="50%">
+  <TR><TH COLSPAN=2>ENTITY</TH><TH>CLOSEDOWN DATE</TH></TR>
+% foreach my $label ( sort @entities ) {
+%   next if grep /^$label$/, @entities_to_skip;
+%   my $date = Mx::Murex->closedown_date( entity => $label, oracle => $oracle, library => $library, config => $config, logger => $logger );
+  <TR>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $label %></FONT></TD>
+    <TD CLASS="description" style=" width: 10%; white-space: nowrap;"><FONT COLOR="#FFFFFF"><% $entity_set{ $label } %></FONT></TD>
+    <TD>&nbsp;<% $date %></TD>
+  </TR>
+% } 
+</table>
+
+<%init>
+my @desks         = Mx::Murex->fo_desks(     oracle => $oracle, library => $library, logger => $logger );
+my @plccs         = Mx::Murex->plc_centers(  oracle => $oracle, library => $library, logger => $logger );
+my @pcs           = Mx::Murex->proc_centers( oracle => $oracle, library => $library, logger => $logger );
+my @entities      = Mx::Murex->entities(     oracle => $oracle, library => $library, logger => $logger );
+my $business_date = Mx::Murex->businessdate( config => $config, logger => $logger );
+my @entities_to_skip = qw( FR KURT ML MN NJ SZ );
+
+my %entity_set = (); my %sets = ();
+foreach my $entity ( @entities ) {
+    next if grep /^$entity$/, @entities_to_skip;
+    my $entity_set = Mx::Murex->entity_to_entity_set( entity => $entity, oracle => $oracle, library => $library, logger => $logger );
+    $entity_set{ $entity } = $entity_set;
+    $sets{ $entity_set } = 1;
+}
+
+my %plcc = (); my %calendar = ();
+if ( $grace ) {
+    foreach my $entity_set ( keys %sets ) {
+        my $plcc     = Mx::Murex->entity_set_to_plcc( entity_set => $entity_set, oracle => $oracle, library => $library, logger => $logger );
+        my $calendar = Mx::Murex->plcc_calendar( plcc => $plcc, oracle => $oracle, library => $library, logger => $logger );
+        $plcc{ $entity_set }     = $plcc;
+        $calendar{ $entity_set } = $calendar;
+    }
+}
+
+my %plcc_date = ();
+</%init>
+
+<%args>
+$grace => 0
+</%args>

@@ -1,0 +1,63 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('.selectize_ro').selectize({
+    plugins: [ 'remove_button' ]
+  });
+  $('.selectize_rw').selectize({
+    create: true,
+    plugins: [ 'remove_button' ]
+  });
+});
+</script>
+
+<H2>Search Alerts</H2>
+<form onsubmit="return msubmit(this, 'alerts.html')">
+<table class="center" width="70%">
+% foreach my $entry ( @columns ) {
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF"><% $entry->{description} %>&nbsp;</FONT></TD>
+    <TD>
+%   if ( $entry->{type} eq 'free' ) {
+      <INPUT TYPE="text" class="selectize_rw" placeholder="Input <% $entry->{description} %>" NAME="<% $entry->{column} %>" SIZE="<% $entry->{length} %>" MAXLENGTH="<% $entry->{length} %>">
+%   }
+%   elsif ( $entry->{type} eq 'list' ) {
+      <SELECT multiple class="selectize_ro" placeholder="Choose <% $entry->{description} %>" NAME="<% $entry->{column} %>">
+%     my @values = $db_audit->get_distinct_values( column => $entry->{column}, table => 'alerts' );
+        <OPTION></OPTION>
+%     foreach my $value ( sort @values ) {
+        <OPTION><% $value %></OPTION>
+%     }      
+      </SELECT>
+%   }
+%   elsif ( $entry->{type} eq 'checkbox' ) {
+      <INPUT TYPE="checkbox" NAME="<% $entry->{column} %>">
+%   }
+    </TD>
+  </TR>
+% }
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Records per Page</FONT></TD>
+    <TD><INPUT TYPE="text" NAME="recs_per_page" SIZE=3 VALUE="50"></TD>
+  </TR>
+</table>
+<BR>
+<INPUT TYPE="submit" CLASS="table_button" VALUE=" Search ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onClick="mgoback('alerts.html', { <% join ',', @nav_args %> });">
+</form>
+
+<%init>
+my @columns = (
+    { column => 'id',              description => 'ID',              type => 'free', length => 6 },
+    { column => 'name',            description => 'Name',            type => 'list' },
+    { column => 'item',            description => 'Item',            type => 'list' },
+    { column => 'category',        description => 'Category',        type => 'list' },
+    { column => 'wlevel',          description => 'Level',           type => 'list' },
+    { column => 'business_date',   description => 'Business Date',   type => 'list' },
+);
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'reverse';
+  push @nav_args, "$k:'$v'";
+}
+</%init>

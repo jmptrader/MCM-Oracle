@@ -1,0 +1,35 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+  <link rel="stylesheet" type="text/css" href="/css/style_<% $config->PILLAR %>.css">
+  <link rel="stylesheet" type="text/css" href="/css/style_<% $ENV{MXENV} %>.css">
+  <link rel="stylesheet" type="text/css" href="/css/navigation.css">
+  <link rel="stylesheet" type="text/css" href="/css/960.css"> 
+  <title>Session information on <% $ENV{MXENV} %></title>
+</head>
+<body>
+<h1>Server information</h1>
+<h2>Machine</h2>
+<h2>Web-server</h2>
+<h2>Mason</h2>
+Version = <% $HTML::Mason::VERSION %>
+<h2>Cache</h2>
+% # foreach my $key ($m->cache->get_keys) {
+   <% # $key %> = <% # $m->cache->get($key) %>
+% # }
+<h1>Session information</h1>
+<h1>Request information</h1>
+<h2>Header</h2>
+<h2>Request</h2>
+<h1>Response information</h1>
+<h2>Header</h2>
+% foreach my $key ($r->headers_out()) {
+  <% $key %> = <% $r->headers_out->get($key) %>
+% }
+% # $r->http_header();
+</body>
+</html>
+
+<%once>
+</%once>
+

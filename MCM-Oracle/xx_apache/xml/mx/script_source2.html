@@ -1,0 +1,17 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @source; my $destination;
+
+if ( my $fh = IO::File->new( $path, '<' ) ) {
+  @source = <$fh>;
+  $fh->close;
+  perltidy( source => \@source, destination => \$destination, argv => '-html -pre -nnn' );
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $destination } );
+</%init>
+<%args>
+$path
+</%args>

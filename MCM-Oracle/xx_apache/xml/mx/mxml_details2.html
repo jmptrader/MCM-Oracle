@@ -1,0 +1,13 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my ( $values, $names ) = Mx::MxML::Message->retrieve_details( workflow => $workflow, reference_id => $reference_id, logger => $logger, config => $config, oracle => $oracle, library => $library );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $values, names => $names } );
+</%init>
+<%args>
+$workflow
+$reference_id
+$archived
+</%args>

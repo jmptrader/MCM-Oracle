@@ -1,0 +1,78 @@
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_limits.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_limits.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_limits.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_limits.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+% foreach my $schema ( @schemas ) {
+%   my $size_file = shift @size_files;
+%   my $conn_file = shift @conn_files;
+<H2><% $schema %>: Size</H2>
+<IMG SRC="<% $size_file %>?<% time() %>">
+<P>
+<H2><% $schema %>: Connections</H2>
+<IMG SRC="<% $conn_file %>?<% time() %>">
+<P>
+% }
+
+<%init>
+my @db_names = qw( DB_FIN DB_REP DB_MON );
+my @db_users = qw( FIN_DBUSER REP_DBUSER MON_DBUSER );
+
+my @schemas = ();
+foreach my $db_user ( @db_users ) {
+  push @schemas, $config->retrieve( $db_user );
+}
+
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+
+my $nr_seconds;
+SWITCH: {
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $nr_seconds = 24 * 3600;
+};
+
+my @graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => time() - $nr_seconds,
+  end       => time()
+);
+
+my $collector = Mx::Collector->new( name => 'limits', config => $config, logger => $logger );
+my $rrdfile   = $collector->rrdfile;
+my $rrd       = RRDTool::OO->new( file => $rrdfile );
+
+my @size_files = (); my @conn_files = ();
+foreach my $db_name ( @db_names ) {
+  my $size_file = "/tmp/size_${db_name}_$range" . $image_extension;
+  my $conn_file = "/tmp/conn_${db_name}_$range" . $image_extension;
+
+  my @size_options = my @conn_options = @graph_options;
+
+  push @size_options, ( image => $size_file );
+  push @conn_options, ( image => $conn_file );
+
+  push @size_options, ( draw  => { dsname => $db_name . '_size_used',  color => '00FF00', legend => 'Size Used' } );
+  push @size_options, ( draw  => { dsname => $db_name . '_size_total', color => 'FF0000', legend => 'Total Size' } );
+
+  push @conn_options, ( draw  => { dsname => $db_name . '_conn_used',  color => '00FF00', legend => '# Connections' } );
+  push @conn_options, ( draw  => { dsname => $db_name . '_conn_total', color => 'FF0000', legend => 'Total # Connections' } );
+
+  $rrd->graph( @size_options );
+  $rrd->graph( @conn_options );
+
+  push @size_files, $size_file;
+  push @conn_files, $conn_file;
+}
+</%init>
+<%args>
+$range => 'day'
+</%args>

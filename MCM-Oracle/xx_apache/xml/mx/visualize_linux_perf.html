@@ -1,0 +1,130 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'});
+} );
+</script>
+<H2>Global Performance on <% $app_servers[0] %></H2>
+
+% my( $start, $end ) = $m->comp( 'timepicker.comp', url => 'visualize_linux_perf.html', range => $range, date => $date, time => $time, action => $action );
+
+<%perl>
+my %graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => $start,
+  end       => $end
+);
+
+my $cpu_file = "/tmp/${collector_name}_cpu_${range}" . $image_extension;
+$rrd->graph(
+  image => $cpu_file,
+  %graph_options,
+  draw => {
+    type   => 'area',
+    color  => '00FF00',
+    dsname => 'ucpu_user',
+    legend => 'CPU User',
+  },
+  draw => {
+    type   => 'stack',
+    color  => 'FF0000',
+    dsname => 'ucpu_system',
+    legend => 'CPU System',
+  },
+  draw => {
+    type   => 'stack',
+    color  => '0000FF',
+    dsname => 'ucpu_iowait',
+    legend => 'I/O Wait',
+  }
+);
+
+my $mem_file = "/tmp/${collector_name}_mem_${range}" . $image_extension;
+$rrd->graph(
+  image => $mem_file,
+  %graph_options,
+  draw => {
+    color  => 'FF0000',
+    dsname => 'umem',
+    legend => 'Phys. Memory Free',
+  },
+  draw => {
+    color  => '00FF00',
+    dsname => 'uswap',
+    legend => 'Swap Free',
+  }
+);
+
+my $dsk_file = "/tmp/${collector_name}_dsk_${range}" . $image_extension;
+$rrd->graph(
+  image => $dsk_file,
+  %graph_options,
+  draw => {
+    color  => 'FF0000',
+    dsname => 'udsk_read',
+    legend => 'Disk Read',
+  },
+  draw => {
+    color  => '00FF00',
+    dsname => 'udsk_write',
+    legend => 'Disk Write',
+  }
+);
+
+my $net_file = "/tmp/${collector_name}_net_${range}" . $image_extension;
+$rrd->graph(
+  image => $net_file,
+  %graph_options,
+  draw => {
+    color  => 'FF0000',
+    dsname => 'unet_rx',
+    legend => 'Network Kbit received',
+  },
+  draw => {
+    color  => '00FF00',
+    dsname => 'unet_tx',
+    legend => 'Network Kbit sent',
+  }
+);
+
+my $load_file = "/tmp/${collector_name}_load_${range}" . $image_extension;
+$rrd->graph(
+  image => $load_file,
+  %graph_options,
+  draw => {
+    color  => 'FF0000',
+    dsname => 'load',
+    legend => 'Load',
+  }
+);
+</%perl>
+
+<P>
+<IMG SRC="<% $cpu_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $mem_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $dsk_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $net_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $load_file %>?<% time() %>">
+
+<%init>
+my $image_format = 'PNG';
+my $image_extension = '.png';
+
+my $collector_name = 'app_server_0_perf';
+my $collector = Mx::Collector->new( name => $collector_name, config => $config, logger => $logger );
+
+my $rrd = RRDTool::OO->new( file => $collector->rrdfile );
+</%init>
+
+<%args>
+$range  => 'hour';
+$date   => '';
+$time   => '';
+$action => '';
+</%args>

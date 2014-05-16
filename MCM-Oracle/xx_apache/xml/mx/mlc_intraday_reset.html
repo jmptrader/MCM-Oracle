@@ -1,0 +1,42 @@
+<H2>MLC Tasks <% $ENV{MXENV} %></H2>
+
+<BR>
+
+<H3>MLC Intraday Reset</H3>
+
+<TABLE class="center_nb">
+  <TR>
+    <TD> Data Collection AB </TD>
+    <TD>
+% $m->comp( 'webcommand.comp', command => $config->KBC_MXHOME . '/kbc/common/bin/dm_batch.pl -name BXER_MLCTR -project xx_mlc -sched_js OWMXDABOMLCTR', text => 'Feeder MLCTR ', right => 'mlc_task' );
+    </TD>
+    <TD>
+% $m->comp( 'webcommand.comp', command => $config->KBC_MXHOME . '/kbc/common/bin/dm_batch.pl -name BXER_MLCFX -project xx_mlc -sched_js OWMXDABOMLCFX', text => 'Feeder MLCFX ', right => 'mlc_task' );
+    </TD>
+  </TR>
+  <TR>
+    <TD> Data Collection CG </TD>
+    <TD>
+% $m->comp( 'webcommand.comp', command => $config->KBC_MXHOME . '/kbc/common/bin/dm_batch.pl -name BXER_MLCTR -project xx_mlc -sched_js OWMXDCGOMLCTR', text => 'Feeder MLCTR ', right => 'mlc_task' );
+    </TD>
+    <TD>
+% $m->comp( 'webcommand.comp', command => $config->KBC_MXHOME . '/kbc/common/bin/dm_batch.pl -name BXER_MLCFX -project xx_mlc -sched_js OWMXDCGOMLCFX', text => 'Feeder MLCFX ', right => 'mlc_task' );
+    </TD>
+  </TR>
+  <TR>
+    <TD> Intraday Reset </TD>
+    <TD>
+% $m->comp( 'webcommand.comp', command => $config->KBC_MXHOME . '/kbc/xx_mlc/bin/mlc_task.pl -project xx_mlc -name limit_comp -xml mlc_limit_comp_intraday_v2.xml -log -sched_js OWMXDXXNMLCEOD', text => 'Intraday Reset', right => 'mlc_task' );
+    </TD>
+  </TR>
+</TABLE>
+
+<BR>
+
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('home.html')">
+
+<%init>
+</%init>
+
+<%args>
+</%args>

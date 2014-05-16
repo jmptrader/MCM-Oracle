@@ -1,0 +1,14 @@
+<form action="webcommand.html" method=POST target="CMD" onSubmit="popupWindow('dummy.html','CMD','1400','800','yes','center'); return true" onfocus="this.blur()">
+  <input type="hidden" name="command" value="<% $command %>">
+% if ( $right ) {
+  <input type="submit" class="button" right="<% $right %>" value=" <% $text %> ">
+% }
+% else {
+  <input type="submit" class="button" value=" <% $text %> ">
+% }
+</form>
+<%args>
+$command
+$text
+$right => ''
+</%args>

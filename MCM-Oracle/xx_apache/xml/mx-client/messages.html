@@ -1,0 +1,15 @@
+<img src="http://<% $config->APPL_DNS %>:<% $config->WEB_PORT %>/images/green.gif" width="10" height="10" />  All environments running<br />
+% foreach my $db_environment ( @rows ) {
+% if ( $db_environment->[8] eq 'Y' ) {
+<img src="http://<% $config->APPL_DNS %>:<% $config->WEB_PORT %>/images/red.gif" width="10" height="10" />  <% $db_environment->[2] %> not available<br />
+% }
+% }
+
+<%init>
+my $sybase = $auth_db->{sybase};
+my $query = 'select id, id, name, description, pillar, samba_read, samba_write, sybase_version, e.disabled, ';
+$query = $query . 'ec.contact_id, db_version, binary_version from environments e, environment_info ei, environment_contacts ec ';
+$query = $query . 'where e.id=ei.environment_id and e.id=ec.environment_id';
+my $result = $sybase->query( query => $query );
+my @rows = $result->all_rows;
+</%init>

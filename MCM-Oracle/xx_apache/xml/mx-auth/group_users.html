@@ -1,0 +1,57 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    Update group <% $group->name %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="form" class="grid_12">
+    <form action="group_users_action.html" method="POST">
+    <input type="hidden" name="id" value="<% $id %>">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>&nbsp;</th>
+      <th>Login</th>
+      <th>Name</th>
+      <th>Location</th>
+      <th>Type</th>
+    </tr>
+% foreach my $user ( sort { $a->name cmp $b->name } @all_users ) {
+%   my $id = $user->id;
+    <tr>
+      <td style=" text-align: center; "><input type="checkbox" name="user_ids" value="<% $id %>" <% $seen{$id} ? 'checked' : '' %>></td>
+      <td><% $user->name %></td>
+      <td><% $user->full_name %></td>
+      <td><% $user->location %></td>
+      <td><% $user->type %></td>
+    </tr>
+% }
+    </table>
+
+    <input type="submit" class="button" name="action" value=" Update ">
+    <input type="button" class="button" value=" Cancel " onClick="history.back()">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+$group->retrieve;
+my @all_users = Mx::Auth::User->retrieve_all( db => $auth_db, config => $config, logger => $logger );
+my %seen = ();
+map { $seen{ $_->id } = 1 } $group->users;
+</%init>
+
+<%args>
+$id
+</%args>

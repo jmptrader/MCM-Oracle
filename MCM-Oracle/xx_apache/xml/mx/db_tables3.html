@@ -1,0 +1,572 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      schema = $('#schemas').val();
+      aoData.push( 
+        { "name": "schema",  "value": schema },
+        { "name": "name",    "value": "<% $name %>" }
+      ); 
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        installHover();
+        installContextMenu(); 
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "bUseRendered": false,
+    "sAjaxSource":  '/mx/db_tables2.html',
+    "bPaginate":    false,
+    "bStateSave":   true,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "fnFooterCallback": function( nRow, aaData, iStart, iEnd, aiDisplay ) {
+      var total_rows = 0; var total_data = 0; var total_indexes = 0; var total_lobs = 0; var total_lobindexes = 0; var total_size = 0;
+      for ( var i = 0; i < aaData.length; i++ ) {
+        total_rows       += Number( aaData[i][2].replace( /,/g, '' ) );
+        total_data       += Number( aaData[i][3].replace( /,/g, '' ) );
+        total_indexes    += Number( aaData[i][4].replace( /,/g, '' ) );
+        total_lobs       += Number( aaData[i][5].replace( /,/g, '' ) );
+        total_lobindexes += Number( aaData[i][6].replace( /,/g, '' ) );
+        total_size       += Number( aaData[i][7].replace( /,/g, '' ) );
+      }
+
+      var nCells = nRow.getElementsByTagName('td');
+
+//      nCells[1].innerHTML = separateThousands( '', total_rows );
+      nCells[2].innerHTML = separateThousands( '', total_data );
+      nCells[3].innerHTML = separateThousands( '', total_indexes );
+      nCells[4].innerHTML = separateThousands( '', total_lobs );
+      nCells[5].innerHTML = separateThousands( '', total_lobindexes );
+      nCells[6].innerHTML = separateThousands( '', total_size );
+    },
+
+    "aoColumnDefs": [
+      { "sClass": "ralign",       "aTargets": [ 2,3,4,5,6,7,8 ] },
+      { "bVisible": false,        "aTargets": [ 1,9 ] },
+
+      { "sWidth": "150px",        "aTargets": [ 2,3,4,5,6,7,8 ] },
+      { "sWidth": "250px",        "aTargets": [ 0 ] },
+
+      { "sType": "formatted-num", "aTargets": [ 2,3,4,5,6,7,8 ] }, 
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 2,3,4,5,6,7,8 ] }
+    ],
+
+    "aaSorting":    [[7, "desc"]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#schemas').change( function() {
+    oTable.fnReloadAjax();
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('.');
+      var schema = result[0]; 
+      var table = result[1];
+      $('#dummytrigger').attr( 'table', table );
+      $('#dummytrigger').attr( 'schema', schema );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+
+  $('tfoot tr').contextMenu( {
+    menu: 'footer_contextmenu'
+  },
+    function(action, el, pos) {
+      $('#dummytrigger').attr( 'schema', schema );
+      $('#dummytrigger').attr( 'action', 'total' );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function drawGraph( table, schema, action, ylabel ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/db_table_size2.html',
+    data:     { 'table': table, 'schema': schema, 'action': action },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1400px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var labels = [];
+      for ( var i = 0; i < data.labels.length; i++ ) {
+        var label = data.labels[i];
+        labels.push( { 'label': label } );
+      }
+
+      var plot1 = $.jqplot('jqmContent', data.data, {
+        seriesDefaults: {
+          lineWidth: 1.5,
+          showMarker: false,
+          shadow: false
+        },
+        seriesColors: [ '#FF0000', '#00FF00', '#000000', '#0000FF', '#FFFF00', '#00FFFF', '#FF66FF', '#006633', '#9999FF', '#660066', '#666666', '#FF3399', '#666600' ],
+        series: labels,
+        legend: {
+          show: true,
+          location:'nw'
+        },
+        axes: {
+          xaxis: {
+            pad: 0,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              fontFamily: 'Calibri',
+              fontSize: '10pt',
+              formatString: '%d/%m/%y',
+            }
+          },
+          yaxis: {
+            label: ylabel,
+            labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+            labelOptions: {
+              fontSize: '14pt',
+              fontWeight: 'bold'
+            },
+            tickOptions:{
+              fontFamily: 'Calibri',
+              fontSize: '10pt',
+              formatter: separateThousands
+            },
+            min: 0
+          }
+        },
+        cursor: {
+          show: true,
+          zoom: true,
+          tooltipLocation: 'sw'
+        },
+        grid: { borderWidth: 1 }
+      } );
+    }
+    else {
+      alert('failed');
+    }
+  } );
+}
+
+function showTable( table, schema ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/db_table_size2.html',
+    data:     { 'table': table, 'schema': schema, 'action': 'both' },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '800px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0 width="50%">';
+      html[++h] = '<tr><th>DATE</th><th>SIZE</th><th># ROWS</th></tr>';
+
+      for ( var i = data.reserved_data[0].length - 1; i >= 0; i-- ) {
+        var timestamp = data.reserved_data[0][i][0];
+        var reserved  = data.reserved_data[0][i][1];
+        var nr_rows   = data.nr_rows_data[0][i][1];
+        html[++h] = '<tr>';
+        html[++h] = '<td align="center">' + timestamp + '</td>';
+        html[++h] = '<td align="right">' + separateThousands( '', reserved ) + '&nbsp;</td>';
+        html[++h] = '<td align="right">' + separateThousands( '', nr_rows ) + '&nbsp;</td>';
+        html[++h] = '</tr>';
+      }
+
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function showIndexes( table, schema ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/sybase_table_index2.html',
+    data:     { 'table': table, 'schema': schema },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1000px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      html[++h] = '<p>';
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0 width="90%">';
+      html[++h] = '<tr><th>NAME</th><th>COLUMNS</th><th>UNIQUE</th><th>DATE</th></tr>';
+
+      for ( var i = 0; i < data.data.length; i++ ) {
+        var index = data.data[i];
+        html[++h] = '<tr>';
+        html[++h] = '<td>' + index['0'] + '</td>';
+        html[++h] = '<td>' + index['1'] + '</td>';
+        html[++h] = '<td align="center">' + index['2'] + '</td>';
+        html[++h] = '<td align="center">' + index['3'] + '</td>';
+        html[++h] = '</tr>';
+      }
+
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function showDDL( table, schema ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/sybase_table_ddl2.html',
+    data:     { 'table': table, 'schema': schema },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '800px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      var ddl = data.data[0]['0'];
+      var ddl_array = ddl.split( '\n' );
+
+      html[++h] = '<p>';
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0 width="60%">';
+      html[++h] = '<tr><td style="font-size: 10pt;">';
+      html[++h] = ddl_array[0] + '<br>';
+      for ( var i = 1; i < ddl_array.length - 1; i++ ) {
+        var line = ddl_array[i];
+        line = line.replace( /^(\w+) /, '<span style="color: blue;">$1</span> ' );
+        html[++h] = line + '<br>';
+      }
+      html[++h] = ddl_array[ ddl_array.length - 1 ] + '<br>';
+      html[++h] = '</td></tr>'; 
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function showRDBTrace( sessionid, table ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_sql2.html',
+    data:     { 'id': sessionid, 'table': table },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1500px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center">';
+    html[++h] = '<tr><th>TIMESTAMP</th><th>DATABASE</th><th>TIME</th><th>SQL</th></tr>';
+    for ( var i = 0; i < data.data.length; i++ ) {
+      var row = data.data[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td align="center" nowrap>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="center" nowrap>' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td align="right" nowrap>' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td>' + row[3] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function assignCategory( table, schema ) {
+  $('#jqmContent').css( 'width', '800px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  html[++h] = '<p>';
+  html[++h] = '<div align=center>';
+  html[++h] = '<form>';
+  html[++h] = '</form>';
+  html[++h] = '</div>';
+
+  $('#jqmContent')[0].innerHTML = html.join('');
+}
+
+function separateThousands( formatString, value ) {
+  var sRegExp = new RegExp('(-?[0-9]+)([0-9]{3})');
+  value = Math.round( value );
+  var string = value + '';
+ 
+  while(sRegExp.test(string)) {
+    string = string.replace(sRegExp, '$1' + ',' + '$2');
+  }
+
+  return string;
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function selectedTables( table ) {
+  var multiple_tables = [];
+  $('tr.row_selected').each( function( i, row ) {
+    var data = oTable.fnGetData( this );
+    multiple_tables.push( data[0] );
+  } );
+
+  if ( multiple_tables.length > 0 ) {
+    table = multiple_tables.join(',');
+  }
+
+  return table;
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var table   = $('#dummytrigger').attr('table');
+  var schema  = $('#dummytrigger').attr('schema');
+  var action  = $('#dummytrigger').attr('action');
+
+  if ( action == 'reserved' ) {
+    $('#jqmTitleText').text( '' );
+    $modal.jqmShow();
+    var label = 'Reserved size (bytes)';
+
+    table = selectedTables( table );
+
+    drawGraph( table, schema, action, label );
+  }
+  else if ( action == 'total' ) {
+    $('#jqmTitleText').text( '' );
+    $modal.jqmShow();
+    var label = 'Reserved size (bytes)';
+
+    drawGraph( table, schema, action, label );
+  }
+  else if ( action == 'nr_rows' ) {
+    $('#jqmTitleText').text( '' );
+    $modal.jqmShow();
+    var label = 'Number of rows';
+
+    table = selectedTables( table );
+
+    drawGraph( table, schema, action, label );
+  }
+  else if ( action == 'table' ) {
+    $('#jqmTitleText').text( table + ' - Size Evolution' );
+    $modal.jqmShow();
+    showTable( table, schema );
+  }
+  else if ( action == 'index' ) {
+    $('#jqmTitleText').text( table + ' - Indexes' );
+    $modal.jqmShow();
+    showIndexes( table, schema );
+  }
+  else if ( action == 'ddl' ) {
+    $('#jqmTitleText').text( table + ' - Table Definition' );
+    $modal.jqmShow();
+    showDDL( table, schema );
+  }
+  else if ( action == 'category' ) {
+    $('#jqmTitleText').text( 'Choose a category:' );
+    $modal.jqmShow();
+
+    table = selectedTables( table );
+
+    assignCategory( table, schema );
+  }
+  else if ( action == 'statements' ) {
+    $('#jqmTitleText').text( 'session #<% $session_id %>' );
+    $modal.jqmShow();
+
+    showRDBTrace( <% $session_id %>, table );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+</script>
+
+<ul id="contextmenu" class="contextMenu" style="text-align: left;">
+  <li>
+    <a href="#reserved">Table Size Graph (bytes)</a>
+  </li>
+  <li>
+    <a href="#nr_rows">Table Size Graph (rows)</a>
+  </li>
+  <li>
+    <a href="#table">Size Evolution Table</a> 
+  </li>
+  <li>
+    <a href="#ddl">Table Definition</a> 
+  </li>
+  <li>
+    <a href="#index">Indexes</a> 
+  </li>
+% if ( $session_id ) {
+  <li>
+    <a href="#statements">Statements</a>
+  </li>
+% }
+</ul>
+
+<ul id="footer_contextmenu" class="contextMenu" style="text-align: left;">
+  <li>
+    <a href="#total">Total Size Graph</a>
+  </li>
+</ul>
+
+% if ( $ARGS{no_navigation} ) {
+<span style="float: right; padding: 2px;"><input type="button" class="button" value=" Close " onClick="window.close()"></span>
+% }
+
+<div id="title">Sybase Tables</div>
+
+<p>
+
+<div style="float: left;">
+<select id="schemas">
+% foreach ( @schemas ) {
+  <option value="<% $_ %>"><% $_ %></option>
+% }
+</select>
+</div>
+
+<div style="clear: both;"></div>
+
+<br>
+
+<div id="dummytrigger" table="" schema=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>NAME</th>
+  <th>DATABASE</th>
+  <th># ROWS</th>
+  <th>DATA</th>
+  <th>INDEXES</th>
+  <th>LOBS</th>
+  <th>LOBINDEXES</th>
+  <th>TOTAL SIZE</th>
+  <th>GROWTH RATE</th>
+  <th>CATEGORY</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+<tfoot>
+ <tr>
+  <td>TOTALS</td> 
+  <td></td>
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td style="text-align:right"></td> 
+  <td></td>
+ </tr> 
+</tfoot>
+</table>
+
+<p>
+
+<button class="button" id="refresh"> Refresh </button>
+
+<%init>
+my @schemas =  $schema ? ( $schema ) : (
+  $config->FIN_DBUSER,
+  $config->REP_DBUSER,
+  $config->MON_DBUSER,
+);
+</%init>
+<%args>
+$schema     => ''
+$name       => ''
+$session_id => 0
+</%args>

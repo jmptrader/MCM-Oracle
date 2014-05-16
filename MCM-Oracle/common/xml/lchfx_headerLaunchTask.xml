@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!DOCTYPE ProcessingScriptQuery>
+<ProcessingScriptQuery>
+<workflowFilter>
+  <!-- Exchange Workflow -->
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P0-ReceptionFromESB"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P1-MsgValidation"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P2-TradeRepo"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P3-ExceptionManagement"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P4-NotificationToESB"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P5-AutoCancel"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P6-LiabilityApproval"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P7-Margin Run Close / Cancel"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P8-PortfolioTransfer"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P10-HedgeTrades"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P12-ITR"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P14-Fixings"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Exchange" sheet="P15-ConsentProcess"/>
+  <!-- Contract Workflow -->
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P0-Routing"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P1-Validation"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P2-Registration"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P3-ManualRegistration"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P4-Notification"/>
+  <include processing-template="PCGLOBAL_P1" workflow="Contract" sheet="P5-DraftTrades"/>
+</workflowFilter>
+</ProcessingScriptQuery>

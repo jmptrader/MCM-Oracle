@@ -1,0 +1,18 @@
+<BODY>
+% foreach my $statement ( @statements ) {
+<% $statement %>
+<BR>
+% }
+</BODY>
+
+<%init>
+  my $statement = "sp_showplan $spid, NULL, NULL, NULL";
+  $sa_sybase->open();
+  $sa_sybase->do( statement => $statement, no_error_handling => 1 );
+  my @statements = $sa_sybase->error_handler_messages();
+  $sa_sybase->close();
+</%init>
+
+<%args>
+$spid
+</%args>

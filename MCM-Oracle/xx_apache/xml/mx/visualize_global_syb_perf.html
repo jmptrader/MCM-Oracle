@@ -1,0 +1,118 @@
+<H2>Global Sybase Performance on <% $dsquery %></H2>
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_syb_perf.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_syb_perf.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_syb_perf.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_syb_perf.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<IMG SRC="<% $file1 %>?<% time() %>">
+<P>
+<IMG SRC="<% $file2 %>?<% time() %>">
+<P>
+<IMG SRC="<% $file3 %>?<% time() %>">
+<P>
+<IMG SRC="<% $file4 %>?<% time() %>">
+
+<%init>
+my $nr_seconds;
+if ( $range eq 'year' ) {
+  $nr_seconds = 365 * 24 * 3600;
+}
+elsif ( $range eq 'month' ) {
+  $nr_seconds = 31 * 24 * 3600;
+}
+elsif ( $range eq 'week' ) {
+  $nr_seconds = 7 * 24 * 3600;
+}
+else {
+  $nr_seconds = 24 * 3600;
+}
+
+my $collector = Mx::Collector->new( name => 'syb_db_perf', config => $config, logger => $logger );
+my $rrdfile   = $collector->rrdfile;
+my $rrd       = RRDTool::OO->new( file => $rrdfile );
+my $dsquery   = $config->retrieve('DSQUERY');
+
+my $file1 = "/tmp/${dsquery}_global_perf_1_$range.png";
+$rrd->graph(
+  image  => $file1,
+  width  => $config->GRAPH_WIDTH,
+  height => $config->GRAPH_HEIGHT,
+  start => time() - $nr_seconds,
+  end   => time(),
+  draw  => {
+    color  => '0000FF',
+    dsname => 'cpu',
+    legend => '%CPU',
+  },
+  draw  => {
+    color  => '000000',
+    dsname => 'io',
+    legend => '%IO',
+  }
+);
+
+my $file2 = "/tmp/${dsquery}_global_perf_2_$range.png";
+$rrd->graph(
+  image  => $file2,
+  width  => $config->GRAPH_WIDTH,
+  height => $config->GRAPH_HEIGHT,
+  start => time() - $nr_seconds,
+  end   => time(),
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'users',
+    legend => 'Total Users',
+  },
+  draw  => {
+    color  => '00FF00',
+    dsname => 'runnable',
+    legend => 'Active Users',
+  }
+);
+
+my $file3 = "/tmp/${dsquery}_global_perf_3_$range.png";
+$rrd->graph(
+  image  => $file3,
+  width  => $config->GRAPH_WIDTH,
+  height => $config->GRAPH_HEIGHT,
+  start => time() - $nr_seconds,
+  end   => time(),
+  draw  => {
+    color  => '0000FF',
+    dsname => 'reads',
+    legend => '# Reads',
+  },
+  draw  => {
+    color  => '000000',
+    dsname => 'writes',
+    legend => '# Writes',
+  }
+);
+
+my $file4 = "/tmp/${dsquery}_global_perf_4_$range.png";
+$rrd->graph(
+  image  => $file4,
+  width  => $config->GRAPH_WIDTH,
+  height => $config->GRAPH_HEIGHT,
+  start => time() - $nr_seconds,
+  end   => time(),
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'net_in',
+    legend => 'Packets In',
+  },
+  draw  => {
+    color  => '00FF00',
+    dsname => 'net_out',
+    legend => 'Packets Out',
+  }
+);
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

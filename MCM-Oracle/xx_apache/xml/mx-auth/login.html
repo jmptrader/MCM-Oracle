@@ -1,0 +1,81 @@
+<script language=javascript src="common/validations.js"></script>
+<script language=javascript>
+<!--
+  function submitmyform(form)
+  {
+    if(!(CheckStringField(form.login, 50))) return false;
+    if(!(CheckStringField(form.password, 50))) return false;
+
+    if(!(CheckMandatoryField(form.login,   'login'))) return false;
+    if(!(CheckMandatoryField(form.password,  'password'))) return false;
+ 
+    return true;
+  }
+//-->
+</script>
+
+<body onload="document.login.<% $username ? 'password' : 'login' %>.focus()">
+
+<table width=100% border=0 cellspacing=0 cellpadding=0>
+  <tr>
+    <td align="left" valign="top">
+      <img src="/mx/pics/logo.gif">
+    </td>
+    <td align="right" valign="top">
+      <h1><% $app_name %></h1>
+      <h2>Login</h2>
+    </td>
+  </tr>
+  <tr bgcolor="#000000"> 
+    <td style="background-color: #000000" colspan="2">
+      <img src="/mx/pics/pixeltransp.gif" width="1" height="1">
+    </td>
+  </tr>
+</table>
+
+<br>
+<br>
+<br>
+
+<form name="login" action="submitlogin.html" method="POST" onsubmit="return submitmyform(this)">
+  <table border="0" cellspacing="0" cellpadding="1" align="center">
+    <tr align="center">
+      <td style="background-color: #000000">
+        <font color="#FFFFFF"><b>LOGIN</b></font>
+      </td>
+    </tr>
+    <tr> 
+      <td> 
+        <table border="0" cellspacing="3" cellpadding="0">
+          <tr> 
+            <td>Login ID</td>
+            <td><input type="text" name="login" value="<% $username %>" size="20" maxlength="50"></td>
+          </tr>
+          <tr> 
+            <td>Password</td>
+            <td><input type="password" name="password" size="20" maxlength="50"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td align="right"><input type="submit" value=" LOG ON "></td>
+    </tr>
+    <tr> 
+      <td style="background-color: #000000">
+        <img src="/mx/pics/pixeltransp.gif" width="1" height="10">
+      </td>
+    </tr>
+  </table>
+</form>
+
+<center>
+<h2><font color="#FF0000"><% $error_message %></font></h2>
+</center>
+
+</body>
+
+<%args>
+$error_message => ""
+$username      => ""
+</%args>

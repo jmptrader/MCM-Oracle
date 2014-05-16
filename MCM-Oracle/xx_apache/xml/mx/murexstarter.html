@@ -1,0 +1,69 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  launchAuto();
+} );
+
+function launchAuto() {
+  LaunchVBS();
+  //LaunchMoz();
+}
+function launchClick() {
+  //LaunchVBS();
+  LaunchMoz();
+}
+function LaunchMoz(){
+  //Set permissions to allow XPCOM
+  netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+  // create an nsILocalFile for the executable
+  var file = Components.classes["@mozilla.org/file/local;1"].getService(Components.interfaces.nsILocalFile);
+  file.initWithPath("W:\\SPI\\000465\\localstarter.cmd");
+  // create an nsIProcess
+  var process = Components.classes["@mozilla.org/process/util;1"].getService(Components.interfaces.nsIProcess);
+  process.init(file);
+  // Run the process.
+  // If first param is true, calling process will be blocked until
+  // called process terminates. 
+  // Second and third params are used to pass command-line arguments
+  // to the process.
+  var args = ["<% $ENV{MXENV} %>"];
+  process.run(false, args, args.length);
+}
+</script>
+
+<script language="VBScript">
+<!--
+Function LaunchVBS()
+  Dim WshShell
+  Set WshShell = CreateObject("WScript.Shell")
+  WshShell.CurrentDirectory = "W:\SPI\000465"
+  WshShell.run "W:\SPI\000465\localstarter.cmd <% $ENV{MXENV} %>"
+End Function
+-->
+</script>
+
+<h1>Murex starter</h1>
+<p>Development page to test new technologies for starting Murex</p>
+<table class="center_nb"><tr><td>
+<p>If your client does not get started automatically when opening this page, please click the following button
+</td><td>
+<form method="post" action="murexstarter.html">
+  <button id="clientlauncher" onClick="launchClick();">MurexStarter</button>
+</form>
+</p>
+</td></tr>
+<tr><td>Murex menu started from web-page.  Same as Murex-menu from the Windows start-menu. 
+<A HREF="file://W|/SPI/000465/MurexStarter.hta">MurexMenu (IE only)</A>
+</td></tr>
+<tr><td>New application starter 
+<A HREF="file://W|/SPI/000465/LocalStarter.hta">Application starter (IE only)</A>
+</td></tr>
+</table>
+<p></p>
+<p>Unfortunately, this function is disabled on Chrome and Firefox for security reasons.</p>
+<p>Use the appet below for cross-browser compatbilitty.  Should work on IE, Firefox, Chrome</p>
+<applet archive="/mx-client/localstarter.jar" code="uiPresentation.MenuStarter" width="500" height="70">
+  Your browser does not support applets.
+  <param name="MXENV" value="<% $ENV{MXENV} %>" />
+  <param name="MXSTARTERURL" value="<% "http://" . $config->APPL_DNS . ":" . $config->WEB_PORT . "/mx-client/usermenu.xml" %>" />
+</applet>
+

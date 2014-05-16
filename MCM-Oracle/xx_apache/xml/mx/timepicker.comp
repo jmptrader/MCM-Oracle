@@ -1,0 +1,80 @@
+<form onsubmit="return msubmit(this, '<% $url %>', [ { name: 'action', value: $('#action1').val() } ]);">
+<table class="center_nb" width=520>
+  <tr>
+    <input type="hidden" id="action1" value="">
+    <TD><INPUT TYPE="submit" CLASS="button" NAME="action" VALUE="Set"  onclick="$('#action1').val('Set');"></TD>
+    <TD><INPUT TYPE="submit" CLASS="button" NAME="action" VALUE="Last" onclick="$('#action1').val('Last');"></TD>
+    <TD><FONT COLOR="#000000">Range:</FONT></TD>
+    <TD><SELECT NAME="range">
+%   foreach my $value ( qw( hour day week month year ) ) {
+      <OPTION <% ( $value eq $range ) ? 'SELECTED' : '' %>><% $value %></OPTION>
+%   }
+    </SELECT></TD>
+    <TD><FONT COLOR="#000000">Date:</FONT></TD>
+    <TD><INPUT TYPE="text" CLASS="date-pick dp-applied" NAME="date" VALUE="<% $date %>"></INPUT></TD>
+    <TD><FONT COLOR="#000000">Time:</FONT></TD>
+    <TD><SELECT NAME="time">
+%   foreach my $value ( '00' .. '23' ) {
+%     my $full_value = $value . ':00';
+      <OPTION <% ( $full_value eq $time ) ? 'SELECTED' : '' %>><% $full_value %></OPTION>
+%     $full_value = $value . ':30';
+      <OPTION <% ( $full_value eq $time ) ? 'SELECTED' : '' %>><% $full_value %></OPTION>
+%   }
+    </SELECT></TD>
+  </tr>
+</table>
+</form>
+
+% return( $start, $end );
+
+<%init>
+my ( $day, $month, $year );
+if ( $date ) {
+  ( $year, $month, $day ) = split '-', $date; 
+}
+else {
+  $action = 'Last';
+}
+
+my ( $sec, $min, $hour );
+if ( $time ) {
+  ( $hour, $min ) = split ':', $time; 
+  $sec = 0;
+}
+else {
+  $action = 'Last';
+}
+
+my ( $asec, $amin, $ahour, $aday, $amonth, $ayear ) = localtime();
+$ayear += 1900;
+$amonth++;
+
+if ( $action eq "Last" ) {
+  ( $sec, $min, $hour, $day, $month, $year ) = ( $asec, $amin, $ahour, $aday, $amonth, $ayear );
+}
+
+my $nr_seconds;
+SWITCH: {
+  $range eq 'hour'  && do { $nr_seconds =            3600; last SWITCH; };
+  $range eq 'day'   && do { $nr_seconds =       24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+};
+
+my $end   = timelocal( $sec, $min, $hour, $day, $month - 1, $year - 1900 );
+my $start = $end - $nr_seconds;
+
+my $round_min = ( $min >= 30 ) ? 30 : 0;
+
+$time  = sprintf "%02d:%02d", $hour, $round_min;
+$date  = sprintf "%04d-%02d-%02d", $year, $month, $day;
+</%init>
+
+<%args>
+$url
+$range  => 'hour';
+$time   => '';
+$date   => '';
+$action => '';
+</%args>

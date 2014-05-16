@@ -1,0 +1,24 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $message = 'failed';
+if ( my $service = $m->comp( 'services.comp', name => $name, location => $location ) ) {
+  if ( $service->status eq 'stopped' or $service->status eq 'disabled' ) {
+    $message = 'already stopped';
+  }
+  elsif ( my $handle = $handles[ $service->location ] ) {
+    $logger->info("stopping service $name");
+    if ( $handle->soaphandle->service_action( name => $service->name, action => 'stop' ) ) {
+      $message = 'stopped';
+    }
+  }
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => $message } );
+</%init>
+
+<%args>
+$name
+$location
+</%args>

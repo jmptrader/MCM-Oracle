@@ -1,0 +1,112 @@
+*{
+	font-family: Verdana;
+	font-size: 10pt;
+}
+
+body{
+	margin: 0;
+	padding: 20px;
+	background: #FFF;
+}
+
+
+h1{ font-size: 160% }
+h2{ font-size: 140%; color:#666666; border-bottom:solid 1px silver }
+h3{ font-size: 120%; color:brown }
+ul li{ list-style-type:disc }
+
+ul.codedoc{ margin-top:0px }
+pre{ 
+    font-family:Courier; 
+    background:silver; 
+    color:black;
+    padding:3px;
+}
+
+.defn{ color:green; font-weight:bold }
+.pret{ font-family:Courier, Verdana; background:yellow }
+a, a:link, a:visited{ text-decoration:none; color:blue }
+
+
+#dhtmltooltip{
+position: absolute;
+width: 450px;
+border: 2px solid black;
+padding: 2px;
+background-color: lightyellow;
+visibility: hidden;
+z-index: 100;
+/*Remove below line to remove shadow. Below line should always appear last within this CSS*/
+filter: progid:DXImageTransform.Microsoft.Shadow(color=gray,direction=135);
+}
+
+
+table{
+	border: 1px solid #000;
+	background: #fff;
+	width: 100%;
+}
+
+table caption{
+	margin:0;
+	padding: 8px 20px;
+	text-align: left;
+	border: 1px solid #000;
+	border-bottom: none;
+	background: #fff;
+}
+
+table th, table td{
+	margin:0;
+	padding: 5px;
+	border-bottom: solid 1px #b5b5b5;
+}
+
+table th{
+	color: orange;
+	text-align:  center;
+}
+
+td .ctr{ text-align: center }
+
+table .ui{ background: #ABD0BC; }
+
+table .ws{ background: #F6CAA5; }
+
+table .db{ background: #BBCCDD; }
+
+table .pl{ background: #D0BBAB; }
+
+table .mx{ background: #FF0000; }
+
+
+
+table pre{
+    background:white;
+}
+
+#toc{
+	width:18%;
+	margin-right:2%;
+	background:#BBCCDD;
+	float: left;
+}
+
+#toc a{
+	color:black;
+	font-size:90%;
+	line-height:1.4em;
+}
+#toc a:hover{ 
+	color:#999;
+}
+#toc a.on{
+	font-weight:bold;
+}
+
+#content{
+	float: right;
+	width:80%;
+        overflow-x:auto;
+	
+}

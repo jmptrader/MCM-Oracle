@@ -1,0 +1,50 @@
+@ECHO OFF
+
+C:
+cd /Temp/MX/<% $ENV{MXENV} %>
+
+SET HOMEDIR=%CD%
+SET JAVAHOME=W:/SPI/000465/Murex/jre_1.6.0_14
+
+call mxg2000_settings.cmd
+
+REM define a setting for routing over central site
+set JAVAARGS_DESTSITE=
+if not [%MXJ_DESTINATION_SITE_NAME%]==[] set JAVAARGS_DESTSITE=/MXJ_DESTINATION_SITE_NAME:%MXJ_DESTINATION_SITE_NAME%
+if [%MXJ_DESTINATION_SITE_NAME%]==[%MXJ_SITE_NAME%] set JAVAARGS_DESTSITE=
+
+SET PATH=%JAVAHOME%\jre\bin;%JAVAHOME%\jre\bin\client;%JAVAHOME%\bin;%PATH%
+SET PATH=%PATH%;bin\
+SET MXJ_JAR_FILELIST=murex.download.richclient.download
+SET MXJ_POLICY=java.policy
+SET MXJ_BOOT=mxjboot.jar
+SET MXJ_CONFIG_FILE=client.xml
+SET GLOW_PARAM=
+
+REM ------------------------------
+REM CHECK XP/VISTA PC
+REM ------------------------------
+
+SET GLOW_PARAM=-Dsun.java2d.noddraw
+
+IF [%PROGRAMDATA%]=="%PROGRAMDATA%" goto :contJAVACMD
+SET GLOW_PARAM=%GLOW_PARAM% -Dsun.java2d.d3d=false -Dsun.java2d.noddraw=true
+SET J2D_D3D=false
+
+goto:contJAVACMD
+
+:noEnvSet
+echo Script called without an environment indicated.
+echo This script should not be called directly, please contact TSMurex T. +32 242 99853
+
+goto :end
+
+:contJAVACMD
+IF EXIST jar\%MXJ_BOOT% copy jar\%MXJ_BOOT% . >NUL
+IF NOT EXIST %MXJ_BOOT% COPY %HOMEDIR%\..\BIN\mxjboot_MX3.jar %MXJ_BOOT%
+
+title %~n0 FS:%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST%  Xml:%SET MXJ_SITE_NAME=site1% /PLATF:%MXJ_PLATFORM_NAME% /NNAME:%MXJ_PROCESS_NICK_NAME% 
+ %JAVAHOME%\bin\java -Xmx256m -cp %MXJ_BOOT% %GLOW_PARAM% -Declipse.product=com.murex.richclient.application.product -Djava.security.policy=%MXJ_POLICY% -Dmurex.gui.session.modal.deactivate=true -Dmurex.gui.container.family=com.murex.richclient.ui.internal.EclipseViewContainer -Djava.rmi.server.codebase=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST% murex.rmi.loader.RmiLoader /MXJ_SITE_NAME:%MXJ_SITE_NAME% /MXJ_CLASS_NAME:org.eclipse.core.launcher.Main /MXJ_PLATFORM_NAME:%MXJ_PLATFORM_NAME% /MXJ_PROCESS_NICK_NAME:%MXJ_PROCESS_NICK_NAME% /MXJ_CONFIG_FILE:%MXJ_CONFIG_FILE% %1 %2 %3 %4 %5 %6 
+
+:end
+title %ENVIR% : %~n0 - ended

@@ -1,0 +1,19 @@
+<% $value %>
+<%init>
+$logger->info("incoming webservice call");
+while ( my( $key, $value ) = each %ARGS ) {
+  $logger->info("-- $key: $value");
+}
+
+my $value;
+SWITCH: {
+  $type eq 'nick'      && do { $value = $m->comp( '/mx/webservice/nick.comp' ); last SWITCH; };
+  $type eq 'md_upload' && do { $value = $m->comp( '/mx/webservice/md_upload.comp', win_user => $ARGS{win_user}, xml => $ARGS{xml} ); last SWITCH; };
+  $type eq 'upload'    && do { $value = $m->comp( '/mx/webservice/upload.comp', key => $ARGS{key}, win_user => $ARGS{win_user}, xml => $ARGS{xml}, filename => $ARGS{filename} ); last SWITCH; };
+  $type eq 'xterm'     && do { $value = $m->comp( '/mx/webservice/xterm.comp' ); last SWITCH; };
+  $value = $m->comp( '/mx/webservice/no_type.comp' );
+}
+</%init>
+<%args>
+$type => ''
+</%args>

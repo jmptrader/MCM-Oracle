@@ -1,0 +1,15 @@
+<BODY>
+<BR>
+<% $text %>
+<BR>
+</BODY>
+
+<%init>
+my $result = $db_audit->retrieve_logfile_extract( id => $id );
+my $text = $result->[4];
+$text =~ s/\n/<BR>\n/g;
+</%init>
+
+<%args>
+$id
+</%args>

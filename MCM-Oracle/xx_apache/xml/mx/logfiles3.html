@@ -1,0 +1,201 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      aoData.push(
+        { "name": "path", "value": "<% $path %>" }
+      );
+      $.getJSON( sSource, aoData, function (json) {
+        fnCallback(json.datatables);
+        displayRefreshTime();
+        installHover();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">ft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/logfiles2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnRender": function ( o, val ) {
+          var path = o.aData.DT_RowId; 
+
+          if ( o.aData[0] == 'd' ) {
+            return '<a href="#" onclick="showLogfiles(\'' + path + '\');"><img src="../images/directory.png" alt="directory" border=0"></a>';
+          }
+          else if ( o.aData[1] == 'log' ) {
+            return '<a href="#" onclick="showLogging(\'' + path + '\');"><img src="../images/log.png" alt="log" border=0"></a>';
+          }
+          else if ( o.aData[1] == 'xml' ) {
+            return '<a href="#" onclick="$(\'#dummytrigger\').attr( \'path\', \'' + path + '\' ); $(\'#modalWindow\').jqmShow();"><img src="../images/xml.png" alt="xml" border=0"></a>';
+          }
+          else {
+            return '<img src="../images/file.png" border=0">';
+          }
+        }, "aTargets": [ 0 ] },
+
+      { "sClass": "center",       "aTargets": [ 0, 1, 4 ] },
+      { "sClass": "ralign",       "aTargets": [ 3 ] },
+
+      { "bVisible": false,        "aTargets": [ 1 ] },
+
+      { "sWidth": "40px",         "aTargets": [ 0 ] },
+      { "sWidth": "80px",         "aTargets": [ 1 ] },
+      { "sWidth": "100px",        "aTargets": [ 3, 4 ] },
+      { "sWidth": "400px",        "aTargets": [ 2 ] },
+
+      { "sType": "alt-string",    "aTargets": [ 0 ] },
+      { "sType": "formatted-num", "aTargets": [ 3 ] }
+    ],
+
+    "aaSorting":    [[ 4, "desc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var path   = $('#dummytrigger').attr('path');
+
+  $('#jqmTitleText').text( path );
+  $modal.jqmShow();
+
+  showXML( path );
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showLogging( path ) {
+  $("#logging_path").val( path );
+  $('#logging_form').submit();
+}
+
+function showXML( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/xmlfile2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+
+function showLogfiles( path ) {
+  if ( path ) {
+    $("#logfiles_path").val( path );
+    $('#logfiles_form').submit();
+  }
+  else {
+    $('#logdates_form').submit();
+  }
+}
+</script>
+
+<div id="title"><% $path %></div>
+
+<br><br>
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="path" id="logging_path" value="">
+</form>
+
+<form id="logfiles_form" onsubmit="return msubmit( this, '/mx/logfiles3.html' );">
+  <input type="hidden" name="path" id="logfiles_path" value="">
+  <input type="hidden" name="project" value="<% $project %>">
+</form>
+
+<form id="logdates_form" onsubmit="return msubmit( this, '/mx/logdates.html' );">
+  <input type="hidden" name="project" value="<% $project %>">
+</form>
+
+<div id="dummytrigger" path=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<div style="float: left;" id="refreshtime"></div>
+
+<br>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>TYPE</th>
+  <th>EXTENSION</th>
+  <th>NAME</th>
+  <th>SIZE</th>
+  <th>TIMESTAMP</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="button" style="clear: left;" id="refresh"> Refresh </button>
+<button class="button" onClick="showLogfiles('<% $upper_path %>');"> Go Up </button>
+
+<%init>
+my $upper_path = '';
+if ( $path !~ /\/\d{8}$/ ) { 
+ $upper_path = dirname( $path );
+}
+</%init>
+
+<%args>
+$path
+$project
+</%args>

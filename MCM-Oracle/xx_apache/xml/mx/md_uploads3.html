@@ -1,0 +1,273 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        installHover();
+        $('.tiptip').tipTip();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":            'r<"clear">Cftpi',
+    "bProcessing":     true,
+    "sAjaxSource":     '/mx/md_uploads2.html',
+    "bPaginate":       true,
+    "sPaginationType": "full_numbers",
+    "sScrollY":        "800px",
+    "sScrollX":        "100%",
+    "iDisplayLength":  40,
+    "aaSorting":       [[0,'desc']],
+
+    "oLanguage": {
+      "oPaginate": {
+        "sFirst":    "<<",
+        "sPrevious": "<",
+        "sNext":     ">",
+        "sLast":     ">>"
+      }
+    },
+
+    "aoColumnDefs": [
+      { "fnRender": function ( o, val ) {
+        if ( o.aData[11] == '' ) {
+          return o.aData[6];
+        }
+        return '<a class="tiptip" href="#" title="user id: ' + o.aData[6] + '">' + o.aData[11] + '</a>';
+        }, "aTargets": [ 6 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          if ( sData == 'failed' ) {
+            $(nTd).css('background-color', '#FF0000')
+          }
+        }, "aTargets": [ 3 ] },
+      { "sClass": "center",       "aTargets": [ 0, 1, 2, 3, 6, 7, 8, 9, 10 ] },
+      { "sClass": "ralign",       "aTargets": [ 4, 5 ] },
+
+      { "sWidth": "40px",         "aTargets": [ 0 ] },
+      { "sWidth": "60px",         "aTargets": [ 2, 3, 6, 7, 8, 9, 10 ] },
+      { "sWidth": "100px",        "aTargets": [ 4, 5 ] },
+      { "sWidth": "140px",        "aTargets": [ 1 ] },
+
+      { "sType": "numeric",       "aTargets": [ 0 ] },
+      { "sType": "formatted-num", "aTargets": [ 4 ] }
+    ]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split(':');
+      var upload_id  = result[0];
+      var script_id  = result[1];
+      var session_id = result[2];
+      var path       = result[3];
+      $('#dummytrigger').attr( 'upload_id', upload_id );
+      $('#dummytrigger').attr( 'script_id', script_id );
+      $('#dummytrigger').attr( 'session_id', session_id );
+      $('#dummytrigger').attr( 'path', path );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var upload_id  = $('#dummytrigger').attr('upload_id');
+  var script_id  = $('#dummytrigger').attr('script_id');
+  var session_id = $('#dummytrigger').attr('session_id');
+  var path       = $('#dummytrigger').attr('path');
+  var action     = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_matrix' ) {
+    $('#jqmTitleText').text( );
+    $modal.jqmShow();
+    showMatrix( path );
+  }
+  else if ( action == 'show_xml' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showXML( path );
+  }
+  else if ( action == 'goto_script' ) {
+    $modal.jqmHide();
+    mnavigate( 'histscript_details.html', { script_id:script_id, hist_url:'md_uploads3.html' }  );
+  }
+  else if ( action == 'goto_session' ) {
+    $modal.jqmHide();
+    mnavigate( 'histsession_details.html', { session_id:session_id, hist_url:'md_uploads3.html' } );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function showMatrix( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/md_upload_matrix2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '600px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    for ( var i = 0; i < data.length; i++ ) {
+      var pair      = data[i].pair;
+      var ordinates = data[i].ordinates;
+      var matrix    = data[i].matrix;
+      html[++h] = '<center><h2>' + pair + '</h2></center>';
+      html[++h] = '<table width="60%" class="center">';
+      html[++h] = '<tr>';
+      html[++h] = '<th></th>';
+      for ( var j = 0; j < ordinates.length; j++ ) { 
+        html[++h] = '<th>' + ordinates[j] + '</th>';
+      } 
+      html[++h] = '</tr>';
+      for ( var k = 0; k < matrix.length; k++ ) {
+        html[++h] = '<tr>';
+        var maturity = matrix[k][0];
+        var vols     = matrix[k][1];
+        html[++h] = '<td class="description" align="center">' + maturity + '</td>';
+        for ( var j = 0; j < ordinates.length; j++ ) { 
+          var ordinate = ordinates[j];
+          if ( vols[ordinate] ) {
+            html[++h] = '<td align="right">' + parseFloat(vols[ordinate]).toFixed(2) + '&nbsp;</td>';
+          }
+          else {
+            html[++h] = '<td></td>';
+          }
+        }
+        html[++h] = '</tr>';
+      }
+      html[++h] = '</table>';
+      html[++h] = '<br>';
+    }
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showXML( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/xmlfile2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+</script>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#show_matrix">Show Matrix</a>
+  </li>
+  <li>
+    <a href="#show_xml">Show XML</a>
+  </li>
+  <li>
+    <a href="#goto_script">Go to Script</a>
+  </li>
+  <li>
+    <a href="#goto_session">Go to Session</a>
+  </li>
+</ul>
+
+<div id="title">Market Data Uploads</div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<div style="clear: both;"></div>
+
+<button class="button" style="float: left;" id="refresh"> Refresh </button>
+
+<p>
+
+<div class="jqmWindow" id="stdout"></div>
+
+<div id="dummytrigger" upload_id="" script_id="" session_id="" path="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ID</th>
+  <th>TIMESTAMP</th>
+  <th>CHANNEL</th>
+  <th>STATUS</th>
+  <th># NOT IMPORTED</th>
+  <th>XML SIZE</th>
+  <th>USER</th>
+  <th>GROUP</th>
+  <th>ACTION</th>
+  <th>DATE</th>
+  <th>MDS</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>

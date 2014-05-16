@@ -1,0 +1,50 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+unless ( exists $extra_indexes{ $schema } ) {
+  $extra_indexes{ $schema } = Mx::Database::Index->retrieve_extra_indexes( schema => $schema, oracle => $oracle, config => $config, logger => $logger );
+}
+
+my $schema_fin = $config->FIN_DBUSER;
+unless ( exists $murex_indexes{ $schema_fin } ) {
+  $murex_indexes{ $schema_fin } = Mx::Database::Index->retrieve_murex_indexes( oracle => $oracle, config => $config, logger => $logger );
+}
+
+my @list = (); my @index_count = ();
+unless( $type eq 'murex' && $schema ne $schema_fin ) {
+  my ( $existing_indexes, $existing_tables ) = Mx::Database::Index->retrieve_existing_indexes( schema => $schema, oracle => $oracle, config => $config, logger => $logger );
+
+  my $indexes_ref = ( $type eq 'extra' ) ? $extra_indexes{ $schema } : $murex_indexes{ $schema_fin };
+
+  my $total_nr_indexes = 0; my $nr_existing_indexes = 0; my $nr_missing_indexes = 0;
+  foreach my $index ( values %{$indexes_ref} ) {
+    $index->check( existing_indexes => $existing_indexes, existing_tables => $existing_tables ) ? $nr_existing_indexes++ : $nr_missing_indexes++;
+
+    $total_nr_indexes++;
+  }
+
+  push @index_count, { description => 'total',    count => $total_nr_indexes    };
+  push @index_count, { description => 'existing', count => $nr_existing_indexes };
+  push @index_count, { description => 'missing',  count => $nr_missing_indexes  };
+
+  @list = map { $_->TO_JSON } values %{$indexes_ref};
+
+  my $nr_undefined_indexes = 0;
+  if ( $type eq 'extra' ) {
+    foreach my $index ( values %{$existing_indexes} ) {
+      next if $index->type ne 'extra' or $index->status eq $Mx::Database::Index::STATUS_DEFINED;
+      push @list, $index->TO_JSON;
+      $nr_undefined_indexes++;
+    }
+
+    push @index_count, { description => 'undefined',  count => $nr_undefined_indexes  };
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list }, index_count => [ @index_count ] } );
+</%init>
+<%args>
+$schema
+$type
+</%args>

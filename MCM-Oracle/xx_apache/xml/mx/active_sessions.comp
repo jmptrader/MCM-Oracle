@@ -1,0 +1,25 @@
+<%init>
+my $result = $m->cache->get('active_sessions');
+
+if ( ! defined $result ) {
+  my %active_sessions = ();
+ 
+  map { $_->sessions_async } @handles;
+
+  my @sessions = ();
+  foreach my $handle ( @handles ) {
+    push @sessions, $handle->poll_async;
+  }
+
+  foreach my $session ( @sessions ) {
+    $active_sessions{ $session->mx_sessionid }                   = [ $session->pid, $session->mx_pid ];
+    $active_sessions{ $session->hostname . ':' . $session->pid } = [ $session->mx_sessionid, $session->mx_pid ];
+  }
+
+  $result = \%active_sessions;
+
+  $m->cache->set( 'active_sessions', $result, '1 min' );
+}
+
+return $result;
+</%init>

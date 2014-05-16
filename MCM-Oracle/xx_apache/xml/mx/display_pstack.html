@@ -1,0 +1,41 @@
+<H2>corefile of session #<% $session_id %></H2>
+<BR>
+% print @txt;
+<BR>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mnavigate('<% $hist_url %>', { <% $nav_args %> })">
+
+<%init>
+my $pstack_file = $config->COREDIR . '/' . $session_id . '.pstack';
+my @txt;
+if ( open FH, $pstack_file ) {
+  while ( my $line = <FH> ) {
+    my $oline;
+    if ( $line =~ /^\s*---.+---\s*$/ ) {
+        $oline = "<B>$line</B><BR>\n";
+    }
+    elsif ( $line =~ /^ (\w{8}) (int|bool|void )?([^(]+)(.+)$/ ) {
+        $oline = "<TT><font color='green'>$1</font> <font color='red'>$2</font><font color='blue'>$3</font><font color='black'>$4</font></TT><br>";
+    } 
+    else {
+        $oline = "<TT>$line</TT><BR>\n";
+    }
+    push @txt, $oline;
+  }
+  close(FH);
+}
+else {
+  push @txt, "<H2>$pstack_file cannot be opened.</H2>";
+}
+
+my @nav_args = (); my $nav_args = '';
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'session_id' or $k eq 'hist_url'; 
+  push @nav_args, "$k:'$v'";
+}
+$nav_args = join ',', @nav_args;
+</%init>
+
+<%args>
+$session_id
+$hist_url
+</%args>

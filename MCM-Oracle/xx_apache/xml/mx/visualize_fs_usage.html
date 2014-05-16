@@ -1,0 +1,97 @@
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_fs_usage.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_fs_usage.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_fs_usage.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_fs_usage.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<p>
+% for ( my $i = -1; $i <= $#app_servers; $i++ ) {
+%   next unless my $usage_file = shift @usage_files;
+%   my $hostname = $app_servers[$i] if $i >= 0;
+<H2><% ( $i == -1 ) ? "NFS filesystem usage" : "Local filesystem usage on $hostname" %></H2>
+<P>
+<IMG SRC="<% $usage_file %>?<% time() %>">
+% }
+
+<%init>
+my @filesystems = Mx::Filesystem->retrieve_all( historize => 1, logger => $logger, config => $config );
+
+my @nfs_names = (); my @local_names = (); my @local_solaris_names = (); my @local_linux_names = ();
+foreach my $filesystem ( @filesystems ) {
+  SWITCH: {
+    $filesystem->type eq $Mx::Filesystem::TYPE_NFS           && do { push @nfs_names, $filesystem->name; last SWITCH; };
+    $filesystem->type eq $Mx::Filesystem::TYPE_LOCAL         && do { push @local_names, $filesystem->name; last SWITCH; };
+    $filesystem->type eq $Mx::Filesystem::TYPE_LOCAL_SOLARIS && do { push @local_solaris_names, $filesystem->name; last SWITCH; };
+    $filesystem->type eq $Mx::Filesystem::TYPE_LOCAL_LINUX   && do { push @local_linux_names, $filesystem->name; last SWITCH; };
+  };
+}
+
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+my @colors = qw( FF0000 000000 0000FF 006633 00FFFF 9999FF FFFF00 FF66FF 660066 666666 FF3399 666600 00FF00 );
+
+my $nr_seconds;
+SWITCH: {
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $nr_seconds = 24 * 3600;
+};
+
+my @usage_files = ();
+
+my @graph_options = (
+  imgformat   => $image_format,
+  width       => $config->GRAPH_WIDTH,
+  height      => $config->GRAPH_HEIGHT,
+  start       => time() - $nr_seconds,
+  end         => time(),
+  lower_limit => 0,
+  upper_limit => 100
+);
+
+for ( my $i = -1; $i <= $#app_servers; $i++ ) {
+  my $collector_name = ( $i == -1 ) ? 'app_server_nfs' : 'app_server_' . $i . '_fs';
+  my $collector = Mx::Collector->new( name => $collector_name, config => $config, logger => $logger );
+
+  unless ( -f $collector->rrdfile ) {
+    push @usage_files, 0;
+    next;
+  }
+
+  my $rrd = RRDTool::OO->new( file => $collector->rrdfile );
+
+  my $usage_file = "/tmp/${collector_name}_${range}" . $image_extension;
+
+  my @labels = ();
+  if ( $i == -1 ) {
+    @labels = @nfs_names;
+  } 
+  elsif ( $i == 0 ) {
+    @labels = ( @local_names, @local_linux_names );
+  }
+  else {
+    @labels = ( @local_names, @local_solaris_names );
+  }
+
+  my @options = @graph_options;
+
+  for ( my $j = 0; $j <= $#labels; $j++ ) {
+    my $label = $labels[$j];
+    my $color = $colors[$j];
+    push @options, (
+        draw  => { dsname => $label, color => $color, legend => $label }
+    );
+  }
+
+  $rrd->graph( image => $usage_file, @options );
+
+  push @usage_files, $usage_file;
+}
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

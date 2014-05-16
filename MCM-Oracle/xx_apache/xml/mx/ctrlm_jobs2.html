@@ -1,0 +1,29 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @raw_jobs = $db_audit->retrieve_ctrlm_jobs();
+
+my @jobs = ();
+foreach my $job ( @raw_jobs ) {
+    push @jobs, {
+      0  => $job->[1],
+      1  => $job->[2],
+      2  => $job->[3],
+      3  => $job->[4],
+      4  => $job->[5],
+      5  => $job->[6],
+      6  => $job->[7],
+      7  => $job->[9],
+      8  => $job->[10],
+      9  => $job->[11],
+      10 => $job->[12],
+      DT_RowId => $job->[1] . ':' . $job->[2]
+    };
+}
+
+my $nr_jobs = @jobs;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@jobs }, nr_jobs => $nr_jobs } );
+</%init>

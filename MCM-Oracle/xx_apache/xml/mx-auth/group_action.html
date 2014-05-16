@@ -1,0 +1,71 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="feedback" class="grid_12">
+    <% $feedback %>
+  </div>
+
+  <div id="actions" class="grid_12">
+    <form action="groups.html" method=POST>
+      <input type="submit" class="button" value=" Go Back ">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $feedback;
+if ( $name ) {
+  if ( $action =~ /insert/i ) {
+    my $group = Mx::Auth::Group->new( name => $name, type => $type, description => $description, config_data => $config_data, db => $auth_db, config => $config, logger => $logger);
+    if ( $group->insert ) {
+      $feedback = "Group $name has been inserted";
+    }
+    else {
+      $feedback = "Group $name could not be inserted";
+    }
+  }
+  elsif ( $action =~ /update/i ) {
+    my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $group->retrieve;
+    $group->name( $name );
+    $group->type( $type );
+    $group->description( $description );
+    $group->config_data( $config_data );
+    if ( $group->update ) {
+      $feedback = "Group $name has been updated";
+    } 
+    else {
+      $feedback = "Group $name could not be updated";
+    }
+  }
+  elsif ( $action =~ /delete/i ) {
+    my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    if ( $group->delete ) {
+      $feedback = "Group $name has been deleted";
+    } 
+    else {
+      $feedback = "Group $name could not be deleted";
+    }
+  }
+}
+else {
+  $feedback = "No name specified";
+}
+</%init>
+
+<%args>
+$action
+$id          => 0
+$name        => ''
+$type        => ''
+$description => ''
+$config_data => ''
+</%args>

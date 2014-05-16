@@ -1,0 +1,570 @@
+<script type="text/javascript">
+var oTable; var tid1; var doRefresh = false; var killing = false;
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        displaySessionCount( json.session_count );
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        $('.tiptip').tipTip();
+        checkRights();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "oColVis":      { "aiExclude": [ 16,17,21 ] },
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/sessions2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "600px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnRender": function ( o, val ) {
+        return '<a class="tiptip" href="#" title="session id: ' + o.aData[14] + '" ' + ( o.aData[21] == 1 ? 'style="color: red;"' : '' ) + '>' + o.aData[0] + '</a>';
+        }, "aTargets": [ 0 ] },
+
+      { "fnRender": function ( o, val ) {
+        if ( o.aData[16] == null ) {
+          return '';
+        }
+        if ( o.aData[5] == null ) {
+          return o.aData[16];
+        }
+        return '<a class="tiptip" href="/mx-auth/user_details.html?name=' + o.aData[16] + '" title="user id: ' + o.aData[16] + ' - # sessions: ' + o.aData[17] + '">' + o.aData[5] + '</a>';
+        }, "aTargets": [ 5 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_percent_cpu %>" );
+        }, "aTargets": [9] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_percent_mem %>" );
+        }, "aTargets": [10] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_vsize %>" );
+        }, "aTargets": [11] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_cpusec %>" );
+        }, "aTargets": [13] },
+
+      { "sClass": "center",       "aTargets": [ 0,1,8,14,15 ] },
+      { "sClass": "ralign",       "aTargets": [ 9,10,11,12,13 ] },
+
+      { "bVisible": false,        "aTargets": [ 14,15,16,17,18,19,20,21 ] },
+      { "sWidth": "60px",         "aTargets": [ 0,9,10 ] },
+      { "sWidth": "70px",         "aTargets": [ 13 ] },
+      { "sWidth": "90px",         "aTargets": [ 1,2,6,7,11,12,14,15 ] },
+      { "sWidth": "150px",        "aTargets": [ 5,8 ] },
+      { "sWidth": "200px",        "aTargets": [ 3,4 ] },
+
+      { "bUseRendered": false,    "aTargets": [ 0 ] },
+
+      { "sType": "num-html",      "aTargets": [ 0 ] },
+      { "sType": "html",          "aTargets": [ 5 ] },
+      { "sType": "numeric",       "aTargets": [ 9,10,14 ] },
+      { "sType": "formatted-num", "aTargets": [ 11,12,13,15 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 9,10,11,12,13 ] }
+
+    ]
+  } );
+
+  installHover();
+
+  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#refresh').live( "click", function() {
+    refresh();
+  } );
+
+  $('#select').live( "click", function() {
+    $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
+  } );
+
+  $('#unselect').live( "click", function() {
+    $('#result tbody tr').removeClass('row_selected');
+  } );
+
+  $('#kill').live( "click", function() {
+    var sessions = selectedSessions();
+
+    if ( sessions.length == 0 ) {
+      jAlert('No sessions selected.', 'Kill Sessions');
+      return;
+    }
+
+    jConfirm('Number of sessions selected: ' + sessions.length + '. Are you sure?', 'Kill Sessions', function(r) {
+      if ( r == true ) {
+        $('#jqmTitleText').text( 'kill sessions' );
+        $('#modalWindow').jqmShow();
+        $('#jqmContent').css( 'width', '600px' );
+        $('#jqmContent').css( 'height', '200px' );
+        $('.jqmWindow').css( 'display', 'block' );
+        killing = true;
+        killSessions( sessions );
+      }
+    } );
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function displaySessionCount( aList ) {
+  var html = [], h = -1; 
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+
+  for ( var i = 0; i < aList.length; i++ ) {
+    html[++h] = '<tr><td align=right>';
+
+    if ( aList[i].hostname == 'total' ) {
+      html[++h] = 'Total number of sessions';
+    }
+    else if ( aList[i].hostname == 'total_users' ) {
+      html[++h] = 'Number of user sessions';
+    }
+    else {
+      html[++h] = aList[i].hostname;
+    }
+
+    html[++h] = ':</td><td align=right>';
+    html[++h] = aList[i].count;
+    html[++h] = '</td></tr>';
+  }
+
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#sessioncount')[0].innerHTML = html.join('');
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('|');
+      var sessionid = result[0];
+      var hostname  = result[1];
+      var pid       = result[2];
+      var mx_pid    = result[3];
+      $('#dummytrigger').attr( 'sessionid', sessionid );
+      $('#dummytrigger').attr( 'hostname', hostname );
+      $('#dummytrigger').attr( 'pid', pid );
+      $('#dummytrigger').attr( 'mx_pid', mx_pid );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var sessionid  = $('#dummytrigger').attr('sessionid');
+  var hostname   = $('#dummytrigger').attr('hostname');
+  var pid        = $('#dummytrigger').attr('pid');
+  var mx_pid     = $('#dummytrigger').attr('mx_pid');
+  var action     = $('#dummytrigger').attr('action');
+
+  var name;
+  if ( sessionid != 0 ) {
+    name = 'session #' + sessionid;
+  }
+  else {
+    name = 'pid ' + pid + ' on ' + hostname;
+  }
+
+  if ( action == 'show_mms' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showMMS( sessionid );
+  }
+  else if ( action == 'show_mxtiming' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showMXTiming( pid, mx_pid, hostname );
+  }
+  else if ( action == 'show_stdout' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showSTDOUT( sessionid );
+  }
+  else if ( action == 'show_env' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showEnv( pid, hostname );
+  }
+  else if ( action == 'show_command' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showCommand( pid, hostname );
+  }
+  else if ( action == 'goto_hist' ) {
+    $modal.jqmHide();
+    mnavigate( 'histsession_details.html', { 'session_id': sessionid, 'hist_url': 'sessions3.html' } );
+  }
+  else if ( action == 'kill_session' ) {
+    jConfirm('Kill ' + name + '. Are you sure?', 'Kill Session', function(r) {
+      if ( r == true ) {
+          $('#jqmTitleText').text( 'kill session' );
+          $modal.jqmShow();
+          $('#jqmContent').css( 'width', '600px' );
+          $('#jqmContent').css( 'height', '200px' );
+          $('.jqmWindow').css( 'display', 'block' );
+          killing = true;
+          killSessions( [ { 'sessionid': sessionid, 'pid': pid, 'hostname': hostname } ] );
+      }
+      else {
+        $modal.jqmHide();
+      }
+    } );
+  }
+}
+
+function unloadModal( hash ) {
+  if ( killing == true ) {
+    jConfirm('Do you want to interrupt the kill sequence?', 'Kill Session', function(r) {
+      if ( r == true ) {
+        killing = false;
+      }
+    } );
+  }
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  if ( doRefresh ) {
+    doRefresh = false;
+    refresh();
+  }
+}
+
+function showSTDOUT( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_stdout2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br>' + data.data;
+    }
+  } );
+}
+
+function showMMS( sessionid ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_mms2.html',
+    data:     { 'id': sessionid },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = data.data;
+    }
+  } );
+}
+
+function showMXTiming( pid, mx_pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_timings2.html',
+    data:     { 'pid': pid, 'mx_pid': mx_pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="90%">';
+    html[++h] = '<tr><th>TIMESTAMP</th><th>ID</th><th>CONTEXT</th><th>COMMAND</th><th>ELAPSED</th><th>CPU</th><th>RDB+COM</th></tr>';
+    for ( var i = 0; i < data.timings.length; i++ ) {
+      var row = data.timings[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td align="center">' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td align="center">' + row[3] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[4] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[5] + '&nbsp;</td>';
+      html[++h] = '<td align="right">'  + row[6] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '<tr><td></td><td></td><td></td><td></td>';
+    html[++h] = '<td align="right"><b>'  + data.total_elapsed + '</b>&nbsp;</td>';
+    html[++h] = '<td align="right"><b>'  + data.total_cpu + '</b>&nbsp;</td>';
+    html[++h] = '<td align="right"><b>'  + data.total_rdb + '</b>&nbsp;</td>';
+    html[++h] = '</tr>';
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showEnv( pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_env2.html',
+    data:     { 'pid': pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="90%">';
+    html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+    for ( var i = 0; i < data.length; i++ ) {
+      html[++h] = '<tr><td class="description" width="20%" nowrap>' + data[i].name +  '</td><td>' + data[i].value + '</td></tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showCommand( pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_cmdline2.html',
+    data:     { 'pid': pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '900px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div style="white-space: nowrap;">';
+    for ( var i = 0; i < data.length; i++ ) {
+      var parts = data[i].split(':');
+      var first_part = parts.shift();
+      html[++h] = '<b>' + first_part + '</b>';
+      if ( parts.length > 0 ) {
+        html[++h] = ':' + '<span style="color: green;">' + parts.join(':') + '</span>';
+      }
+      html[++h] = '<br>'; 
+    }
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+
+function killSessions( sessions ) {
+  var session;
+  if ( ( killing == true ) && ( session = sessions.shift() ) ) {
+    var sessionid = session.sessionid;
+    var hostname  = session.hostname;
+    var pid       = session.pid;
+
+    $('#jqmContent').append( 'pid ' + pid + ' on ' + hostname + '...' );
+    $('#modalWindow').scrollTop(
+      $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+    );
+
+    tid1 = setInterval( displayWaitString, 300 );
+
+    var request = $.ajax({
+      type:     'POST',
+      dataType: 'json',
+      url:      '/mx/kill_session.html',
+      data:     { 'hostname': hostname, 'pid': pid, 'mx_sessionid': sessionid },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        alert( textStatus + ': ' + errorThrown );
+      }
+    } );
+
+    request.done( function( data ) {
+      clearInterval(tid1);
+      $('#jqmContent').append( data.message + '<br>' );
+      $('#modalWindow').scrollTop(
+            $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+      );
+      killSessions( sessions );
+    } );
+  }
+  else {
+    killing = false;
+  }
+
+  doRefresh = true;
+}
+
+function displayWaitString() {
+  $('#jqmContent').append( '. ' );
+}
+
+function selectedSessions() {
+  var sessions = [];
+  $('table#result tbody tr.row_selected').each( function( i, row ) {
+    var data = oTable.fnGetData( this );
+
+    var el = { sessionid: data[14], hostname: data[1], pid: data[0] };
+    sessions.push( el );
+  } );
+
+  return sessions;
+}
+</script>
+
+<div id="title">Sessions on <% $ENV{MXENV} %></div>
+
+<div id="sessioncount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime"></div>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#show_mms">Show Messages</a>
+  </li>
+  <li>
+    <a href="#show_mxtiming">Show MXTIMING</a>
+  </li>
+  <li>
+    <a href="#show_stdout">Show STDOUT/STDERR</a>
+  </li>
+  <li>
+    <a href="#show_env">Show Environment Variables</a>
+  </li>
+  <li>
+    <a href="#show_command">Show Command</a>
+  </li>
+  <li>
+    <a href="#goto_hist">Goto Historical Session</a>
+  </li>
+  <li>
+    <a href="#kill_session" right="kill_session">Kill Session</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" sessionid="" hostname="" pid="" mx_pid="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>PID</th>
+  <th>HOST</th>
+  <th>SCRIPT TYPE</th>
+  <th>NICK</th>
+  <th>SCRIPT NAME</th>
+  <th>USER</th>
+  <th>MX USER</th>
+  <th>MX GROUP</th>
+  <th>START TIME</th>
+  <th class="tiptip" title="MAX: <% $max_percent_cpu %>">% CPU</th>
+  <th class="tiptip" title="MAX: <% $max_percent_mem %>">% MEM</th>
+  <th class="tiptip" title="MAX: <% $max_vsize %>">% VSIZE</th>
+  <th>RSS</th>
+  <th class="tiptip" title="MAX: <% $max_cpusec %>">CPU SEC</th>
+  <th>SESSION ID</th>
+  <th>RUNTIME</th>
+  <th>WINUSER</th>
+  <th>SESSION COUNT</th>
+  <th>CLIENT HOST</th>
+  <th>CLIENT IP</th>
+  <th>MX PID</th>
+  <th>MMS</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<p>
+
+<button class="table_button" id="refresh"> Refresh </button>
+<button class="table_button" id="select"> Select All </button>
+<button class="table_button" id="unselect"> Unselect All </button>
+<button class="table_button" id="kill" right="kill_session"> Kill Selected </button>
+
+<%init>
+my $max_percent_cpu = "1.0";
+my $max_percent_mem = "2.0";
+my $max_vsize       = "3,000,000";
+my $max_cpusec      = "1,000";
+</%init>

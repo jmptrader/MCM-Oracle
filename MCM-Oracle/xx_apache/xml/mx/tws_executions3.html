@@ -1,0 +1,327 @@
+<script type="text/javascript">
+var oTable; var tws_date;
+$(document).ready( function() {
+  getTWSDates();
+
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      tws_date = $('#datelist').val();
+      aoData.push({ "name": "tws_date", "value": tws_date });
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayExecutionCount( json.total_nr_executions, json.nr_failed_executions, json.nr_active_executions );
+        displayRefreshTime();
+        installHover();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/tws_executions2.html',
+    "bPaginate":    false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          if ( sData != 0 ) {
+            $(nTd).css('background-color', '#FF0000')
+          }
+        }, "aTargets": [ 8 ] },
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          if ( sData != 0 ) {
+            $(nTd).addClass('command')
+          }
+        }, "aTargets": [ 13 ] },
+      { "sClass": "center",       "aTargets": [ 0, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12 ] },
+
+      { "bVisible": false,        "aTargets": [ 0, 1, 10, 11, 12, 14, 15 ] },
+
+      { "sWidth": "30px",         "aTargets": [ 0, 8 ] },
+      { "sWidth": "50px",         "aTargets": [ 1, 4, 9 ] },
+      { "sWidth": "100px",        "aTargets": [ 4, 7 ] },
+      { "sWidth": "150px",        "aTargets": [ 5, 6, 10, 11, 12 ] },
+      { "sWidth": "200px",        "aTargets": [ 3 ] },
+      { "sWidth": "320px",        "aTargets": [ 2 ] },
+      { "sWidth": "1300px",       "aTargets": [ 13 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 7, 8 ] }
+    ],
+
+    "aaSorting":    [[ 5, "desc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#twsdates').change( function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+
+  $('#relaunch_form').submit( function() {
+    popupWindow( '', 'RELAUNCH', '1500', '800', 'yes', 'center' );
+    this.target = 'RELAUNCH';
+  } );
+} );
+
+function getTWSDates() {
+    var request = $.ajax({
+      type:     'GET',
+      url:      '/mx/tws_dates.html',
+      async:    false,
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        alert( textStatus + ': ' + errorThrown );
+      }
+    });
+
+    request.done( function( aList ) {
+      var html = [], h = -1;
+
+      html[++h] = 'Date:&nbsp;<select id="datelist">';
+
+      for ( var i = 0; i < aList.length; i ++ ) {
+          html[++h] = '<option value="' + aList[i] + '">' + aList[i] + '</option>';
+      }
+
+      html[++h] = '</select>';
+
+      $('#twsdates')[0].innerHTML = html.join('');
+    } );
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function displayExecutionCount( total_nr_executions, nr_failed_executions, nr_active_executions ) {
+  var html = [], h = -1;
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Total number of executions:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = total_nr_executions;
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Active executions:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nr_active_executions;
+  html[++h] = '</td></tr>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Failed executions:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nr_failed_executions;
+  html[++h] = '</td></tr>';
+  html[++h] = '</td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#executioncount')[0].innerHTML = html.join('');
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split(':');
+      var execution_id = result[0];
+      var name = result[1];
+      var jobstream = result[2];
+      var project = result[3];
+      var command = $(el).children('.command').text();
+      $('#dummytrigger').attr( 'execution_id', execution_id );
+      $('#dummytrigger').attr( 'name', name );
+      $('#dummytrigger').attr( 'jobstream', jobstream );
+      $('#dummytrigger').attr( 'project', project );
+      $('#dummytrigger').attr( 'command', command );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var execution_id = $('#dummytrigger').attr('execution_id');
+  var name         = $('#dummytrigger').attr('name');
+  var jobstream    = $('#dummytrigger').attr('jobstream');
+  var project      = $('#dummytrigger').attr('project');
+  var command      = $('#dummytrigger').attr('command');
+  var action       = $('#dummytrigger').attr('action');
+
+  if ( action == 'job_log' ) {
+    if ( ! project || /^\s*$/.test(project) ) {
+      $('#jqmTitleText').text( jobstream + ' - ' + name );
+    }
+    else {
+      $('#jqmTitleText').text( project + ' - ' + jobstream + ' - ' + name );
+    }
+    $modal.jqmShow();
+    showJobLog( execution_id, name, jobstream, project );
+  }
+  else if ( action == 'full_log' ) {
+    $modal.jqmHide();
+    if ( project && ! /^\s*$/.test(project) ) {
+      showFullLog( jobstream, project );
+    }
+  }
+  else if ( action == 'relaunch' ) {
+    $modal.jqmHide();
+    relaunch( execution_id, command );
+  }
+  else if ( action == 'confirm' ) {
+    $('#jqmTitleText').text( '' );
+    $modal.jqmShow();
+    confirm( execution_id );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function showJobLog( execution_id ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/tws_stdout2.html',
+    data:     { 'id': execution_id },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '800px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br><br>' + data.data;
+    }
+  } );
+}
+
+function showFullLog( jobstream, project ) {
+  $("#logging_name").val( jobstream + '.log' );
+  $("#logging_dir").val( tws_date );
+  $("#logging_project").val( project );
+
+  $('#logging_form').submit();
+}
+
+function relaunch( execution_id, command ) {
+  $("#relaunch_command").val( command );
+
+  $('#relaunch_form').submit();
+}
+</script>
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="name" id="logging_name" value="">
+  <input type="hidden" name="dir" id="logging_dir" value="">
+  <input type="hidden" name="project" id="logging_project" value="">
+  <input type="hidden" name="navigation" value="0">
+</form>
+
+<form id="relaunch_form" action="/mx/webcommand.html" method="post">
+  <input type="hidden" name="command" id="relaunch_command" value="">
+</form>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#job_log">Show Job Log</a>
+  </li>
+  <li>
+    <a href="#full_log">Show Full Log</a>
+  </li>
+  <li>
+    <a href="#relaunch">Relaunch</a>
+  </li>
+  <li>
+    <a href="#confirm">Confirm Success</a>
+  </li>
+</ul>
+
+<div id="title">TWS Executions</div>
+
+<div id="executioncount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="twsdates">Date: </div>
+
+<div style="clear: both;"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<p>
+
+<div class="jqmWindow" id="stdout"></div>
+
+<div id="dummytrigger" execution_id="" name="" jobstream="" project="" command="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ID</th>
+  <th>JOB ID</th>
+  <th>NAME</th>
+  <th>JOBSTREAM</th>
+  <th>MODE</th>
+  <th>STARTTIME</th>
+  <th>ENDTIME</th>
+  <th>DURATION</th>
+  <th>RC</th>
+  <th>STDOUT</th>
+  <th>PLAN DATE</th>
+  <th>TWS DATE</th>
+  <th>BUS DATE</th>
+  <th>COMMAND</th>
+  <th>PROJECT</th>
+  <th>JOB NR</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<br>
+
+<button class="button" id="refresh"> Refresh </button>

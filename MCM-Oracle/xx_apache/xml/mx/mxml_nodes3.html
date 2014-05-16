@@ -1,0 +1,296 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      aoData.push({ "name": "refresh", "value": 1 });
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        installModal();
+        installHover();
+        installContextMenu();
+      } );
+    },
+    "sDom":         'r<"clear">Cf<"clear">Wtip',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/mxml_nodes2.html',
+    "bPaginate":    true,
+    "iDisplayLength": 50,
+    "sPaginationType": "full_numbers",
+    "bInfo":        true,
+    "bStateSave":   false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 5,7 ] },
+      { "sClass": "ralign",       "aTargets": [ 4,8,9 ] },
+
+      { "sWidth": "20px",         "aTargets": [ 5 ] },
+      { "sWidth": "35px",         "aTargets": [ 7 ] },
+      { "sWidth": "45px",         "aTargets": [ 4 ] },
+      { "sWidth": "60px",         "aTargets": [ 8,9 ] },
+      { "sWidth": "75px",         "aTargets": [ 0 ] },
+      { "sWidth": "130px",        "aTargets": [ 3,11 ] },
+      { "sWidth": "220px",        "aTargets": [ 6 ] },
+      { "sWidth": "280px",        "aTargets": [ 1 ] },
+      { "sWidth": "330px",        "aTargets": [ 2,10 ] },
+
+      { "sType": "formatted-num", "aTargets": [ 4,8,9 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 4,8,9 ] }
+    ],
+
+    "aaSorting":    [[ 4, "desc" ], [ 5, "asc" ] ],
+
+    "oColumnFilterWidgets": {
+        aiExclude: [ 2,4,5,6,7,8,9,10,11 ]
+    }
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  installResetButton();
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function showCriteria( taskname ) {
+  $('#jqmContent').css( 'width', '300px' );
+  $('#jqmContent').css( 'height', '200px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  var workflow_filter = Array();
+  $('div.column-filter-widget:eq(0) a.filter-term').each( function( index ) {
+    workflow_filter[index] = $(this).text();
+  } );
+
+  var sheetname_filter = Array();
+  $('div.column-filter-widget:eq(1) a.filter-term').each( function( index ) {
+    sheetname_filter[index] = $(this).text();
+  } );
+
+  var tasktype_filter = Array();
+  $('div.column-filter-widget:eq(3) a.filter-term').each( function( index ) {
+    tasktype_filter[index] = $(this).text();
+  } );
+
+  var html = [], h = -1; var d = new Date();
+  var datestring = d.getFullYear() + '-' + ( '0' + ( d.getMonth() + 1 ) ).slice(-2) + '-' + ( '0' + d.getDate() ).slice(-2);
+  html[++h] = '<p><div>';
+  html[++h] = '<form onsubmit="$(\'#modalWindow\').jqmHide(); return msubmit(this, \'mxml_messages3.html\');">';
+  html[++h] = '<table border=0">';
+  html[++h] = '<input type="hidden" name="taskname" value="' + taskname + '"></input>';
+  $.each( workflow_filter, function( index, value ) {
+    html[++h] = '<input type="hidden" name="workflows" value="' + value + '"></input>';
+  } );
+  $.each( sheetname_filter, function( index, value ) {
+    html[++h] = '<input type="hidden" name="sheetnames" value="' + value + '"></input>';
+  } );
+  $.each( tasktype_filter, function( index, value ) {
+    html[++h] = '<input type="hidden" name="tasktypes" value="' + value + '"></input>';
+  } );
+  html[++h] = '<tr><td>From Date:</td>';
+  html[++h] = '<td><input type="text" class="date-pick dp-applied" name="fromdate" id="date1" value="' + datestring + '"></input></td></tr>';
+  html[++h] = '<tr><td>To Date:</td>';
+  html[++h] = '<td><input type="text" class="date-pick dp-applied" name="todate" id="date2" value="' + datestring + '"></input></td></tr>';
+  html[++h] = '<tr><td>Status Taken:</td>';
+  html[++h] = '<td><select name="status_taken">';
+  html[++h] = '<option value="Y" selected="selected">Y</option>';
+  html[++h] = '<option value="N">N</option>';
+  html[++h] = '<option value="*">*</option>';
+  html[++h] = '</select></td></tr>';
+  html[++h] = '<tr><td>Include archive:</td>';
+  html[++h] = '<td><input type="checkbox" name="include_archive" value="1"></input></td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '<p><input type="submit" class="button" id="searchbutton" value="Start Search"></input>';
+  html[++h] = '</form>';
+
+  $('#jqmContent')[0].innerHTML = html.join('');
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'}); 
+  $('#searchbutton').focus();
+}
+
+
+function showAlerts( taskname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/mxml_task2.html',
+    data:     { 'taskname': taskname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '400px' );
+  $('#jqmContent').css( 'height', '200px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      html[++h] = '<br><br>';
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right"># messages warning threshold:</td>';
+      html[++h] = '<td>' + data.data["0"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right"># messages failure threshold:</td>';
+      html[++h] = '<td>' + data.data["1"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right">timeout warning threshold:</td>';
+      html[++h] = '<td>' + data.data["2"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right">timeout failure threshold:</td>';
+      html[++h] = '<td>' + data.data["3"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right">warning address:</td>';
+      html[++h] = '<td>' + data.data["4"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '<tr>';
+      html[++h] = '<td align="right">failure address:</td>';
+      html[++h] = '<td>' + data.data["5"] + '</td>';
+      html[++h] = '</tr>';
+
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function installContextMenu() {
+  oTable.$('tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var taskname = $(el).attr('id');
+      $('#dummytrigger').attr( 'taskname', taskname );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var taskname = $('#dummytrigger').attr('taskname');
+  var action   = $('#dummytrigger').attr('action'); 
+
+  if ( action == 'messages' ) {
+    $('#jqmTitleText').text( taskname );
+    $modal.jqmShow();
+
+    showCriteria( taskname ); 
+  }
+  else if ( action == 'alerts' ) {
+    $('#jqmTitleText').text( taskname );
+    $modal.jqmShow();
+
+    showAlerts( taskname );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installResetButton() {
+  $('.column-filter-widgets').append( $('<div class="column-filter-widget"><button class="button">Reset Selections</button></div>').click( function() {
+    $( '#result_wrapper a.filter-term' ).click();
+    $( '#result_wrapper .dataTables_filter input' ).val( '' ).keyup;
+  } ) );
+}
+</script>
+
+<div id="title">MxML Nodes</div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<p>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#messages">Show Messages</a>
+  </li>
+  <li>
+    <a href="#alerts">Alert Configuration</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" taskname=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>WORKFLOW</th>
+  <th>SHEETNAME</th>
+  <th>TASKNAME</th>
+  <th>TASKTYPE</th>
+  <th># MSGS</th>
+  <th>I/O</th>
+  <th>NODENAME</th>
+  <th>ID</th>
+  <th>TAKEN YES</th>
+  <th>TAKEN NO</th>
+  <th>TARGET TASK</th>
+  <th>TARGET TYPE</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>

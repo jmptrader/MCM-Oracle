@@ -1,0 +1,20 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @data = ();
+foreach my $call ( $db_audit->retrieve_dtrace( session_id => $id ) ) {
+  push @data, [
+    $call->[1],
+    $call->[2],
+    Mx::Util->separate_thousands( $call->[3] ),
+    ( sprintf "%.3f", $call->[4] / 1000000000 ),
+    ( sprintf "%.3f", $call->[5] / 1000000000 )
+  ];
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => \@data } );
+</%init>
+<%args>
+$id
+</%args>

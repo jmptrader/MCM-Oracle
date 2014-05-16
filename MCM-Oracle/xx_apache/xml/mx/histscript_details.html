@@ -1,0 +1,141 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var path   = $('#dummytrigger').attr('path');
+  var action = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_source' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showSource( path );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showSource( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/script_source2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br>' + data.data;
+    }
+  } );
+}
+
+function showLogging( path ) {
+  $("#logging_path").val( path );
+  $('#logging_form').submit();
+}
+</script>
+
+<h2>Script #<% $script_id %></h2>
+
+<div id="dummytrigger" path="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+  <tr><td class="description" width="20%" nowrap><font color="#FFFFFF"><% $key %>&nbsp;</font></td><td><% ( defined $value ) ? $value : '&nbsp;' %></td></tr>
+% }
+</table>
+<br>
+% if ( $show_statements ) {
+<input type="button" class="table_button" value=" Show Statements " onclick="mnavigate('histlist.html', { object: 'histstatement', script_id: <% $script_id %>, page_nr: 1 }, { <% $nav_args %> } )">
+% }
+<input type="button" class="table_button" value=" Go Back " onClick="mgoback('<% $hist_url %>', { <% $nav_args %> })">
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="path" id="logging_path" value="">
+</form>
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'script_id';
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histscript_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $script = $db_audit->retrieve_script( id => $script_id );
+my @linked_reports = $db_audit->retrieve_linked_dm_reports( script_id => $script_id );
+my @table;
+push @table, 'Script Name'        , $script->[1];
+my $path = $script->[2];
+push @table, 'Path'               , ( -f $path ) ? '<a href="#" onclick="$(\'#dummytrigger\').attr( \'path\', \'' . $path . '\' ); $(\'#dummytrigger\').attr( \'action\', \'show_source\' ); $(\'#modalWindow\').jqmShow(); ">' . $path . '</a>' : $path;
+my $cmdline = $script->[3];
+$cmdline =~ s/\s+-(\S+)\s+([^- ]\S+)/ -$1 <B>$2<\/B>/g;
+push @table, 'Commandline'        , $cmdline;
+push @table, 'Hostname'           , $script->[4];
+push @table, 'PID'                , $script->[5];
+push @table, 'Unix User'          , $script->[6];
+push @table, 'Start Time'         , Mx::Util->convert_time( $script->[7] );
+push @table, 'End Time'           , Mx::Util->convert_time( $script->[8] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $script->[13] ) );
+push @table, 'Exit Code'          , $script->[9];
+if ( @linked_reports ) {
+  push @table, '# Reports'        , '<a href="#" onclick="mnavigate( \'histlist.html\', { object: \'histdmreport\', script_id: \'' . $script_id . '\' }, { ' . $nav_args . ' } );">' . scalar( @linked_reports ) . '</a>';
+}
+push @table, 'Project'            , $script->[10];
+push @table, 'Name'               , $script->[18];
+push @table, 'Jobstream'          , $script->[11];
+push @table, '# CPU Seconds'      , Mx::Util->separate_thousands( $script->[15] );
+push @table, 'Memory Size'        , Mx::Util->convert_bytes( $script->[16] * 1024 );
+push @table, 'Business Date'      , $script->[12];
+push @table, 'Logfile'            , '<a href="#" onclick="showLogging(\'' . $script->[17] . '\');">' . $script->[17] . '</a>';
+
+my $show_statements = $db_audit->script_has_statements( script_id => $script_id );
+</%init>
+
+<%args>
+$script_id
+$hist_url => 'histlist.html'
+</%args>

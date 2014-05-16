@@ -1,0 +1,87 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="feedback" class="grid_12">
+    <% $feedback %>
+  </div>
+
+  <div id="actions" class="grid_12">
+    <form action="environments.html" method=POST>
+      <input type="submit" class="button" value=" Go Back ">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $feedback;
+if ( $name ) {
+  if ( $action =~ /insert/i ) {
+    my $environment = Mx::Auth::Environment->new( name => $name, description => $description, pillar => $pillar, samba_read => $samba_read, samba_write => $samba_write, config_data => $config_data, disabled => $disabled, db => $auth_db, config => $config, logger => $logger);
+    $environment->sybversion( $sybversion );
+    $environment->dbversion( $dbversion );
+    $environment->binversion( $binversion );
+    $environment->contactid( $contactid );
+    if ( $environment->insert ) {
+      $feedback = "Environment $name has been inserted";
+    }
+    else {
+      $feedback = "Environment $name could not be inserted";
+    }
+  }
+  elsif ( $action =~ /update/i ) {
+    my $environment = Mx::Auth::Environment->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $environment->retrieve;
+    $environment->retrieve_extended;
+    $environment->name( $name );
+    $environment->description( $description );
+    $environment->pillar( $pillar );
+    $environment->samba_read( $samba_read );
+    $environment->samba_write( $samba_write );
+    $environment->config_data( $config_data );
+    $environment->disabled( $disabled );
+    $environment->sybversion( $sybversion );
+    $environment->dbversion( $dbversion );
+    $environment->binversion( $binversion );
+    $environment->contactid( $contactid );
+    if ( $environment->update ) {
+      $feedback = "Environment $name has been updated";
+    }
+    else {
+      $feedback = "Environment $name could not be updated";
+    }
+  }
+  elsif ( $action =~ /delete/i ) {
+    my $environment = Mx::Auth::Environment->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    if ( $environment->delete ) {
+      $feedback = "Environment $name has been deleted";
+    }
+    else {
+      $feedback = "Environment $name could not be deleted";
+    }
+  }
+}
+</%init>
+
+<%args>
+$action
+$id          => 0
+$name        => ''
+$description => ''
+$pillar      => ''
+$samba_read  => ''
+$samba_write => ''
+$config_data => ''
+$disabled    => 0
+$sybversion  => ''
+$dbversion   => ''
+$binversion  => ''
+$contactid   => 0
+</%args>

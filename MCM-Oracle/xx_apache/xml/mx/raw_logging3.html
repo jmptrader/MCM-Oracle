@@ -1,0 +1,119 @@
+<script type="text/javascript">
+var oTable; var scrollPos = -1;
+$(document).ready( function() {
+  $.fn.dataTableExt.oPagination.iFullNumbersShowPages = 9;
+
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      aoData.push(
+        { "name": "path", "value": "<% $path %>" }
+      );
+      $.ajax( {
+        dataType: "json",
+        url: sSource,
+        data: aoData,
+        type: "POST",
+        success: function(json) {
+          fnCallback(json.datatables)
+          displayRefreshTime();
+          if ( scrollPos == - 1 ) {
+            scrollPos = $("table#result").height();
+          }
+          $(".dataTables_scrollBody").scrollTop( scrollPos );
+          scrollPos = 0;
+        }
+      } );
+    },
+    "sDom":            'lrtpi<"clear">',
+    "bAutoWidth":      false,
+    "bProcessing":     true,
+    "bServerSide":     true,
+    "sAjaxSource":     '/mx/raw_logging2.html',
+    "bPaginate":       true,
+    "sPaginationType": "full_numbers",
+    "bSort":           false,
+    "bStateSave":      false,
+    "sScrollY":        "900px",
+    "sScrollX":        "100%",
+    "sScrollXInner":   "1650px",
+    "iDisplayStart":   <% $display_start %>,
+    "iDisplayLength":  <% $display_length %>,
+    "aLengthMenu":     [[500, 1000, 2000, -1], [500, 1000, 2000, "All"]],
+
+    "oLanguage": {
+      "oPaginate": {
+        "sFirst":    "<<",
+        "sPrevious": "<",
+        "sNext":     ">",
+        "sLast":     ">>"
+      }
+    },
+
+    "aoColumnDefs": [
+      { "sWidth": "1400px", "aTargets": [ 0 ] }
+    ],
+  } );
+
+  $('button#refresh').live( "click", function() {
+    scrollPos = $(".dataTables_scrollBody").scrollTop();
+    oTable.fnStandingRedraw();
+  } );
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+</script>
+
+<body>
+% if ( $navigation ) { 
+<& navigation.comp &>
+% }
+% else {
+<span style="float: right; padding: 2px;"><input type="button" class="button" value=" Close " onClick="window.close()"></span>
+% }
+
+<div style="float: left;" id="refreshtime"></div>
+
+<div id="title"><% $path %></div>
+
+<table id="result">
+<thead style="display: none;">
+ <tr>
+  <th>Lines</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="button" id="refresh"> Refresh </button>
+% if ( $navigation ) {
+<button class="button" onClick="history.back()"> Go Back </button>
+% }
+
+</body>
+
+<%init>
+unless ( $path ) {
+  my $logdir = ( $project) ? $config->retrieve_kbc_logdir( $project ) : $config->retrieve('LOGDIR');
+  $path = "$logdir/$dir/$name";
+}
+
+my @all_lines;
+tie @all_lines, 'Tie::File', $path;
+my $nr_lines = @all_lines;
+
+my $display_length = 500;
+my $display_start  = int( $nr_lines / $display_length ) * $display_length;
+</%init>
+<%args>
+$dir            => ''
+$name           => ''
+$project        => ''
+$path           => ''
+$navigation     => 0
+</%args>

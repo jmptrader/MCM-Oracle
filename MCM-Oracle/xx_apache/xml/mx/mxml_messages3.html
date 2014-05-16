@@ -1,0 +1,394 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      var taskname        = $('#taskname').val();
+      var fromdate        = $('#fromdate').val();
+      var todate          = $('#todate').val();
+      var status_taken    = $('#status_taken').val();
+      var include_archive = $('#include_archive').attr('checked') ? 1 : 0;
+      aoData.push(
+        { "name": "taskname",        "value": taskname },
+        { "name": "fromdate",        "value": fromdate },
+        { "name": "todate",          "value": todate },
+        { "name": "status_taken",    "value": status_taken },
+        { "name": "include_archive", "value": include_archive }
+      );
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        installHover();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+      if ( aData[15] == "YES" ) {
+        $(nRow).css('color', '#6E6E6E');                   
+      }
+    },
+    "sDom":         'r<"clear">Cftip',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/mxml_messages2.html',
+    "bPaginate":    true,
+    "iDisplayLength": 50,
+    "sPaginationType": "full_numbers",
+    "bInfo":        true,
+    "bStateSave":   true,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 0,1,2,3,4,7,8,10,14,15 ] },
+      { "sClass": "ralign",       "aTargets": [ 5,6 ] },
+      { "bVisible": false,        "aTargets": [ 2,4,15 ] },
+
+      { "sWidth": "40px",         "aTargets": [ 7 ] },
+      { "sWidth": "45px",         "aTargets": [ 11,12,13 ] },
+      { "sWidth": "80px",         "aTargets": [ 0,10,14,15 ] },
+      { "sWidth": "90px",         "aTargets": [ 8 ] },
+      { "sWidth": "100px",        "aTargets": [ 5,6 ] },
+      { "sWidth": "120px",        "aTargets": [ 2,4 ] },
+      { "sWidth": "140px",        "aTargets": [ 1,3 ] },
+      { "sWidth": "500px",        "aTargets": [ 9 ] },
+
+      { "sType": "formatted-num", "aTargets": [ 5,6 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 5,6 ] }
+    ],
+
+    "aaSorting":    [[ 2, "desc" ]]
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'});
+
+  $('#route_form').submit( function() {
+    popupWindow( '', 'MXML', '1300', '1000', 'yes', 'center' );
+    this.target = 'MXML';
+  } );
+} );
+
+function showBodies( reference_id, workflow, archived ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/mxml_bodies2.html',
+    data:     { 'reference_id': reference_id, 'workflow': workflow, 'archived': archived },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1000px' );
+  $('#jqmContent').css( 'height', '300px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      html[++h] = '<br><br><br>';
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0 width="90%">';
+      html[++h] = '<tr><th>ID</th><th>TIMESTAMP</th><th>GRAMMAR</th><th>I/O</th><th>VERSION</th><th>LAST</th><th>CONTENT TYPE</th><th>SIZE</th><th></th><th></th></tr>';
+
+      for ( var i = 0; i < data.data.length; i++ ) {
+        var body = data.data[i];
+        var classname = ( i % 2 == 0 ) ? 'even' : 'odd';
+        html[++h] = '<tr class="' + classname + '">';
+        html[++h] = '<td align="center">' + body['0'] + '</td>';
+        html[++h] = '<td align="center">' + body['1'] + '</td>';
+        html[++h] = '<td>' + body['2'] + '</td>';
+        html[++h] = '<td align="center">' + body['3'] + '</td>';
+        html[++h] = '<td align="center">' + body['4'] + '</td>';
+        html[++h] = '<td align="center">' + body['5'] + '</td>';
+        html[++h] = '<td>' + body['6'] + '</td>';
+        html[++h] = '<td align="right">' + body['7'] + '</td>';
+        html[++h] = '<td align="center">';
+        html[++h] = '<form action="/mx/mxml_body2.xml" method=POST target="XML" onSubmit="popupWindow(\'dummy.html\',\'XML\',\'1400\',\'800\',\'yes\',\'center\'); return true" onfocus="this.blur()">'
+        html[++h] = '<input type="hidden" name="raw" value="0">';
+        html[++h] = '<input type="hidden" name="body_id" value="' + body['0'] + '">';
+        html[++h] = '<input type="hidden" name="archived" value="' + archived + '">';
+        html[++h] = '<input type="submit" class="button" style="float: none;" value=" HTML ">';
+        html[++h] = '</form></td>';
+        html[++h] = '<td align="center">';
+        html[++h] = '<form action="/mx/mxml_body2.xml" method=GET target="XML" onSubmit="popupWindow(\'dummy.html\',\'XML\',\'1400\',\'800\',\'yes\',\'center\'); return true" onfocus="this.blur()">'
+        html[++h] = '<input type="hidden" name="body_id" value="' + body['0'] + '">';
+        html[++h] = '<input type="hidden" name="archived" value="' + archived + '">';
+        html[++h] = '<input type="submit" class="button" style="float: none;" value=" XML ">';
+        html[++h] = '</form></td>';
+        html[++h] = '</tr>';
+      }
+
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function showDetails( reference_id, workflow, archived ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/mxml_details2.html',
+    data:     { 'reference_id': reference_id, 'workflow': workflow, 'archived': archived },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1000px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      var html = [], h = -1;
+
+      html[++h] = '<p>';
+      html[++h] = '<div align=center>';
+      html[++h] = '<table border=0>';
+      html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+
+      for ( var i = 0; i < data.data.length; i++ ) {
+        var value = data.data[i];
+        var name  = data.names[i];
+        var classname = ( i % 2 == 0 ) ? 'even' : 'odd';
+        html[++h] = '<tr class="' + classname + '">';
+        html[++h] = '<td style="font-weight: bold; padding: 3;">' + name + '</td>';
+        html[++h] = '<td style="padding: 3;">' + value + '</td>';
+        html[++h] = '</tr>';
+      }
+
+      html[++h] = '</table>';
+      html[++h] = '</div>';
+      html[++h] = '<br><br>';
+
+      $('#jqmContent')[0].innerHTML = html.join('');
+    }
+  } );
+}
+
+function installContextMenu() {
+  oTable.$('tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('.');
+      var reference_id = result[0];
+      var workflow     = result[1];
+      var key_id       = result[2];
+      var fc_id        = result[3];
+      var archived     = result[4];
+      var include_archive = $('#include_archive').attr('checked') ? 1 : 0;
+      if ( action == 'route' ) {
+          $("#route_key_id").val( key_id );
+          $("#route_workflow").val( workflow );
+          $("#route_include_archive").val( include_archive );
+          $("#route_modal").val( 1 );
+          $('#route_form').submit();
+      }
+      else if ( action == 'fc_route' ) {
+          $("#route_key_id").val( fc_id );
+          $("#route_workflow").val( 'Contract' );
+          $("#route_include_archive").val( include_archive );
+          $("#route_modal").val( 1 );
+          $('#route_form').submit();
+      }
+      else {
+          $('#dummytrigger').attr( 'reference_id', reference_id );
+          $('#dummytrigger').attr( 'workflow', workflow );
+          $('#dummytrigger').attr( 'action', action );
+          $('#dummytrigger').attr( 'archived', archived );
+          $('#modalWindow').jqmShow();
+      }
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var reference_id = $('#dummytrigger').attr('reference_id');
+  var workflow = $('#dummytrigger').attr('workflow');
+  var action   = $('#dummytrigger').attr('action');
+  var archived = $('#dummytrigger').attr('archived');
+
+  if ( action == 'bodies' ) {
+    $('#jqmTitleText').text( 'workflow: ' + workflow + ' - reference id: ' + reference_id );
+
+    showBodies( reference_id, workflow, archived );
+
+    $modal.jqmShow();
+  }
+  else if ( action == 'details' ) {
+    $('#jqmTitleText').text( 'workflow: ' + workflow + ' - reference id: ' + reference_id );
+
+    showDetails( reference_id, workflow, archived );
+
+    $modal.jqmShow();
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+</script>
+
+<div id="title">MxML Messages</div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<div style="clear: both;"></div>
+
+<p>
+
+<div>
+<span style="float: left; padding: 2px;">Taskname: </span>
+<select id="taskname" name="taskname" style="float: left;">
+% foreach my $task ( sort @tasks ) {
+  <option value="<% $task %>" <% ( $task eq $taskname ) ? 'selected="selected"' : '' %>><% $task %></option>
+% }
+</select>
+<span style="float: left; padding: 2px;">From Date: </span>
+<input id="fromdate" type="text" class="date-pick dp-applied" name="fromdate" id="date1" value="<% $fromdate %>"></input>
+<span style="float: left; padding: 2px;">To Date: </span>
+<input id="todate" type="text" class="date-pick dp-applied" name="todate" id="date2" value="<% $todate %>"></input>
+<span style="float: left; padding: 2px;">Status Taken: </span>
+<select id="status_taken" name="status_taken" style="float: left;">
+  <option value="Y" <% ( $status_taken eq 'Y' ) ? 'selected="selected"' : '' %>>Y</option>
+  <option value="N" <% ( $status_taken eq 'N' ) ? 'selected="selected"' : '' %>>N</option>
+  <option value="*" <% ( $status_taken eq '*' ) ? 'selected="selected"' : '' %>>*</option>
+</select>
+<span style="float: left; padding: 2px;">&nbsp;&nbsp;Include Archive: </span>
+<input id="include_archive" type="checkbox" name="include_archive" value="1" <% $include_archive ? 'checked' : '' %> style="float: left;"></input>
+<button class="button" style="float: left; margin-left: 10px;" id="refresh"> Refresh </button>
+</div>
+
+<p>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#route"><% "$workflow history via $workflow_short ID" %></a>
+  </li>
+% if ( $workflow ne 'Contract' ) {
+  <li>
+    <a href="#fc_route">Contract history via FC ID</a>
+  </li>
+% }
+  <li>
+    <a href="#bodies">Attached Bodies</a>
+  </li>
+  <li>
+    <a href="#details">Details</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" reference_id=""></div>
+
+<div id="modalWindow" style="text-align: left;" class="jqmWindow">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<form id="route_form" action="/mx/mxml_route3.html" method="post">
+  <input type="hidden" name="key_id"          id="route_key_id" value="">
+  <input type="hidden" name="workflow"        id="route_workflow" value="">
+  <input type="hidden" name="include_archive" id="route_include_archive" value="">
+  <input type="hidden" name="modal"           id="route_modal" value="">
+</form>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ID</th>
+  <th>TIMESTAMP</th>
+  <th>TIMESTAMP</th>
+  <th>STATUS TIME</th>
+  <th>STATUS TIME</th>
+  <th>WAIT TIME</th>
+  <th>PROC TIME</th>
+  <th>TAKEN</th>
+  <th><% $workflow_short %> ID</th>
+  <th>NODE</th>
+  <th>CONTRACT ID</th>
+  <th>FAMILY</th>
+  <th>GROUP</th>
+  <th>TYPE</th>
+  <th>PACKAGE ID</th>
+  <th>ARCHIVED</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<%init>
+my $task = $mxml_tasks{$taskname};
+my $workflow = $task->workflow;
+my $workflow_short = $task->workflow_short;
+my @tasks = ();
+while( my ( $taskname, $task ) = each %mxml_tasks ) {
+  if ( @workflows ) {
+    my $workflow = $task->workflow; 
+    next unless grep /^$workflow$/, @workflows;
+  }
+  if ( @sheetnames ) {
+    my $sheetname = $task->sheetname; 
+    next unless grep /^$sheetname$/, @sheetnames;
+  }
+  if ( @tasktypes ) {
+    my $tasktype = $task->tasktype; 
+    next unless grep /^$tasktype$/, @tasktypes;
+  }
+  push @tasks, $taskname;
+}
+</%init>
+
+<%args>
+$taskname
+@workflows => ()
+@sheetnames => ()
+@tasktypes => ()
+$fromdate
+$todate
+$status_taken
+$include_archive => 0
+</%args>

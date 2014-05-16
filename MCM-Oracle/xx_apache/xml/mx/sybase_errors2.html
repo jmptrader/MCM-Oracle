@@ -1,0 +1,30 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $query = "select SPID, ErrorNumber, Severity, State, convert(char(10), Time, 111) + ' ' + convert(char(8), Time, 108), ErrorMessage from monErrorLog where ErrorNumber not in (2, 300239, 300240)";
+
+$sa_sybase->open( private => 1 );
+my $current_db = $sa_sybase->database;
+$sa_sybase->use( 'master' );
+my $result = $sa_sybase->query( query => $query, quiet => 1 );
+$sa_sybase->use( $current_db ) if $current_db;
+$sa_sybase->close();
+
+my @errors;
+if ( $result ) {
+  foreach my $error ( @{$result} ) {
+    push @errors, {
+      0 => $error->[0],
+      1 => $error->[1],
+      2 => $error->[2],
+      3 => $error->[3],
+      4 => $error->[4],
+      5 => $error->[5]
+    };
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@errors } } );
+</%init>

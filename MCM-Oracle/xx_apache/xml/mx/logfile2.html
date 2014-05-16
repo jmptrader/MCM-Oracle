@@ -1,0 +1,91 @@
+<BODY>
+<& navigation.comp &>
+<BR>
+<CENTER>
+<H2><% $name %></H2>
+<B>Total number of lines: <% $nr_results %></B>
+<BR>
+% return unless $nr_results;
+<B>Displaying lines <% $first %> to <% $last %></B>
+<P>
+% $m->comp( 'pager.comp', url => "logfile2.html?name=$name", refresh => 1, go_back => 1, sort => '', nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr );
+<TABLE BORDER=1 CELLSPACING=1 CELLPADDING=3>
+  <TR>
+    <TH>DATE</TH>
+    <TH>TIME</TH>
+    <TH>MODULE</TH>
+    <TH>LEVEL</TH>
+    <TH>PID</TH>
+    <TH>MESSAGE</TH>
+  </TR>
+% foreach my $line (@lines) {
+%   my $style = '';
+%   if ( $line->{level} eq 'WARN' ) {
+%       $style = 'STYLE="background-color: #FF9900;"';
+%   }
+%   elsif ( $line->{level} eq 'ERROR' or $line->{level} eq 'FATAL' ) {
+%       $style = 'STYLE="background-color: #FF9900;"';
+%   }   
+  <TR>
+    <TD <% $style %> VALIGN=TOP NOWRAP><% $line->{date} %></TD>
+    <TD <% $style %> VALIGN=TOP NOWRAP><% $line->{time} %></TD>
+    <TD <% $style %> VALIGN=TOP NOWRAP><% $line->{module} %></TD>
+    <TD <% $style %> VALIGN=TOP NOWRAP><% $line->{level} %></TD>
+    <TD <% $style %> VALIGN=TOP NOWRAP><% $line->{pid} %></TD>
+    <TD <% $style %> VALIGN=TOP><% $line->{message} %></TD>
+  </TR>
+% }
+</TABLE>
+<CENTER>
+% $m->comp( 'pager.comp', url => "logfile2.html?name=$name", refresh => 1, go_back => 1, sort => '', nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr );
+</CENTER>
+</BODY>
+
+<%init>
+my @all_lines; my @lines;
+
+tie @all_lines, 'Tie::File', $name;
+
+my $nr_results = @all_lines;
+
+if ( $page_nr == -1 ) {
+    $page_nr = int( $nr_results / $recs_per_page );
+    if ( $recs_per_page * $page_nr < $nr_results ) {
+        $page_nr++;
+    }
+}
+
+my $first = ( $page_nr - 1 ) * $recs_per_page + 1;
+my $last  = $page_nr * $recs_per_page;
+if ( $nr_results < $last ) {
+  $last = $nr_results;
+}
+
+for ( my $i = $first - 1; $i < $last; $i ++ ) {
+  my $raw_line = $all_lines[ $i ];
+  chomp($raw_line);
+
+  my $line = {}; 
+  if ( $raw_line =~ /^\[(\d\d\d\d\/\d\d\/\d\d) (\d\d:\d\d:\d\d)\] (\S+)\s+([A-Z]+)\s+- (\d+)\s+- (.*)$/ ) {
+    $line->{date}    = $1;
+    $line->{time}    = $2;
+    $line->{module}  = $3;
+    $line->{level}   = $4;
+    $line->{pid}     = $5;
+    $line->{message} = $6;
+  }
+  else {
+    $raw_line =~ s/</&lt;/g;
+    $raw_line =~ s/>/&gt;/g;
+    $line->{message} = $raw_line
+  }
+
+  push @lines, $line;
+}
+</%init>
+
+<%args>
+$name
+$recs_per_page => 500
+$page_nr => -1
+</%args>

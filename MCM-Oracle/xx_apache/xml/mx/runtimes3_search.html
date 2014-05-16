@@ -1,0 +1,58 @@
+<h2>Selection Criteria</h2>
+<form onsubmit="return msubmit(this, 'runtimes3.html')">
+<table class="center" width="40%">
+  <tr>
+    <td class="description"><font color="#FFFFFF">Batch Type&nbsp;</font></td>
+    <td>
+%   foreach my $type ( @scripttypes ) {
+      <input type="checkbox" name="scripttype" value="<% $type->{value} %>" <% $type->{checked} ? 'checked' : '' %>>&nbsp;<% $type->{label} %></input><br>
+%   }
+    </td>
+  </tr>
+  <tr>
+    <td class="description"><font color="#FFFFFF">Run Type&nbsp;</font></td>
+    <td>
+%   foreach my $type ( @runtypes ) {
+      <input type="checkbox" name="runtype" value="<% $type->{value} %>" <% $type->{checked} ? 'checked' : '' %>>&nbsp;<% $type->{label} %></input><br>
+%   }
+    </td>
+  </tr>
+</table>
+
+<p>
+
+<input type="submit" class="table_button" value=" Search ">
+<input type="button" class="table_button" value=" Cancel " onClick="mgoback('home.html')">
+</form>
+
+<%init>
+my @scripttypes = (
+  { label   => 'M-report Batch',
+    value   => 'batch',
+    checked => 1
+  },
+  { label   => 'Datamart Batch',
+    value   => 'dm_batch',
+    checked => 0
+  },
+);
+
+my @runtypes = (
+  { label   => 'O-run',
+    value   => 'O',
+    checked => 1
+  },
+  { label   => '1-run',
+    value   => '1',
+    checked => 0
+  },
+  { label   => 'V-run',
+    value   => 'V',
+    checked => 0
+  },
+  { label   => 'X-run',
+    value   => 'X',
+    checked => 0
+  },
+);
+</%init>

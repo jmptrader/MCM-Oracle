@@ -1,0 +1,29 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my ( $collector ) = grep { $_->name eq $name } @collectors;
+
+if ( my $handle = $handles[ $collector->location ] ) {
+  ( $collector ) = $handle->soaphandle->mcollector( names => [ $name ] )->result;
+}
+
+my $process = $collector->{process};
+
+my @collector = (
+{ name => 'Name',              value => $name },
+{ name => 'Description',       value => $collector->description },
+{ name => 'Status',            value => $collector->status },
+{ name => 'Host',              value => $collector->hostname },
+{ name => 'Start Order',       value => $collector->order },
+{ name => 'Polling Interval',  value => $collector->poll_interval },
+{ name => 'PID',               value => ( $process ) ? $process->pid : '' },
+{ name => 'Start Time',        value => ( $process ) ? Mx::Util->convert_time( $process->starttime ) : '' },
+{ name => 'Command Line',      value => ( $process ) ? $process->cmdline : '' }
+);
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@collector );
+</%init>
+<%args>
+$name
+</%args>

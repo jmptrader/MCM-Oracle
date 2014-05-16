@@ -1,0 +1,4 @@
+%return( substr( $date, 11 ) .'Z' );
+<%args>
+$date => ''
+</%args>

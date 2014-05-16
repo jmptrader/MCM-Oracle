@@ -1,0 +1,72 @@
+<BODY>
+<& navigation.comp &>
+<CENTER>
+<H2>Network Pings</H2>
+<TABLE WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="visualize_pings.html?range=day"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="visualize_pings.html?range=week"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="visualize_pings.html?range=month"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="visualize_pings.html?range=year"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<IMG SRC="<% $time_file %>?<% time() %>">
+</CENTER>
+</BODY>
+
+<%init>
+my @colors = qw( 00FF00 FF0000 000000 0000FF FFFF00 00FFFF FF66FF 006633 9999FF 660066 666666 FF3399 666600 );
+my $nr_seconds;
+if ( $range eq 'year' ) {
+  $nr_seconds = 365 * 24 * 3600;
+}
+elsif ( $range eq 'month' ) {
+  $nr_seconds = 31 * 24 * 3600;
+}
+elsif ( $range eq 'week' ) {
+  $nr_seconds = 7 * 24 * 3600;
+}
+else {
+  $nr_seconds = 24 * 3600;
+}
+my $collector = Mx::Collector->new( name => 'ping', config => $config, logger => $logger );
+my $rrdfile = $collector->rrdfile;
+my $rrd = RRDTool::OO->new( file => $rrdfile );
+
+my $env = $ENV{MXENV};
+
+my $time_file = "/tmp/${env}_pings_time_$range.png";
+
+
+my @names = ();
+foreach my $ping ( Mx::Network::Ping->retrieve_all( config => $config, logger => $logger ) ) {
+    my $name = $ping->name;
+    $name =~ s/ /_/g;
+    push @names, $name;
+}
+
+my @options = (
+    image          => $time_file,
+    vertical_label => 'Time (ms)',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+for ( my $i = 0; $i <= $#names; $i++ ) {
+    my $name = my $cname = $names[$i];
+    $cname =~ s/_/ /g;
+    my $color = $colors[$i];
+    push @options, (
+        draw  => { dsname => $name, color => $color, legend => $cname }
+    );
+}
+
+$rrd->graph( @options );
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

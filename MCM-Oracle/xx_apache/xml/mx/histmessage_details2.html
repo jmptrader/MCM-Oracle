@@ -1,0 +1,36 @@
+<h2>Delivery details for message #<% $id %></h2>
+<table class="center" width="70%">
+  <tr>
+    <th>USER</th>
+    <th>DELIVERED</th>
+    <th>DELIVERY TS</th>
+    <th>CONFIRMED</th>
+    <th>CONFIRMED TS</th>
+  </tr>
+% foreach my $delivery ( @deliveries ) {
+  <tr>
+    <td ALIGN="center"><% $delivery->{user} %></td>
+    <td ALIGN="center"><% $delivery->{delivered} %></td>
+    <td ALIGN="center"><% $delivery->{delivery_ts} %></td>
+    <td ALIGN="center"><% $delivery->{confirmed} %></td>
+    <td ALIGN="center"><% $delivery->{confirmed_ts} %></td>
+  </tr>
+% }
+</table>
+
+<%init>
+my @deliveries = ();
+
+foreach my $row ( $db_audit->retrieve_message_deliveries( message_id => $id ) ) {
+  push @deliveries, {
+    user         => $row->[1],
+    delivered    => ( $row->[2] ) ? 'YES' : 'NO',
+    confirmed    => ( $row->[4] ) ? 'YES' : 'NO',
+    delivery_ts  => ( $row->[2] ) ? Mx::Util->convert_time( $row->[3] ) : '',
+    confirmed_ts => ( $row->[4] ) ? Mx::Util->convert_time( $row->[4] ) : ''
+  };
+}
+</%init>
+<%args>
+$id
+</%args>

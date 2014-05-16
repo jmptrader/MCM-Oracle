@@ -1,0 +1,33 @@
+<h2><% $description %> #<% $id %></h2>
+<table class="center" width="70%">
+<thead>
+  <tr><th>Name</th><th>Value</th></tr>
+</thead>
+<tbody>
+% foreach my $column ( @columns ) {
+  <tr>
+    <td class="description" width="20%" nowrap style="color: #FFFFFF;"><% $column->{desc} %></td>
+    <% Mx::Mason::HTML->td_details( result => $result, column => $column ) %>
+  </tr>
+% }
+</tbody>
+</table>
+<br>
+<input type="button" class="table_button" value=" Go Back " onClick="mgoback('histlist.html', { <% join ',', @nav_args %> })">
+
+<%init>
+$callbacks{ $object }->( 'Mx::Mason::Config::' . $object, %ARGS );
+
+my $result = $details_method->( $db_audit, id => $id );
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'id';
+  push @nav_args, "$k:'$v'";
+}
+</%init>
+
+<%args>
+$object
+$id
+</%args>

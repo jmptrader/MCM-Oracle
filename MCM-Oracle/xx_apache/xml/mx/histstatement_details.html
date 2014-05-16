@@ -1,0 +1,230 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var statement_id = $('#dummytrigger').attr('statement_id');
+  var action       = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_plan' ) {
+    $('#jqmTitleText').text( 'statement #' + statement_id );
+    $modal.jqmShow();
+    showPlan( statement_id );
+  }
+  else if ( action == 'show_sql' ) {
+    $('#jqmTitleText').text( 'statement #' + statement_id );
+    $modal.jqmShow();
+    showSQL();
+  }
+  else if ( action == 'show_waits' ) {
+    $('#jqmTitleText').text( 'statement #' + statement_id );
+    $modal.jqmShow();
+    showWaits( statement_id );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showPlan( statement_id ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/statement_plan2.html',
+    data:     { 'statement_id': statement_id },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<br>';
+    for ( var i = 0; i < data.length; i++ ) {
+      html[++h] = data[i] + '<br>';
+    }
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showSQL() {
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  $('#jqmContent')[0].innerHTML = '<table width="90%"><tr><td><% $nice_sql %></td></tr></table>';
+}
+
+function showWaits( statement_id ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/statement_waits2.html',
+    data:     { 'statement_id': statement_id },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<br>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="90%">';
+    html[++h] = '<tr><th>EVENT ID</th><th>DESCRIPTION</th><th># WAITS</th><th>WAIT TIME</th></tr>';
+    for ( var i = 0; i < data.length; i++ ) {
+      var row = data[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td align="center">' + row[0] + '&nbsp;</td>';
+      html[++h] = '<td>' + row[1] + '&nbsp;</td>';
+      html[++h] = '<td align="right">' + row[2] + '&nbsp;</td>';
+      html[++h] = '<td align="right">' + row[3] + '&nbsp;</td>';
+      html[++h] = '</tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+</script>
+
+<H2>Statement #<% $statement_id %></H2>
+
+<div id="dummytrigger" statement_id="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Show SQL " onclick="$('#dummytrigger').attr( 'statement_id', <% $statement_id %> ); $('#dummytrigger').attr( 'action', 'show_sql' ); $('#modalWindow').jqmShow();">
+
+% if ( -f $showplan_dump ) {
+<input type="button" class="table_button" value=" Show Plan " onclick="$('#dummytrigger').attr( 'statement_id', <% $statement_id %> ); $('#dummytrigger').attr( 'action', 'show_plan' ); $('#modalWindow').jqmShow();">
+% }
+
+% if ( $nr_blockers ) {
+<input type="button" class="table_button" value=" Show Blockers " onclick="mnavigate( 'histlist.html', { object: 'histblocker', 'statement_id': <% $statement_id %> }, { <% $nav_args %> } );">
+% }
+
+<input type="button" class="table_button" value=" Compare " onclick="mnavigate( 'histlist.html', { 'object': 'histstatement', 'sql_tag': <% $sql_tag %> }, { <% $nav_args %> } );">
+
+<input type="button" class="table_button" value=" Go Back " onclick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'statement_id';
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histstatement_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $statement = $db_audit->retrieve_statement( id => $statement_id );
+my @table;
+my $session_id = $statement->[1];
+if ( $session_id ) {
+  push @table, 'Session ID', "<a href='#' onclick=\"mnavigate('histsession_details.html', { session_id: $session_id }, { $nav_args, statement_id: $statement_id })\">$session_id</a>";
+} 
+else {
+  push @table, 'Session ID', undef;
+}
+my $script_id = $statement->[2];
+if ( $script_id ) {
+  push @table, 'Script ID', "<a href='#' onclick=\"mnavigate('histscript_details.html', { script_id: $script_id }, { $nav_args, statement_id: $statement_id })\">$script_id</a>";
+} 
+else {
+  push @table, 'Script ID', undef;
+}
+my $service_id = $statement->[3];
+if ( $service_id ) {
+  push @table, 'Service ID', "<a href='#' onclick=\"mnavigate('histservice_details.html', { service_id: $service_id }, { $nav_args, statement_id: $statement_id })\">$service_id</a>";
+} 
+else {
+  push @table, 'Service ID', undef;
+}
+push @table, 'Schema'             , $statement->[4];
+push @table, 'Username'           , $statement->[5];
+push @table, 'SID'                , $statement->[6];
+push @table, 'Hostname'           , $statement->[7];
+push @table, 'OS User'            , $statement->[8];
+push @table, 'PID'                , $statement->[9];
+push @table, 'Program'            , $statement->[10];
+push @table, 'Command'            , $statement->[11];
+push @table, 'Start Time'         , Mx::Util->convert_time( $statement->[12] );
+push @table, 'End Time'           , Mx::Util->convert_time( $statement->[13] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $statement->[14] ) );
+push @table, 'CPU'                , Mx::Util->separate_thousands( $statement->[15] );
+push @table, 'Wait Time'          , Mx::Util->separate_thousands( $statement->[16] );
+push @table, 'Logical Reads'      , Mx::Util->separate_thousands( $statement->[17] );
+push @table, 'Physical Reads'     , Mx::Util->separate_thousands( $statement->[18] );
+push @table, 'Physical Writes'    , Mx::Util->separate_thousands( $statement->[19] );
+my $sql_tag = $statement->[22];
+push @table, 'SQL Tag'            , $sql_tag;
+push @table, 'Plan Tag'           , $statement->[23];
+push @table, 'Business Date'      , $statement->[24];
+
+my $sql_text = $statement->[20];
+
+$sql_text =~ s/#/__SHARP__/g;
+
+my $sql = SQL::Beautify->new( spaces => 2, space => '&nbsp;', break => '<br>', wrap => { keywords => [ '<b>', '</b>' ], constants => [ '<font color="green">', '</font>' ] } );
+
+$sql->query($sql_text);
+
+my $nice_sql = $sql->beautify; 
+
+$nice_sql =~ s/__SHARP__/#/g;
+$nice_sql =~ s/'/\\'/g;
+
+my $showplan_dump = $config->SHOWPLANDIR . '/' . $statement_id . '.sp';
+my $nr_blockers = $db_audit->retrieve_nr_blockers( statement_id => $statement_id );
+</%init>
+<%args>
+$statement_id
+</%args>

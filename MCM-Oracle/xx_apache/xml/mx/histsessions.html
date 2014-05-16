@@ -1,0 +1,199 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('.tiptip').tipTip();
+} );
+</script>
+
+<CENTER>
+<BR>
+<H2>Historical sessions on <% $ENV{MXENV} %></H2>
+<B>Total number of sessions: <% $nr_results %></B>
+<BR>
+% if ( $nr_results ) {
+% my $first = ( $page_nr - 1 ) * $recs_per_page + 1;
+% my $last  = $page_nr * $recs_per_page;
+% if ( $nr_results < $last ) {
+%   $last = $nr_results;
+% }
+<B>Displaying sessions <% $first %> to <% $last %></B>
+<P>
+<TABLE id="table2csv" BORDER=0 CELLSPACING=1 CELLPADDING=2 WIDTH="90%" BGCOLOR="#000066">
+  <TR>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'id',            reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">ID</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'hostname',      reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">HOST</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_scripttype', reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">SCRIPT TYPE</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_nick',       reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">NICK</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_scriptname', reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">SCRIPT NAME</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'entity',        reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">ENTITY</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'runtype',       reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">RT</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'win_user',      reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">USER</a></th>
+% if ( $detailed_timing ) {
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'req_starttime', reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">REQ STIME</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_starttime',  reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">MX STIME</a></th>
+% }
+% else {
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_starttime',  reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">START TIME</a></th>
+% }
+% if ( $detailed_timing ) {
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_endtime',    reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">MX ETIME</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'req_endtime',   reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">REQ ETIME</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'start_delay',   reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">SDELAY</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'remote_delay',  reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">RDELAY</a></th>
+% }
+% else {
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'mx_endtime',    reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">END TIME</a></th>
+% }
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'duration',      reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">DURATION</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'cpu_seconds',   reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">CPUSEC</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'vsize',         reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">VSIZE</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'nr_queries',    reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;"># QUERIES</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'reruns',        reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;"># RR</a></th>
+    <th><a href="#" onclick="mnavigate('histsessions.html', { sort: 'exitcode',      reverse: 1, detailed_timing: <% $detailed_timing %>, <% $sort_args %> })" style="color: #FFFFFF;">EXIT CODE</a></th>
+  </TR>
+% my $i = 0;
+% foreach my $process ( @processes ) {
+%   my $milestone = 1 if $process->[7] eq 'milestone';
+%   $i++;
+%   my $session_id = $process->[1];
+%   if ( $milestone ) { 
+  <TR CLASS="milestone" ALIGN=CENTER>
+%   }
+%   else {
+%     if ( $i % 2 == 0 ) {
+  <TR CLASS="even" ALIGN=CENTER>
+%     }
+%     else {
+  <TR CLASS="odd" ALIGN=CENTER>
+%     }
+%   }
+%   if ( $milestone ) {
+    <TD><A CLASS="select" HREF="#"><% $session_id %></A></TD>
+%   }
+%   elsif ( my $result = $active_sessions->{ $session_id } ) {
+%     my $pid    = $result->[0];
+%     my $mx_pid = $result->[1];
+    <TD STYLE="background-color: #70C070;"><A CLASS="tiptip" HREF="#" onclick="mnavigate('histsession_details.html', { session_id:<% $session_id %>, pid:<% $pid %>, mx_pid:<% $mx_pid %> }, { <% join ',', @nav_args %> });" title="Nick: <% $process->[25] %>  </br> PID: <% $pid %>"><% $session_id %></A</TD>
+%   }
+%   else {
+    <TD><A CLASS="tiptip" HREF="#" onclick="mnavigate('histsession_details.html', { session_id:<% $session_id %> }, { <% join ',', @nav_args %> });" title="Nick: <% $process->[25] %>"><% $session_id %></A</TD>
+%   }
+%   if ( $milestone ) {
+    <TD COLSPAN=3>MILESTONE</TD>
+%   }
+%   else {
+    <TD><% $process->[2] %></TD>
+    <TD><% $process->[7] %></TD>
+    <TD><% $process->[25] %></TD>
+%   }
+    <TD><% $process->[8] %></TD>
+    <TD><% $process->[20] %></TD>
+    <TD><% $process->[21] %></TD>
+%   my $win_user = $process->[9];
+%   my $full_name = $full_names{$win_user};
+%   if ( $full_name ) {
+    <TD><A CLASS="select" HREF="#" onclick="mnavigate('/mx-auth/user_details.html', { name:'<% $win_user %>' }, { <% join ',', @nav_args %> });"><% $full_name %></A></TD> 
+%   }
+%   else {
+    <TD><% $win_user %></TD>
+%   }
+%   if ( $detailed_timing ) {
+    <TD><% Mx::Util->convert_time_short( $process->[3] ) %></TD>
+    <TD><% Mx::Util->convert_time_short( $process->[4] ) %></TD>
+%   }
+%   else {
+%     my $start_time = $process->[3] || $process->[4];
+    <TD><% $start_time ? Mx::Util->convert_time($start_time) : '&nbsp;' %></TD>
+%   }
+%   if ( $detailed_timing ) {
+    <TD><% Mx::Util->convert_time_short( $process->[5] ) %></TD>
+    <TD><% Mx::Util->convert_time_short( $process->[6] ) %></TD>
+    <TD><% scalar( Mx::Util->convert_seconds( $process->[29] ) ) %></TD>
+    <TD><% scalar( Mx::Util->convert_seconds( $process->[32] ) ) %></TD>
+%   }
+%   else {
+%     my $end_time = $process->[6] || $process->[5];
+    <TD><% $end_time ? Mx::Util->convert_time($end_time) : '&nbsp;' %></TD>
+%   }
+    <TD><% scalar( Mx::Util->convert_seconds( $process->[24] ) ) %></TD>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $process->[30] ) %>&nbsp;&nbsp;</TD>
+    <TD ALIGN=RIGHT><% Mx::Util->convert_bytes( $process->[31] * 1024 ) %>&nbsp;&nbsp;</TD>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $process->[33] ) %>&nbsp;&nbsp;</TD>
+%   if ( $process->[27] ) {
+    <TD STYLE="background-color: #FF9900;"><% $process->[27] %></TD>
+%   }
+%   else {
+    <TD>0</TD>
+%   }
+%   my $killed = $process->[28];
+%   my $exitcode = $process->[13];
+%   if ( $killed ) {
+    <TD STYLE="background-color: #FF9900;">KILLED</TD>
+%   }
+%   elsif ( $exitcode == 17 ) {
+    <TD STYLE="background-color: #FF9900;">CORE</TD>
+%   }
+%   elsif ( $exitcode == 0 or ( $exitcode == 9 and $process->[7] eq 'user session' ) ) {
+    <TD><% $process->[13] %></TD>
+%   }
+%   else {
+    <TD STYLE="background-color: #FF9900;"><% $process->[13] %></TD>
+%   }
+  </TR>
+% }
+</TABLE>
+% }
+<BR>
+% $m->comp( 'pager.comp', url => 'histsessions.html', search_url => ( $ARGS{ab_session_id} ) ? '' : 'histsession_search.html', go_back => $go_back, go_back_url => $ARGS{hist_url}, sort => $sort, detailed_timing => $detailed_timing, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash, nav_args => ( join ',', @nav_args ) );
+</CENTER>
+
+<%init>
+my @columns = qw( hostname id pid mx_scripttype mx_scriptname *mx_scriptname mx_nick win_user mx_user mx_group mx_client_host exitcode ab_session_id sched_jobstream entity runtype project business_date reruns killed start_delay cpu_seconds vsize nr_queries);
+my @numeric_columns = qw( id pid exitcode reruns ab_session_id mx_starttime mx_endtime req_starttime req_endtime start_delay *mx_scriptname cpu_seconds vsize nr_queries);
+
+if ( $reverse ) {
+  $m->session->{histsessions_reverse} = ! $m->session->{histsessions_reverse};
+}
+
+my %where_hash = (); my @sort_args = (); my $sort_args = '';
+foreach my $column ( @columns ) {
+  if ( my $entry = $ARGS{$column} ) {
+    my @values;
+    if ( ref $entry eq 'ARRAY' ) {
+      @values = @{$entry};
+    }
+    elsif ( $entry =~ /,/ ) {
+      @values = split /,/, $entry;
+    }
+    else {
+      @values = ( $entry );
+    }
+    foreach my $value ( @values ) {
+      push @{$where_hash{$column}}, (( grep /^$column$/, @numeric_columns ) ? $value : "\"$value\"");
+      push @sort_args, "$column: '$value'";
+    }
+  }
+}
+$sort_args = join ',', @sort_args;
+
+my $result = $db_audit->retrieve_sessions( sort => { $sort => $m->session->{histsessions_reverse} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+
+my @processes = @{$result};
+my $nr_results = @processes ? $processes[0][0] : 0;
+
+my $active_sessions = $m->comp( 'active_sessions.comp' );
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "'$k':'$v'";
+}
+push @nav_args, "'hist_url':'histsessions.html'";
+</%init>
+
+<%args>
+$recs_per_page   => 50 
+$page_nr         => 1
+$sort            => 'id'
+$reverse         => 0
+$detailed_timing => 0
+$go_back         => 0
+</%args>

@@ -1,0 +1,53 @@
+<div class="swapper">
+  <div class="swapper_left">
+    <select multiple size="10" name="_group">  
+% foreach my $id ( @left ) {
+      <option value="<% $id %>"><% $groups{$id}->name %></option>
+% }
+    </select>
+  </div>
+
+  <div class="swapper_middle">
+    &nbsp;
+    <input type="button" onClick="move(this.form.group,this.form._group)" value="<<">
+    &nbsp;
+    <br>
+    <br>
+    &nbsp;
+    <input type="button" onClick="move(this.form._group,this.form.group)" value=">>">
+    &nbsp;
+  </div>
+
+  <div class="swapper_right">
+    <select multiple size="10" name="group">
+% foreach my $id ( @right ) {
+      <option value="<% $id %>"><% $groups{$id}->name %></option>
+% }
+    </select>
+  </div>
+</div>
+
+<%init>
+my @all_groups = Mx::Auth::Group->retrieve_all( db => $auth_db, config => $config, logger => $logger );
+my %groups;
+foreach my $group ( @all_groups ) {
+  $groups{ $group->id } = $group;
+}
+
+my @right = @{$group_ids};
+my %seen;
+foreach ( @right ) { $seen{$_} = 1 }
+
+my @left;
+foreach my $group ( @all_groups ) {
+  my $id = $group->id;
+  push @left, $id unless $seen{$id};
+}
+
+@left  = sort { $groups{$a}->name cmp $groups{$b}->name } @left;
+@right = sort { $groups{$a}->name cmp $groups{$b}->name } @right;
+</%init>
+
+<%args>
+$group_ids => []
+</%args>

@@ -1,0 +1,17 @@
+cairo-1.12.16.tar.xz
+expat-2.1.0.tar.gz
+fontconfig-2.11.0.tar.gz
+freetype-2.5.2.tar.gz
+gettext-0.18.3.1.tar.gz
+glib-2.32.4.tar.xz
+libelf-0.8.13.tar.gz
+libffi-3.0.13.tar.gz
+libgd-2.1.0.tar.gz
+libiconv-1.14.tar.gz
+libpng-1.6.7.tar.gz
+make-3.82.tar.gz
+pango-1.30.1.tar.xz
+pixman-0.32.4.tar.gz
+pkg-config-0.28.tar.gz
+Python-2.7.6.tar.gz
+xz-5.0.5.tar.gz

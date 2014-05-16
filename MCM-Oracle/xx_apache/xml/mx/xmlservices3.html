@@ -1,0 +1,68 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  displayRefreshTime();
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) {
+        fnCallback(json.datatables);
+        displayRefreshTime(json.timestamp);
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/xmlservices2.html',
+    "bPaginate":    false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 3, 4, 5, 6 ] },
+
+      { "sWidth": "80px",         "aTargets": [ 5, 6 ] },
+      { "sWidth": "100px",        "aTargets": [ 3, 4 ] },
+      { "sWidth": "200px",        "aTargets": [ 2 ] },
+      { "sWidth": "300px",        "aTargets": [ 0, 1  ] }
+    ],
+  } );
+
+  installHover();
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+} );
+
+function displayRefreshTime( timestamp ) {
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+</script>
+
+<div id="title">XML Services on <% $ENV{MXENV} %></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime"></div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>NICKNAME</th>
+  <th>LAUNCHER</th>
+  <th>DESCRIPTION</th>
+  <th>STARTTIME</th>
+  <th>HOST</th>
+  <th>UNIX PID</th>
+  <th>MX PID</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="table_button" id="refresh"> Refresh </button>

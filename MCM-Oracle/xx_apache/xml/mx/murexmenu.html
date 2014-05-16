@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC 
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<HEAD> 
+<script type="text/vbscript" src="./murextools.js">
+</script>
+<script type="text/vbscript" src="./murextools.vbs">
+</script>
+        
+<TITLE>Murex proof of concept menu</TITLE>
+</HEAD>
+
+<BODY>  
+<H1>Murex menu for all users</H1>
+<TABLE>
+<TR BGCOLOR=#AAAADD>
+  <TD width='40'><b>Pillar</b></TD>
+  <TD width='100'><b>Information</b></TD>
+  <TD width='40'><b>client</b></TD>
+  <TD width='50'><b>samba read</b></TD>
+  <TD width='50'><b>samba write</b></TD>
+  <TD width='40'><b>monit</b></TD>
+  <TD width='40'><b>mxml gui</b></TD>
+  <TD width='40'><b>re launch</b></TD>
+</TR>
+<TR ALIGN='center' BGCOLOR=#AAAADD><TD><b>Make choice</b><TD>
+<FORM NAME='F' onsubmit=launch('x')>
+  <INPUT type='text' size='1' maxlength='3' value='1' name='klik'/></FORM></TD><TD></TD>
+   <TD><BUTTON style='background-color:#CCCCCC' onClick='mx3_menu()' tabindex='-1' >MX3</BUTTON></TD>
+   <TD><BUTTON style='background-color:#CCCCCC' onClick='env_view()' tabindex='-1' >env</BUTTON></TD>
+   <TD><BUTTON style='background-color:#CCCCCC' onClick='batchview()' tabindex='-1' >batch</BUTTON></TD>
+</FORM>
+</TR>
+</TABLE>
+</body>
+</html>
+
+<%init>
+my ( @user_env, @user_group, @datalist ); 
+my $user = Mx::User2->new( name => 'U77944', logger => $logger, sybase => $db_audit->sybase );
+
+if ( Mx::Environment->retrieve( user => $user, logger => $logger, sybase => $db_audit->sybase ) ) {
+    @user_env = $user->environments;
+}
+
+if ( Mx::Group->retrieve( user => $user, logger => $logger, sybase => $db_audit->sybase ) ) { 
+    @user_groups = $user->groups; 
+    foreach my $row ( @user_groups ) {
+       $row->[0] = Mx::Environment->retrieve( group => $row->[0], logger => $logger, sybase => $db_audit->sybase );
+    }
+}
+
+foreach my $row ( @user_env ) {
+ 
+    
+    
+</%init>
+
+<%args>
+
+</%args>
+
+

@@ -1,0 +1,53 @@
+<%init>
+if ( $name ) {
+  my $handle;
+  foreach my $collector ( @collectors ) {
+    if ( $collector->name eq $name ) {
+      $handle = $handles[ $collector->location ];
+      last;
+    }
+  }
+
+  if ( $handle ) {
+    if ( my ( $collector ) = $handle->soaphandle->mcollector( names => [ $name ] )->result ) {
+      return $collector;
+    }
+  }
+}
+else {
+  my @names2 = ();
+  foreach my $collector ( @collectors ) {
+    if ( @names ) {
+      my $name = $collector->name;
+      next unless grep /^$name$/, @names;
+      next if $collector->is_hard_disabled;
+    }
+
+    if ( $handles[ $collector->location ] ) {
+      push @{$names2[ $collector->location ]}, $collector->name;
+    }
+  }
+
+  foreach my $handle ( @handles ) {
+    if ( my $names = $names2[ $handle->instance ] ) {
+      $handle->mcollector_async( names => $names );
+    }
+  }
+
+  my @collectors2 = ();
+  foreach my $handle ( @handles ) {
+    if ( my $names = $names2[ $handle->instance ] ) {
+      push @collectors2, $handle->poll_async;
+    }
+  }
+
+  @collectors2 = sort { $a->{order} <=> $b->{order} } @collectors2;
+
+  return \@collectors2;
+}
+</%init>
+
+<%args>
+@names => ()
+$name  => ''
+</%args>

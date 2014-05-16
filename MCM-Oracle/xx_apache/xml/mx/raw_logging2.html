@@ -1,0 +1,46 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @all_lines;
+tie @all_lines, 'Tie::File', $path;
+
+my $nr_lines = @all_lines;
+
+my $last;
+if ( $iDisplayLength == -1 ) {
+  $iDisplayStart = 0;
+  $last = $nr_lines;
+}
+else {
+  $last = $iDisplayStart + $iDisplayLength;
+  $last = $nr_lines if $last > $nr_lines;
+}
+
+my @lines = (); my $nr_display_lines = 0;
+for ( my $i = $iDisplayStart; $i < $last; $i++ ) {
+  my $line = $all_lines[ $i ];
+  chomp($line);
+
+  $line = escape_html( $line );
+
+  $line = '&nbsp;' unless $line;
+
+  push @lines, {
+    0        => $line,
+    DT_RowId => $i
+  };
+
+  $nr_display_lines++;
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { iTotalRecords => $nr_lines, iTotalDisplayRecords => $nr_lines, sEcho => $sEcho, aaData => \@lines } } );
+</%init>
+
+<%args>
+$path
+$iDisplayStart  => 0
+$iDisplayLength => 500
+$sEcho          => ''
+</%args>

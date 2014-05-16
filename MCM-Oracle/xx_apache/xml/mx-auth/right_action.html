@@ -1,0 +1,66 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="feedback" class="grid_12">
+    <% $feedback %>
+  </div>
+
+  <div id="actions" class="grid_12">
+    <form action="rights.html" method=POST>
+      <input type="submit" class="button" value=" Go Back ">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $feedback;
+if ( $name ) {
+  if ( $action =~ /insert/i ) {
+    my $right = Mx::Auth::Right->new( name => $name, type => $type, description => $description, db => $auth_db, config => $config, logger => $logger);
+    if ( $right->insert ) {
+      $feedback = "Right $name has been inserted";
+    }
+    else {
+      $feedback = "Right $name could not be inserted";
+    }
+  }
+  elsif ( $action =~ /update/i ) {
+    my $right = Mx::Auth::Right->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $right->retrieve;
+    $right->name( $name );
+    $right->type( $type );
+    $right->description( $description );
+    if ( $right->update ) {
+      $feedback = "Right $name has been updated";
+    }
+    else {
+      $feedback = "Right $name could not be updated";
+    }
+  }
+  elsif ( $action =~ /delete/i ) {
+    my $right = Mx::Auth::Right->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    if ( $right->delete ) {
+      $feedback = "Right $name has been deleted";
+    }
+    else {
+      $feedback = "Right $name could not be deleted";
+    }
+  }
+}
+</%init>
+
+<%args>
+$action
+$id          => 0
+$name        => ''
+$type        => ''
+$description => ''
+</%args>

@@ -1,0 +1,34 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my ( $service ) = grep { ( $_->name eq $name ) && ( $_->location == $location ) } @services;
+
+if ( my $handle = $handles[$location] ) {
+  ( $service ) = $handle->soaphandle->mservice( names => [ $name ] )->result;
+}
+
+my $process = $service->process( descriptor => $descriptor );
+
+my @service = (
+{ name => 'Name',              value => $name },
+{ name => 'Status',            value => $service->status },
+{ name => 'Host',              value => $service->hostname },
+{ name => 'Start Order',       value => $service->order },
+{ name => 'Launcher Options',  value => $service->options },
+{ name => 'Extra Parameters',  value => $service->params },
+{ name => 'Post Start Action', value => $service->post_start_action },
+{ name => 'Pre Stop Action',   value => $service->pre_stop_action },
+{ name => 'Descriptor',        value => $descriptor },
+{ name => 'PID',               value => ( $process ) ? $process->pid : '' },
+{ name => 'Start Time',        value => ( $process ) ? Mx::Util->convert_time( $process->starttime ) : '' },
+{ name => 'Command Line',      value => ( $process ) ? $process->cmdline : '' }
+);
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@service );
+</%init>
+<%args>
+$name
+$location
+$descriptor
+</%args>

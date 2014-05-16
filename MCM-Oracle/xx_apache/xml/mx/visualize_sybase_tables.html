@@ -1,0 +1,165 @@
+<H2>Reserved Size</H2>
+<IMG SRC="<% $reserved_file %>?<% time() %>">
+<P>
+<P>
+<H2>Number of Rows</H2>
+<IMG SRC="<% $nr_rows_file %>?<% time() %>">
+<P>
+<P>
+<H2>Total size of Database</H2>
+<IMG SRC="<% $totalsize_file %>?<% time() %>">
+
+<br>
+
+(last 90 days)
+
+<br>
+
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="history.back()">
+% if ( $table ) {
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Details " onClick="mnavigate( 'table_size.html', { 'name': '<% $table %>' } )">
+% }
+
+<%init>
+$db_name = $db_name || $config->DB_NAME;
+$table = uri_unescape( $table ) if $table;
+my @reserved_tables = ( $table ) ? ( $table ) : $db_audit->top_mxtables( count => $nr_tables, criterium => 'reserved', db_name => $db_name );
+my @nr_rows_tables  = ( $table ) ? ( $table ) : $db_audit->top_mxtables( count => $nr_tables, criterium => 'nr_rows', db_name => $db_name );
+
+my ( $lowest_timestamp, $highest_timestamp ) = $db_audit->mxtable_timestamp_range ( name => $reserved_tables[0], db_name => $db_name );
+my @timestamps = ( $lowest_timestamp );
+my $timestamp = $lowest_timestamp;
+
+while ( $timestamp < $highest_timestamp ) {
+    my ( $year, $month, $day ) = $timestamp =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+    my ( $next_year, $next_month, $next_day ) = Add_Delta_Days( $year, $month, $day, 1 );
+    $timestamp = sprintf "%04d%02d%02d", $next_year, $next_month, $next_day;
+    push @timestamps, $timestamp;
+}
+
+my @reserved_data   = ( \@timestamps );
+my @reserved_legend = @reserved_tables;
+
+foreach my $table ( @reserved_tables ) {
+    my @result = $db_audit->mxtable_sizes( name => $table, criterium => 'reserved', db_name => $db_name );
+
+    my %values = ();
+    foreach my $result ( @result ) {
+        my ( $timestamp, $value ) = @{$result};
+        $values{ $timestamp } = $value;
+    }
+
+    my @values = (); my $previous_value = 0;
+    foreach my $timestamp ( @timestamps ) {
+        $previous_value = $values{ $timestamp } if $values{ $timestamp };
+        push @values, $previous_value;
+    }
+
+    push @reserved_data, [ @values ];
+}
+
+my @nr_rows_data   = ( \@timestamps );
+my @nr_rows_legend = @nr_rows_tables;
+
+foreach my $table ( @nr_rows_tables ) {
+    my @result = $db_audit->mxtable_sizes( name => $table, criterium => 'nr_rows', db_name => $db_name );
+
+    my %values = ();
+    foreach my $result ( @result ) {
+        my ( $timestamp, $value ) = @{$result};
+        $values{ $timestamp } = $value;
+    }
+
+    my @values = (); my $previous_value = 0;
+    foreach my $timestamp ( @timestamps ) {
+        $previous_value = $values{ $timestamp } if $values{ $timestamp };
+        push @values, $previous_value;
+    }
+
+    push @nr_rows_data, [ @values ];
+}
+
+my @totalsize_data   = ( \@timestamps );
+my @result = $db_audit->total_mxtables( db_name => $db_name );
+
+my %values = ();
+foreach my $result ( @result ) {
+    my ( $timestamp, $value ) = @{$result};
+    $values{ $timestamp } = $value;
+}
+
+my @values = (); my $previous_value = 0;
+foreach my $timestamp ( @timestamps ) {
+    $previous_value = $values{ $timestamp } if $values{ $timestamp };
+    push @values, $previous_value;
+}
+
+push @totalsize_data, [ @values ];
+
+
+#--------
+# GRAPH 1
+#--------
+my $reserved_graph = GD::Graph::lines->new(900, 600);
+
+my $x_label_skip = int ( scalar(@timestamps) / 12 );
+
+$reserved_graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => \&y_label, legend_spacing => 10 );
+$reserved_graph->set_text_clr('black');
+$reserved_graph->set_legend( @reserved_legend );
+
+my $reserved_file = "/tmp/mxtables_reserved.png";
+
+my $fh;
+$fh = IO::File->new( $reserved_file, '>' );
+print $fh $reserved_graph->plot(\@reserved_data)->png;
+$fh->close;
+
+#--------
+# GRAPH 2
+#--------
+my $nr_rows_graph = GD::Graph::lines->new(900, 600);
+
+$nr_rows_graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => \&y_label_2, legend_spacing => 10 );
+$nr_rows_graph->set_text_clr('black');
+$nr_rows_graph->set_legend( @nr_rows_legend );
+
+my $nr_rows_file = "/tmp/mxtables_nr_rows.png";
+
+$fh = IO::File->new( $nr_rows_file, '>' );
+print $fh $nr_rows_graph->plot(\@nr_rows_data)->png;
+$fh->close;
+
+#--------
+# GRAPH 3
+#--------
+my $total_size_graph = GD::Graph::lines->new(900, 600);
+
+$total_size_graph->set( x_labels_vertical => 1, x_label_skip => 7, y_number_format => \&y_label, long_ticks => 1 );
+$total_size_graph->set_text_clr('black');
+
+my $totalsize_file = "/tmp/mxtables_totalsize.png";
+
+$fh = IO::File->new( $totalsize_file, '>' );
+print $fh $total_size_graph->plot(\@totalsize_data)->png;
+$fh->close;
+
+sub y_label {
+  my ( $kbytes ) = @_;
+ 
+  return  Mx::Util->convert_bytes( $kbytes * 1024);
+}
+
+sub y_label_2 {
+  my ( $nr_rows ) = @_;
+ 
+  return  Mx::Util->separate_thousands( $nr_rows );
+}
+
+</%init>
+
+<%args>
+$nr_tables => 10
+$table => ''
+$db_name => ''
+</%args>

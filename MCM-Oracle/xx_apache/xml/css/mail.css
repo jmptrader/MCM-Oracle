@@ -1,0 +1,50 @@
+*{
+	font-family: Arial,Verdana;
+	font-size: 9pt;
+}
+
+body{
+	margin: 0;
+	padding: 20px;
+	background: #FFF;
+}
+
+
+h1{ font-size: 140% }
+ul li{ list-style-type:disc }
+
+
+a, a:link, a:visited{ text-decoration:none; color:blue }
+
+
+
+table{
+	border: 1px solid #000;
+	background: #fff;
+	width: 100%;
+}
+
+table caption{
+	margin:0;
+	padding: 8px 20px;
+	text-align: left;
+	border: 1px solid #000;
+	border-bottom: none;
+	background: #fff;
+}
+
+table th, table td{
+	margin:0;
+	padding: 3px;
+	border-bottom: solid 1px #b5b5b5;
+}
+
+table th{
+	color: blue;
+	text-align:  center;
+}
+
+td .ctr{ text-align: center }
+
+table .mx{ background: #bbccdd; }
+

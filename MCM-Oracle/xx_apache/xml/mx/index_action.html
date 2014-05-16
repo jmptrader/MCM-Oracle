@@ -1,0 +1,40 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $ok; my $message;
+
+if ( $action eq 'drop' ) {
+  my $index = Mx::Sybase::Index2->new( name => $name, table => $table, database => $database, columns => [], clustered => 0, unique => 0, logger => $logger, config => $config );
+
+  if( $ok = $index->drop( sybase => $sybase ) ) {
+    $message = "index $name on table $table is dropped";
+  }
+  else {
+    $message = "index $name on table $table could not be dropped";
+  }
+}
+else {
+  unless ( exists $kbc_indexes{ $database } ) {
+    $kbc_indexes{ $database } = Mx::Sybase::Index2->retrieve_kbc_indexes( database => $database, sybase => $sybase, config => $config, logger => $logger );
+  }
+
+  my $index = $kbc_indexes{ $database }->{ $table . ':' . $name };
+
+  if( $ok = $index->create( sybase => $sybase ) ) {
+    $message = "index $name on table $table is created";
+  }
+  else {
+    $message = "index $name on table $table could not be created";
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => ( $ok ? "OK" : "NOK" ), data => $message } );
+</%init>
+
+<%args>
+$action
+$database
+$table
+$name
+</%args>

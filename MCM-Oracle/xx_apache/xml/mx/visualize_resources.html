@@ -1,0 +1,71 @@
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_resources.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_resources.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_resources.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_resources.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<H2>CPU Resources</H2>
+<IMG SRC="<% $cpu_file %>?<% time() %>">
+<P>
+<H2>IO Resources</H2>
+<IMG SRC="<% $io_file %>?<% time() %>">
+<P>
+<H2>Global IO Resources </H2>
+<IMG SRC="<% $global_io_file %>?<% time() %>">
+
+<%init>
+my @colors = qw( 00FF00 FF0000 000000 0000FF FFFF00 00FFFF FF66FF 006633 9999FF 660066 666666 FF3399 666600 );
+
+my $image_format = 'PNG';
+my $image_extension = '.png';
+
+my $nr_seconds;
+SWITCH: {
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $nr_seconds = 24 * 3600;
+};
+
+my @graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => time() - $nr_seconds,
+  end       => time()
+);
+
+my $collector = Mx::Collector->new( name => 'resource', config => $config, logger => $logger );
+my $rrdfile   = $collector->rrdfile;
+my $rrd       = RRDTool::OO->new( file => $rrdfile );
+
+my $cpu_file       = "/tmp/resource_cpu_$range"       . $image_extension;
+my $io_file        = "/tmp/resource_io_$range"        . $image_extension;
+my $global_io_file = "/tmp/resource_global_io_$range" . $image_extension;
+
+my @cpu_options = my @io_options = my @global_io_options = @graph_options;
+
+push @cpu_options,       ( image => $cpu_file );
+push @io_options,        ( image => $io_file );
+push @global_io_options, ( image => $global_io_file );
+
+for ( my $i = 1; $i <= $#app_servers; $i++ ) {
+    my $app_server = $app_servers[$i]; 
+    my $color      = $colors[$i];
+    push @cpu_options, ( draw  => { dsname => 'cpu_' . $app_server, color => $color, legend => $app_server } );
+    push @io_options,  ( draw  => { dsname => 'io_' .  $app_server, color => $color, legend => $app_server } );
+}
+
+push @global_io_options, ( draw  => { dsname => $config->DSQUERY, color => '0000FF', legend => $config->DSQUERY } );
+
+$rrd->graph( @cpu_options );
+$rrd->graph( @io_options );
+$rrd->graph( @global_io_options );
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

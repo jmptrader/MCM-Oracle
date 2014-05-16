@@ -1,0 +1,17 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @data = ();
+if ( my $mdml = Mx::MDML->new( filename => $path, logger => $logger ) ) {
+  foreach my $pair ( $mdml->vol_pairs ) {
+     my ( $matrix, $ordinates ) = $mdml->vol_matrix( pair => $pair );
+     push @data, { pair => $pair, ordinates => $ordinates, matrix => $matrix };
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@data );
+</%init>
+<%args>
+$path
+</%args>

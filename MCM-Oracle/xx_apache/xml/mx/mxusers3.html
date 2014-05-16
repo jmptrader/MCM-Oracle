@@ -1,0 +1,171 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) {
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        $('.tiptip').tipTip();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cfti',
+    "oColVis":      { "aiExclude": [ 16,17,21 ] },
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/mxusers2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "600px",
+    "sScrollX":     "100%",
+    "aaSorting":    [[1,'asc']],
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 4 ] },
+
+      { "bVisible": false,        "aTargets": [ 6 ] },
+
+      { "sWidth": "70px",         "aTargets": [ 0,4 ] },
+      { "sWidth": "100px",         "aTargets": [ 1 ] },
+      { "sWidth": "120px",        "aTargets": [ 3,5 ] },
+      { "sWidth": "180px",        "aTargets": [ 2 ] },
+      { "sWidth": "400px",        "aTargets": [ 6 ] },
+
+      { "sType": "html",          "aTargets": [ 3,5 ] },
+    ]
+  } );
+
+  installHover();
+
+  $('#result tbody tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#refresh').live( "click", function() {
+    refresh();
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('|');
+      var user_id   = result[0];
+      var password  = result[1];
+      $('#dummytrigger').attr( 'user_id', user_id );
+      $('#dummytrigger').attr( 'password', password );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var user_id    = $('#dummytrigger').attr('user_id');
+  var password   = $('#dummytrigger').attr('password');
+  var action     = $('#dummytrigger').attr('action');
+
+  if ( action == 'decrypt_password' ) {
+    $('#jqmTitleText').text();
+    $modal.jqmShow();
+    decryptPassword( password );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function decryptPassword( password ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/decrypt.html',
+    data:     { 'password': password },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '200px' );
+  $('#jqmContent').css( 'height', '50px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    $('#jqmContent')[0].innerHTML = data.data;
+  } );
+}
+</script>
+
+<div id="title">Murex Users on <% $ENV{MXENV} %></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh:</div>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#decrypt_password">Decrypt Password</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" user_id="" password="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ID</th>
+  <th>NAME</th>
+  <th>DESCRIPTION</th>
+  <th>SUSPEND DATE</th>
+  <th>LOCKED</th>
+  <th>PASSWORD DATE</th>
+  <th>PASSWORD</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<br>
+<br>
+
+<div style="clear: both;"></div>
+
+<button class="button" id="refresh"> Refresh </button>

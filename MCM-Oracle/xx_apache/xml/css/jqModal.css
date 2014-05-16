@@ -1,0 +1,73 @@
+/* jqModal base Styling courtesy of;
+	Brice Burgess <bhb@iceburg.net> */
+
+/* The Window's CSS z-index value is respected (takes priority). If none is supplied,
+	the Window's z-index value will be set to 3000 by default (via jqModal.js). */
+	
+.jqmWindow {
+    display: none;
+    
+    position: absolute;
+    overflow: auto;
+    top: 17%;
+    left: 10%;
+    
+    margin-left: -100px;
+    
+    background-color: #FFFFCC;
+    color: #000;
+    border: 1px solid #000;
+    padding: 20px;
+}
+
+.jqmOverlay { background-color: #000; }
+
+/* Background iframe styling for IE6. Prevents ActiveX bleed-through (<select> form elements, etc.) */
+* iframe.jqm {position:absolute;top:0;left:0;z-index:-1;
+	width: expression(this.parentNode.offsetWidth+'px');
+	height: expression(this.parentNode.offsetHeight+'px');
+}
+
+/* Fixed posistioning emulation for IE6
+     Star selector used to hide definition from browsers other than IE6
+     For valid CSS, use a conditional include instead */
+* html .jqmWindow {
+     position: absolute;
+     top: expression((document.documentElement.scrollTop || document.body.scrollTop) + Math.round(17 * (document.documentElement.offsetHeight || document.body.clientHeight) / 100) + 'px');
+}
+
+#jqmContent{ display: block; clear:both; margin:auto; margin-top:10px; }
+
+div.jqmWindow .jqmClose em{display:none;}
+div.jqmWindow .jqmClose {
+  width:20px;
+  height:20px;
+  display:block;
+  float:right;
+  clear:right;
+  background:transparent url(/mx/pics/close_icon_double.png) 0 0 no-repeat;
+}
+
+div.jqmWindow a.jqmClose:hover,div.jqmWindow a.jqmCloseHover{ background-position: 0 -20px; }
+
+#jqmTitle {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+#toTop {
+  width:100px;
+  border:1px solid #ccc;
+  background:#f7f7f7;
+  text-align:center;
+  padding:5px;
+  position:fixed; /* this is the magic */
+  bottom:10px; /* together with this to put the div at the bottom*/
+  right:10px;
+  cursor:pointer;
+  display:none;
+  color:#333;
+  font-family:verdana;
+  font-size:11px;
+}
+

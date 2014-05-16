@@ -1,0 +1,31 @@
+<H2>Session Delays</H2>
+<FORM onsubmit="return msubmit(this, 'visualize_delays.html');">
+<TABLE class="center" WIDTH="30%">
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Script Type&nbsp;</FONT></TD>
+    <TD>
+%     foreach my $type ( sort { $a cmp $b } @mx_scripttypes ) {
+        <INPUT TYPE="checkbox" NAME="mx_scripttypes" VALUE="<% $type %>" CHECKED>&nbsp;<% $type %></INPUT><BR>
+%     }
+    </TD>
+  </TR>
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Business Date&nbsp;</FONT></TD>
+    <TD>
+      <SELECT NAME="date">
+%     foreach my $date (  sort { $b <=> $a } @business_dates ) {
+        <OPTION><% $date %></OPTION>
+%     }
+      </SELECT>
+    </TD>
+  </TR>
+</TABLE>
+<BR>
+<INPUT TYPE="submit" CLASS="table_button" VALUE=" Search ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onclick="mgoback('home.html')">
+</FORM>
+
+<%init>
+my @business_dates = $db_audit->get_distinct_values( column => 'business_date', table => 'sessions' );
+my @mx_scripttypes = $db_audit->get_distinct_values( column => 'mx_scripttype', table => 'sessions' );
+</%init>

@@ -1,0 +1,33 @@
+<H2>MxML zombie nodes on <% $ENV{MXENV} %></H2>
+<TABLE class="center" WIDTH="60%">
+  <TR>
+    <TH>ID</TH>
+    <TH>WORKFLOW</TH>
+    <TH>TAKEN YES</TH>
+    <TH>TAKEN NO</TH>
+  </TR>
+% my $total_taken_y = 0; my $total_taken_n = 0;
+% foreach my $node ( @nodes ) {
+%   $total_taken_y += $node->msg_taken_y;
+%   $total_taken_n += $node->msg_taken_n;
+  <TR ALIGN=CENTER>
+    <TD><% $node->id %></TD>
+    <TD><% $node->workflow %></TD>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $node->msg_taken_y ) %></TD>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $node->msg_taken_n ) %></TD>
+  </TR>
+% }
+  <TR>
+    <TD>&nbsp;</TD>
+    <TD>&nbsp;</TD>
+    <TD ALIGN=RIGHT><B><% Mx::Util->separate_thousands( $total_taken_y ) %></B></TD>
+    <TD ALIGN=RIGHT><B><% Mx::Util->separate_thousands( $total_taken_n ) %></B></TD>
+  </TR>
+</TABLE>
+<BR>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('home.html')">
+
+<%init>
+my @nodes = Mx::MxML::Node->zombie_nodes( logger => $logger, config => $config, sybase => $sybase, library => $library );
+@nodes = sort { $b->msg_taken_y <=> $a->msg_taken_y } @nodes;
+</%init>

@@ -1,0 +1,63 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  var priorities = {
+    low:      'lime',
+    medium:   'tangerine',
+    high:     'ruby',
+    critical: 'ebony'
+  }
+
+  var ws; var i = 0;
+  $.notific8('configure', {
+    zindex: 1201
+  });
+
+  try {
+    ws = new WebSocket("ws://<% $config->WEB_HOST %>:<% $config->MESSENGER_PORT %>/");
+  }
+  catch(e) {
+    alert("Your browser does not support WebSockets");
+  }
+
+  ws.onopen = function() {
+    var message = 'register###<% $ENV{MXENV} %>###<% $username %>';
+    ws.send( message );
+  }
+
+  ws.onmessage = function(msg) {
+    var result = msg.data.split('###');
+
+    var environment = result[0];
+    var message_id  = result[1];
+    var type        = result[2];
+    var priority    = result[3];
+    var validity    = result[4];
+    var timestamp   = result[5];
+    var message     = result[6];
+
+    var theme = priorities[priority];
+
+    var sticky, life;
+    if ( validity == -1 ) {
+      life   = 0;
+      sticky = true;
+    }
+    else {
+      life   = validity * 1000;
+      sticky = false;
+    }
+
+    var heading = environment + ' ' + timestamp;
+
+    $.notific8( message, { heading: heading, sticky: sticky, life: life, theme: theme, callback: function( id ) { return on_close( ws, id ); }, message_id: message_id } );
+  }
+});
+
+function on_close( ws, id ) {
+    var message = 'confirm###' + id;
+    ws.send( message );
+}
+</script>
+<%args>
+$username
+</%args>

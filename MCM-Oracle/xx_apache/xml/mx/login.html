@@ -1,0 +1,92 @@
+<SCRIPT LANGUAGE=JAVASCRIPT SRC="common/validations.js"></SCRIPT>
+<SCRIPT LANGUAGE=JAVASCRIPT>
+<!--
+  function submitmyform(form)
+  {
+    if(!(CheckStringField(form.login, 50))) return false;
+    if(!(CheckStringField(form.password, 50))) return false;
+
+    if(!(CheckMandatoryField(form.login,   'login'))) return false;
+    if(!(CheckMandatoryField(form.password,  'password'))) return false;
+ 
+    return true;
+  }
+//-->
+</SCRIPT>
+
+<BODY onLoad="document.login.<% $username ? 'password' : 'login' %>.focus()">
+
+<TABLE WIDTH=100% BORDER=0 CELLSPACING=0 CELLPADDING=0>
+<TR>
+<TD ALIGN=LEFT VALIGN=TOP>
+  <IMG SRC="pics/logo.gif" HEIGHT="100" WIDTH="142">
+  <H2><% $ENV{MXENV} %></H2>
+</TD>
+<TD ALIGN=RIGHT VALIGN=TOP>
+  <H1><% $app_name %></H1>
+  <H2>Login</H2>
+</TD>
+</TR>
+<TR> 
+<TD CLASS="inverse" COLSPAN=2>
+  <IMG SRC="pics/pixeltransp.gif" WIDTH=1 HEIGHT=1>
+</TD>
+</TR>
+</TABLE>
+
+<BR><BR><BR>
+
+<FORM NAME="login" ACTION="submitlogin.html" METHOD=POST onSubmit="return submitmyform(this)">
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=1 ALIGN=CENTER>
+<TR ALIGN=CENTER> 
+<TD CLASS="inverse">
+  <B>LOGIN</B>
+</TD>
+</TR>
+<TR> 
+<TD> 
+  <TABLE BORDER=0 CELLSPACING=3 CELLPADDING=0>
+  <TR> 
+  <TD>
+    Login ID
+  </TD>
+  <TD> 
+    <INPUT TYPE="TEXT" CLASS="inputfield" NAME="login" VALUE="<% $username %>" SIZE=20 MAXLENGTH=50>
+  </TD>
+  </TR>
+  <TR> 
+  <TD>
+    Password
+  </TD>
+  <TD> 
+    <INPUT TYPE="PASSWORD" CLASS="inputfield" NAME="password" SIZE=20 MAXLENGTH=50>
+  </TD>
+  </TR>
+  </TABLE>
+</TD>
+</TR>
+<TR>
+<TD>
+  <INPUT TYPE="submit" CLASS="button" style="float: right;" VALUE=" LOG ON ">
+</TD>
+</TR>
+<TR> 
+<TD CLASS="inverse">
+  <IMG SRC="pics/pixeltransp.gif" WIDTH=1 HEIGHT=10>
+</TD>
+</TR>
+</TABLE>
+</FORM>
+<CENTER>
+<H2><FONT COLOR="#FF0000"><% $error_message %></FONT></H2>
+</CENTER>
+</BODY>
+
+<%init>
+my $error_message = 'Invalid login' if $err;
+</%init>
+
+<%args>
+$err=>0
+$username=>""
+</%args>

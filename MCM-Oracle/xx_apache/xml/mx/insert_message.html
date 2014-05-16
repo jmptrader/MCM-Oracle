@@ -1,0 +1,85 @@
+<H2>Send Message</H2>
+<form onsubmit="return msubmit(this, 'send_message.html')">
+  <table class="center" width="50%">
+    <TR><TH>Name</TH><TH>Value</TH></TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Type </FONT></TD>
+      <TD>
+      <SELECT NAME="type">
+%     while ( @types ) { 
+%       my $typ = shift @types;
+%       my $description = shift @types;
+%       my $selected = ( $typ eq $type ) ? 'SELECTED' : '';
+        <OPTION <% $selected %> VALUE="<% $typ %>"><% $description %></OPTION>
+%     }
+      </SELECT>
+      </TD>
+    </TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">User </FONT></TD>
+      <TD>
+      <SELECT NAME="userid">
+        <OPTION></OPTION>
+%     foreach my $user ( @users ) {
+%       my $selected = ( $user->name eq $userid ) ? 'SELECTED' : '';
+        <OPTION <% $selected %>><% $user->name %></OPTION>
+%     }
+      </SELECT>
+      </TD>
+    </TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Group </FONT></TD>
+      <TD>
+      <SELECT NAME="groupid">
+        <OPTION></OPTION>
+%     foreach my $group ( @groups ) {
+%       my $selected = ( $group->name eq $groupid ) ? 'SELECTED' : '';
+        <OPTION <% $selected %>><% $group->name %></OPTION>
+%     }
+      </SELECT>
+      </TD>
+    </TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Priority </FONT></TD>
+      <TD>
+      <SELECT NAME="priority">
+%     while ( @priorities ) { 
+%       my $prio = shift @priorities;
+%       my $description = shift @priorities;
+%       my $selected = ( $prio eq $priority ) ? 'SELECTED' : '';
+        <OPTION <% $selected %> VALUE="<% $prio %>"><% $description %></OPTION>
+%     }
+      </SELECT>
+      </TD>
+    </TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Title </FONT></TD>
+      <TD CLASS="entryfield"><INPUT TYPE="text" NAME="title" SIZE=30 VALUE="<% $title %>"></TD>
+    </TR>
+    <TR>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Message </FONT></TD>
+      <TD CLASS="entryfield"><INPUT TYPE="text" NAME="message" SIZE=100 VALUE="<% $message %>"></TD>
+    </TR>
+  </TABLE>
+  <BR>
+<INPUT TYPE="submit" CLASS="table_button" right="send_message" NAME="action" VALUE=" Send ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onClick="mgoback('home.html')">
+</FORM>
+
+<%init>
+my @users  = Mx::Auth::User->retrieve_all( logger => $logger, config => $config, db => $auth_db );
+my @groups = Mx::Auth::Group->retrieve_all( logger => $logger, config => $config, db => $auth_db );
+@users  = sort { $a->name cmp $b->name } @users;
+@groups = sort { $a->name cmp $b->name } @groups;
+my @types = ( $Mx::Message::TYPE_SINGLE, 'Single', $Mx::Message::TYPE_MULTIPLE, 'Multiple' );
+my @priorities = ( $Mx::Message::PRIO_LOW, 'Low', $Mx::Message::PRIO_MEDIUM, 'Medium', $Mx::Message::PRIO_HIGH, 'High', $Mx::Message::PRIO_CRITICAL, 'Critical' );
+</%init>
+
+<%args>
+$userid   => ''
+$groupid  => ''
+$type     => ''
+$priority => ''
+$title    => ''
+$message  => ''
+</%args>

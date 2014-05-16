@@ -1,0 +1,201 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Mx::Config;
+use Mx::Log;
+use Mx::Collector;
+use Mx::Account;
+use Mx::Sybase;
+use Mx::Sybase::Index;
+use Mx::SQLLibrary;
+use Mx::Alert;
+use POSIX;
+
+my $name = 'index';
+ 
+my $config = Mx::Config->new();
+my $logger = Mx::Log->new( filename => $ARGV[0] );
+ 
+my $collector = Mx::Collector->new( name => $name, config => $config, logger => $logger );
+ 
+my $descriptor    = $collector->descriptor;
+my $pidfile       = $collector->pidfile;
+my $poll_interval = $collector->poll_interval;
+ 
+#
+# become a daemon
+#
+my $pid = fork();
+exit if $pid;
+unless ( defined($pid) ) {
+    $logger->logdie("cannot fork: $!");
+}
+
+unless ( setsid() ) {
+    $logger->logdie("cannot start a new session: $!");
+}
+
+#
+# create a pidfile
+#
+my $process = Mx::Process->new( descriptor => $descriptor, logger => $logger, config => $config, light => 1 );
+unless ( $process->set_pidfile( $0, $pidfile ) ) {
+    $logger->logdie("not running exclusively");
+}
+
+#
+# setup the Sybase account
+#
+my $account = Mx::Account->new( name => $config->MX_DBUSER, config => $config, logger => $logger );
+
+#
+# initialize the Sybase connection
+#
+my $sybase  = Mx::Sybase->new( dsquery => $config->DSQUERY, database => $config->DB_NAME, username => $account->name, password => $account->password, error_handler => 1, logger => $logger, config => $config );
+$sybase->open();
+
+my $alert = Mx::Alert->new( name => 'index_missing', config => $config, logger => $logger );
+my $alert2 = Mx::Alert->new( name => 'index_mismatch', config => $config, logger => $logger );
+
+my $dbmon = $config->DB_MON;
+
+my $index_configfile = $config->retrieve('INDEX_CONFIGFILE');
+
+my $startup = 1;
+
+while ( 1 ) {
+my @missing_index_names;
+my @missing_on_db;
+
+my %existing_db_table_index_hash;
+my %db_table_index_hash;
+my %existing_db_table;
+
+my %ignore_db_table_index_hash;
+
+my ( $existing_indexes_ref, $existing_tables_ref ) = Mx::Sybase::Index->retrieve_all_existing(logger => $logger, config => $config);
+my ($indexes_mx_ref, $tables_mx_ref) = Mx::Sybase::Index->retrieve_all_murex( logger => $logger, config => $config );
+my ($indexes_cfg_ref, $tables_cfg_ref) = Mx::Sybase::Index->retrieve_all( logger => $logger, config => $config );
+
+my @database_list = ($config->DB_FIN,$config->DB_REP,$config->DB_DWH);
+foreach my $db (@database_list){
+$sybase->use($db);
+my $query = "select name from sysobjects";
+my $result = $sybase->query( query => $query );
+foreach my $occurence (@$result){
+		my $table_name = $occurence->[0];
+		$existing_db_table{"$db:$table_name"} = 1;
+	}
+}
+
+
+foreach my $index ( @{$existing_indexes_ref} ) {
+foreach my $db ( @{$index->database}){
+	my $key = $db . ':' . $index->table . ':' . $index->name;
+	$existing_db_table_index_hash{$key} = $index;
+}
+}
+my $cfgdir = $config->retrieve ("CONFIGDIR");
+my $ignore_config = Mx::Config->new( "$cfgdir/indexes_ignore.cfg" );
+my $ignored_indexes_ref;
+	unless ( $ignored_indexes_ref = $ignore_config->retrieve('IGNORED_INDEXES') ) {
+		$logger->logdie("cannot access the ignored indexes section in the configuration file");
+	}
+	foreach my $name ( keys %{$ignored_indexes_ref} ) {
+		my $table = $ignored_indexes_ref->{$name}->{table};
+		my $database = $ignored_indexes_ref->{$name}->{database};
+			$database =~ s/\s//g;
+			my @db_raw_list = split ',', $database;
+			$database = [];
+			foreach my $db (@db_raw_list){
+				push @{$database}, $config->retrieve($db);
+			}
+			foreach my $db (@{$database}){
+						my $key = $db . ':' . $table . ':' . $name;
+						print "$key \n";
+						$ignore_db_table_index_hash{$key} = 1;
+			}
+
+	}
+	
+foreach my $index ( @{$existing_indexes_ref} ) {
+foreach my $db ( @{$index->database}){
+	my $key = $db . ':' . $index->table . ':' . $index->name;
+	$existing_db_table_index_hash{$key} = $index;
+}
+}
+
+foreach my $index ( @{$indexes_mx_ref} ) {
+	my $key = @{$index->database}[0] . ':' . $index->table . ':' . $index->name;
+	#MX indexes excluded for now due to many false positives still....
+	if (!exists $ignore_db_table_index_hash{$key}){ $db_table_index_hash{$key} = $index; }
+}
+
+foreach my $index ( @{$indexes_cfg_ref} ) {
+	next unless (index($index->name, 'REPBATCH') < 0);
+foreach my $db ( @{$index->database}){
+	my $key = $db . ':' . $index->table . ':' . $index->name;
+	if (!exists $ignore_db_table_index_hash{$key}){ $db_table_index_hash{$key} = $index; }
+}
+}
+
+foreach my $key (keys %db_table_index_hash){
+	if(!exists $existing_db_table_index_hash{$key}){
+		my ( $db, $table, $name ) = split ':', $key;
+		if(exists $existing_db_table{"$db:$table"}){
+		push @missing_index_names, "$name on $table in $db";
+		push @missing_on_db, $db;
+		}
+	}
+}
+
+		my $size = @missing_index_names;
+		my %db_hash;
+		foreach my $db (@missing_on_db) {
+        $db_hash{$db} =1 ;
+		} 
+
+		my $nr_existing = @{$existing_indexes_ref};
+		if($size > 500 || $nr_existing == 500){
+			# prevent from sending alert
+			$size = 0;
+			$logger->error("Could not access the list of existing indexes, reorg running?");
+		}
+
+		if ($size > 0 && $size <= 500){
+			$alert->trigger( level => $Mx::Alert::LEVEL_FAIL, values => [ $size, join (",",keys(%db_hash)) ], item => "indexes" );
+			foreach (@missing_index_names){
+				$logger->error("missing index: $_");
+			}
+		}
+		
+	if($startup == 1){
+		my @mismatches =();
+		foreach my $key (keys %db_table_index_hash){
+			my ( $db, $table, $name ) = split ':', $key;
+    	if(exists $existing_db_table_index_hash{$key}){
+    		my $existing_col = $db_table_index_hash{$key}->columns;
+    		my $defined_col = $existing_db_table_index_hash{$key}->columns;
+        if($existing_db_table_index_hash{$key}->columns ne $db_table_index_hash{$key}->columns){
+        	push @mismatches, "$name: $defined_col defined vs. $existing_col in database";
+        }
+      }
+    }
+    my $nr_mismatches = @mismatches;
+		if ($nr_mismatches > 0){
+			$alert2->trigger( level => $Mx::Alert::LEVEL_FAIL, values => [ $nr_mismatches ], item => "$nr_mismatches index mismatch(es)" );
+			$logger->error("Index mismatches detected!");
+			foreach(@mismatches){
+				$logger->error("$_");
+			}
+		}
+		$startup = 0;
+	}
+	
+    sleep $poll_interval;
+}
+$sybase->close();
+
+$process->remove_pidfile();

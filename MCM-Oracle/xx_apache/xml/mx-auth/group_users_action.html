@@ -1,0 +1,16 @@
+<%perl>
+$m->comp( "group_details.html", id => $id );
+</%perl>
+
+<%init>
+$user_ids = [ $user_ids ] unless ref($user_ids) eq 'ARRAY';
+my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+$group->set_users( user_ids => $user_ids );
+my $list = join ' ', @{$user_ids};
+print "$list\n";
+</%init>
+
+<%args>
+$id
+$user_ids => []
+</%args>

@@ -1,0 +1,17 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @cmdline = ( 'script seems to have ended' );
+if ( my $handle = $handles{$hostname} ) {
+  if ( my $process = $handle->soaphandle->session( $pid )->result ) {
+    @cmdline = $process->cmdline_array;
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@cmdline );
+</%init>
+<%args>
+$pid
+$hostname
+</%args>

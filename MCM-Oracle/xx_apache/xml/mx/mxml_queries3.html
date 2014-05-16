@@ -1,0 +1,102 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var workflow = $('#dummytrigger').attr('workflow');
+  var key      = $('#dummytrigger').attr('key');
+
+  $('#jqmTitleText').text( workflow + ' Flow' );
+  $modal.jqmShow();
+
+  showCriteria( workflow, key );
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showModal( workflow, key ) {
+  $('#dummytrigger').attr( 'workflow', workflow );
+  $('#dummytrigger').attr( 'key', key );
+  $('#modalWindow').jqmShow();
+}
+
+function showCriteria( workflow, key ) {
+  $('#jqmContent').css( 'width', '300px' );
+  $('#jqmContent').css( 'height', '200px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  var html = [], h = -1; var d = new Date();
+  html[++h] = '<br><div>';
+  html[++h] = '<form onsubmit="$(\'#modalWindow\').jqmHide(); return msubmit(this, \'mxml_route3.html\');">';
+  html[++h] = '<input type="hidden" name="workflow" value="' + workflow + '"></input>';
+  if ( key == 'FC ID' && workflow != 'Contract' ) {
+    html[++h] = '<input type="hidden" name="fc" value="1"></input>';
+  }
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr>';
+  html[++h] = '<td>' + key + ':</td>';
+  html[++h] = '<td><input type="text" name="key_id"></input></td>';
+  html[++h] = '</tr><tr>';
+  html[++h] = '<td>Include archive:</td>';
+  html[++h] = '<td><input type="checkbox" name="include_archive" value="1"></input></td>';
+  html[++h] = '</tr>';
+  html[++h] = '</table>';
+  html[++h] = '<br><input type="submit" class="button" id="searchbutton" value="Lookup"></input>';
+  html[++h] = '</form>';
+
+  $('#jqmContent')[0].innerHTML = html.join('');
+}
+</script>
+
+<div id="title">MxML Queries</div>
+
+<div id="dummytrigger" workflow="" key=""></div>
+
+<div id="modalWindow" class="jqmWindow">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table style="margin-left: auto; margin-right: auto; border-spacing: 10px;">
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Exchange', 'DOC ID' );">Query Exchange Flow using DOC ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Exchange', 'FC ID' );">Query Exchange Flow using FC ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Contract', 'FC ID' );">Query Contract Flow using FC ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Deliverable', 'DLV ID' );">Query Deliverable Flow using DLV ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Deliverable', 'FC ID' );">Query Deliverable Flow using FC ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Event', 'EVT ID' );">Query Event Flow using EVT ID</a>
+</td></tr>
+<tr><td>
+<a href="#" class="select" style="font-size: 12px;" onClick="showModal( 'Event', 'FC ID' );">Query Event Flow using FC ID</a>
+</td></tr>
+</table>

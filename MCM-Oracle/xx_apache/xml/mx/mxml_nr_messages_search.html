@@ -1,0 +1,61 @@
+<H2>Choose a date</H2>
+<BR>
+<form onsubmit="return msubmit(this, 'mxml_nr_messages.html')">
+<TABLE class="center" WIDTH="30%">
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Date&nbsp;</FONT></TD>
+    <TD>
+      <SELECT NAME="date">
+%     foreach my $date ( @dates ) {
+        <OPTION><% $date %></OPTION>
+%     }
+      </SELECT>
+    </TD>
+  </TR>
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Start Time&nbsp;</FONT></TD>
+    <TD>
+      <SELECT NAME="start_time">
+        <OPTION SELECTED>00:00</OPTION>
+% foreach my $i ( 1..23 ) {
+%   $i = sprintf "%02d", $i;
+        <OPTION><% $i %>:00</OPTION>
+% }
+      </SELECT>
+    </TD>
+  </TR>
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">End Time&nbsp;</FONT></TD>
+    <TD>
+      <SELECT NAME="end_time">
+% foreach my $i ( 0..22 ) {
+%   $i = sprintf "%02d", $i;
+        <OPTION><% $i %>:59</OPTION>
+% }
+        <OPTION SELECTED>23:59</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+</TABLE>
+<BR>
+<INPUT TYPE="submit" CLASS="table_button" VALUE=" Search ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onClick="mgoback('home.html')">
+</FORM>
+
+<%init>
+my ( $lowest_timestamp, $highest_timestamp ) = $db_audit->mxml_node_timestamp_range();
+my $lowest_date  = Mx::Util->epoch_to_iso( epoch => $lowest_timestamp  );
+my $highest_date = Mx::Util->epoch_to_iso( epoch => $highest_timestamp );
+
+my @dates = ( $lowest_date );
+
+my $date = $lowest_date;
+while ( $date < $highest_date ) {
+    my ( $year, $month, $day ) = $date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+    my ( $next_year, $next_month, $next_day ) = Add_Delta_Days( $year, $month, $day, 1 );
+    $date = sprintf "%04d%02d%02d", $next_year, $next_month, $next_day;
+    push @dates, $date;
+}
+
+@dates = reverse @dates;
+</%init>

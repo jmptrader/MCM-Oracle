@@ -1,0 +1,73 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        installHover();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/sybase_errors2.html',
+    "bPaginate":    false,
+    "bStateSave":   true,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 0, 1, 2, 3, 4 ] },
+
+      { "sWidth": "60px",         "aTargets": [ 0, 1, 2, 3 ] },
+      { "sWidth": "150px",        "aTargets": [ 4 ] },
+      { "sWidth": "1400px",       "aTargets": [ 5 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 2, 3 ] }
+    ],
+
+    "aaSorting":    [[ 4, "desc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+</script>
+
+<div id="title">Sybase Errors</div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh:</div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>SPID</th>
+  <th>NUMBER</th>
+  <th>SEVERITY</th>
+  <th>STATE</th>
+  <th>TIME</th>
+  <th>MESSAGE</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<br>
+
+<button class="button" id="refresh"> Refresh </button>

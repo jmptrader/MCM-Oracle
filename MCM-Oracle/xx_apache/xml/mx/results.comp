@@ -1,0 +1,16 @@
+<p>
+<div id="title">Historical <% $description %>s on <% $ENV{MXENV} %></div>
+<b>Total number of results: <% $nr_results %></b>
+<br>
+% return unless $nr_results;
+% my $first = ( $page_nr - 1 ) * $recs_per_page + 1;
+% my $last  = $page_nr * $recs_per_page;
+% $last = $nr_results if $nr_results < $last;
+<b>Displaying results <% $first %> to <% $last %></b>
+<p>
+<%args>
+$description
+$nr_results
+$recs_per_page
+$page_nr
+</%args>

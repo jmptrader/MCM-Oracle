@@ -1,0 +1,8 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $scripts_ref  = $m->comp( 'scripts.comp' );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => $scripts_ref } } );
+</%init>

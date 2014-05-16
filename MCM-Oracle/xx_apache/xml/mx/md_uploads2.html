@@ -1,0 +1,29 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $result = $db_audit->retrieve_md_uploads();
+
+my @uploads = ();
+if ( $result ) {
+  foreach my $upload ( @{$result} ) {
+    push @uploads, {
+      0  => $upload->[0],
+      1  => Mx::Util->convert_time( $upload->[1] ),
+      2  => $upload->[3],
+      3  => $upload->[4],
+      4  => Mx::Util->separate_thousands( $upload->[5] ) || '',
+      5  => Mx::Util->convert_bytes( $upload->[7] ),
+      6  => $upload->[8],
+      7  => $upload->[9],
+      8  => $upload->[10],
+      9  => $upload->[11],
+      10 => $upload->[12],
+      11 => $full_names{ $upload->[8] } || '',
+      DT_RowId => $upload->[0] . ':' . $upload->[13] . ':' . $upload->[14] . ':' . $upload->[6]
+    };
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@uploads } } );
+</%init>

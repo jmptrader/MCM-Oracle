@@ -1,0 +1,14 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @data = ();
+if ( my $result = $db_audit->retrieve_logfile_extract( id => $extract_id ) ) {
+  @data = split /\n/, $result->[4];
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@data );
+</%init>
+<%args>
+$extract_id
+</%args>

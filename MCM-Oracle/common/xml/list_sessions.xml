@@ -1,0 +1,11 @@
+<?xml version="1.0"?>                         
+<project name="Monitor_service" basedir="." default="sample">
+  <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#AUTHENTICATION" MxAnchorType="Include"/>
+  <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#LIST_SERVERS" MxAnchorType="Include"/>
+  <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#LIST_PROCESS" MxAnchorType="Include"/>
+  <target name="listservers" description="list servers">
+    <murex.middleware.access.authentication user="ADMIN" password="__ADMIN:PASSWORD__" crypted="Y"/>
+    <murex.middleware.access.listServers outputFile="__$RUNDIR__/sessions.xml"/>
+  </target>
+</project>
+

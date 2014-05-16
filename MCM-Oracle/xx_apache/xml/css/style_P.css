@@ -1,0 +1,46 @@
+/**
+ * Environment specific stylesheet
+ * specific overrides of style.css
+ */
+
+body {
+  background-color: #EEFAFF;
+  color: #000000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 10px;
+}
+
+.blend  {
+  background-color: #EEFAFF;
+}
+
+.button[disabled], .button_d, .button[disabled]:hover {
+  color: #AAAAAA;
+  background-color: #EEFAFF;
+}
+
+.button:hover, .button_a {
+  background-color: #CCD8DD;
+}
+
+input, select, button, .inputfield, input.button, .button, .description {
+  background-color: #F4FCFF;
+}
+
+.inverse {
+  color: #F4FCFF;
+  background-color: 000000;
+}
+
+tr, tr.even, tr.odd {
+  background-color: #EEFAFF;
+}
+
+tr.even:hover, tr.odd:hover {
+  background-color: #FFCC33; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all;
+}
+
+#extra_tables th {
+  color: #5970B2;
+}
+

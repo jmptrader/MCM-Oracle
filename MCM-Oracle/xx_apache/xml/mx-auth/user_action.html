@@ -1,0 +1,82 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="feedback" class="grid_12">
+    <% $feedback %>
+  </div>
+
+  <div id="actions" class="grid_12">
+    <form action="users.html" method=POST>
+      <input type="submit" class="button" value=" Go Back ">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $feedback;
+if ( $name ) {
+  $group = [ $group ] unless ref($group) eq 'ARRAY';
+
+  if ( $action =~ /insert/i ) {
+    my $user = Mx::Auth::User->new( name => $name, first_name => $first_name, last_name => $last_name, password => $password, type => $type, location => $location, config_data => $config_data, disabled => $disabled, db => $auth_db, config => $config, logger => $logger);
+    if ( $user->insert && $user->set_groups( group_ids => $group ) ) {
+      $feedback = "User $name has been inserted";
+    }
+    else {
+      $feedback = "User $name could not be inserted";
+    }
+  }
+  elsif ( $action =~ /update/i ) {
+    my $user = Mx::Auth::User->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $user->retrieve;
+    $user->name( $name );
+    $user->first_name( $first_name );
+    $user->last_name( $last_name );
+    $user->type( $type );
+    $user->location( $location );
+    $user->config_data( $config_data );
+    $user->disabled( $disabled );
+    $user->set_password( $password ) if $password;
+    if ( $user->update && $user->set_groups( group_ids => $group ) ) {
+      $feedback = "User $name has been updated";
+    } 
+    else {
+      $feedback = "User $name could not be updated";
+    }
+  }
+  elsif ( $action =~ /delete/i ) {
+    my $user = Mx::Auth::User->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    if ( $user->delete ) {
+      $feedback = "User $name has been deleted";
+    } 
+    else {
+      $feedback = "User $name could not be deleted";
+    }
+  }
+}
+else {
+  $feedback = "No name specified";
+}
+</%init>
+
+<%args>
+$action
+$id          => 0
+$name        => ''
+$first_name  => ''
+$last_name   => ''
+$password    => ''
+$type        => ''
+$location    => ''
+$config_data => ''
+$disabled    => 0
+$group       => [] 
+</%args>

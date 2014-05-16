@@ -1,0 +1,35 @@
+<table width="100%">
+  <tr class="label">
+    <th class="description" align="left" colspan=3>Environment: <% $environment_name %></th>
+  </tr>
+% if ( @rights ) {
+%   foreach my $right ( @rights ) {
+%     my $id = $right->id;
+  <tr>
+    <td width="20%"><A class="select" href="right_details.html?id=<% $id %>"><% $right->name %></A></td>
+    <td width="20%"><% $right->type %></td>
+    <td width="60%"><% $right->description %></td>
+  </tr>
+%   }
+% }
+% else {
+  <tr><td colspan=3>No Rights</td></tr>
+% }
+</table>
+<form action="group_rights.html" method="POST">
+  <input type="hidden" name="user_group_id" value="<% $user_group_id %>">
+  <input type="hidden" name="environment_id" value="<% $environment_id %>">
+  <input type="hidden" name="environment_name" value="<% $environment_name %>">
+  <input type="submit" class="button" right="auth_master" name="action" value=" Update ">
+</form>
+
+<%init>
+  my $group  = Mx::Auth::Group->new( id => $user_group_id, db => $auth_db, logger => $logger, config => $config );
+  my @rights = $group->rights( environment_id => $environment_id ); 
+</%init>
+
+<%args>
+$user_group_id
+$environment_id
+$environment_name
+</%args>

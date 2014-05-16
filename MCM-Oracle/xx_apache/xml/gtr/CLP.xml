@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reportingOperations xmlns="http://regis-tr.com/schema/2012/1.1.0/Reporting">
+%if ( ! $result->size ) {
+<endOfData>NO MORE DATA</endOfData>
+%}
+%while ( my %row = $result->next_hash ) {
+<reportingCollateralUpdate>
+<header>
+<transactionReference><% $row{'MSG_ID'} %></transactionReference>
+<tradeType><% $row{'TRD_TYPE_REGIS'} %></tradeType>
+<sentBy><% $row{'SENT_BY'} %></sentBy>
+<sentTo><% $row{'SENT_TO'} %></sentTo>
+<creationTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'REP_TIMESTAMP'} ) %></creationTimestamp>
+</header>
+<trade>
+<collateralDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'COL_DATE'} ) %></collateralDate>
+<counterpartyData>
+<partyIdType><% $row{'RP_EMIR_ID_TYPE'} %></partyIdType>
+<partyId><% $row{'RP_EMIR_ID'} %></partyId>
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+<reportingEntityIdType><% $row{'TP_EMIR_ID'} |h %></reportingEntityIdType>
+<reportingEntityId><% $row{'TP_EMIR_ID'} |h %></reportingEntityId>
+%}
+<exposures>
+<collateralPortfolioCode><% $row{'RP_COL_PTF'} %></collateralPortfolioCode>
+<collateralValue><% $row{'RP_COL_AMOUNT'} %></collateralValue>
+<collateralCurrency><% $row{'RP_COL_CCY'} %></collateralCurrency>
+</exposures>
+</counterpartyData>
+%if ( $row{'EMIR_REP'} eq 'FULL' ) {
+<counterpartyData>
+<partyIdType><% $row{'OP_EMIR_ID_TYPE'} |h %></partyIdType>
+<partyId><% $row{'OP_EMIR_ID'} |h %></partyId>
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+<reportingEntityIdType><% $row{'TP_EMIR_ID_TYPE'} |h %></reportingEntityIdType>
+<reportingEntityId><% $row{'TP_EMIR_ID'} |h %></reportingEntityId>
+%}
+%if ( $row{'ACC_TYPE'} eq 'RP' ) {
+<reportingEntityIdType><% $row{'RP_EMIR_ID_TYPE'} |h %></reportingEntityIdType>
+<reportingEntityId><% $row{'RP_EMIR_ID'} |h %></reportingEntityId>
+%}
+<exposures>
+<collateralPortfolioCode><% $row{'RP_COL_PTF'} %></collateralPortfolioCode>
+<collateralValue><% $row{'RP_COL_AMOUNT'} %></collateralValue>
+<collateralCurrency><% $row{'RP_COL_CCY'} %></collateralCurrency>
+</exposures>
+</counterpartyData>
+%}  #end if EMIR_REP = FULL
+</trade>
+</reportingCollateralUpdate>
+%$update_result = $sybase_rep->do( statement => $update_query, logger => $logger, values => [ $row{'MSG_ID'}, $macc_label, $prop_label ] );
+%}  #end while rows available
+</reportingOperations>
+<%init>
+if ( $output eq 'file' ) {
+  my $fh;
+  unless ( $fh = IO::File->new( $filename, '>' ) ) {
+  }
+
+  $m->out_method( sub { print $fh @_ } );
+}
+$config->set_project_variables( 'bo_gtr' );
+my $sql_library = Mx::SQLLibrary->new( file => $config->KBC_SQLDIR.'/gtr_gen_CLP.sql', logger => $logger );
+my ( $query, $update_query, $update_result );
+if ( $size eq 'ALL' ) {
+    $query = $sql_library->query( 'get_all_clp_data_from_final_msg_table' );
+}
+else {
+    $query = $sql_library->query( 'get_clp_data_from_final_msg_table' );
+}
+$update_query = $sql_library->query( 'update_msg_to_status_generated' );
+$config->set_project_variables( 'common' );
+$query =~ s/__ENTITY__/$entity/g;
+$query =~ s/__SIZE__/$size/g;
+$update_query =~ s/__ENTITY__/$entity/g;
+my $result = $sybase_rep->query( query => $query, logger => $logger, values => [ $macc_label, $prop_label ] );
+</%init>
+<%once>
+my $sybase_rep = Mx::Sybase2->new( dsquery => $config->DSQUERY, database => $config->DB_REP, username => $account->name, password => $account->password, config => $config, logger => $logger );
+$sybase_rep->open();
+</%once>
+<%args>
+$output     => 'screen'
+$filename   => ''
+$size       => 1
+$entity     => 'CG'
+$macc_label => 'CBC'
+$prop_label => 'CBC'
+$prop_regis => 'RPTEST'
+</%args>

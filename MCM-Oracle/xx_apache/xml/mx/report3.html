@@ -1,0 +1,464 @@
+<script type="text/javascript">
+var oTable; var aColumns = []; var aExcluded = []; var aFilters = []; var aSorting = []; var bReset = false;
+$(document).ready( function() {
+% foreach ( @columns ) {
+  aColumns.push( "<% $_ %>" );
+% }
+  oTable = $('#result').dataTable( {
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      aoData.push(
+        { "name": "id",    "value": <% $id %> },
+        { "name": "reset", "value": bReset    }
+      );
+      $.each( aExcluded, function(index, value) {
+        aoData.push( { "name": "excluded", "value": value } );
+      } ); 
+      $.each( aFilters, function(index, value) {
+        aoData.push( { "name": "filter", "value": value.column + ':' + value.filter } );
+      } ); 
+      $.each( aSorting, function(index, value) {
+        aoData.push( { "name": "sort", "value": value.column + ':' + value.direction } );
+      } ); 
+      $.ajax( {
+        dataType: "json",
+        url: sSource,
+        data: aoData,
+        type: "POST",
+        success: function(json) {
+          fnCallback(json.datatables)
+          installModal();
+          installHover();
+          bReset = false;
+        }
+      } );
+    },
+    "sDom":            'lTr<"clear">Ctpi<"clear">',
+    "bProcessing":     true,
+    "bServerSide":     true,
+    "sAjaxSource":     '/mx/report2.html',
+    "bPaginate":       true,
+    "sPaginationType": "full_numbers",
+    "bSort":           false,
+    "bStateSave":      false,
+    "sScrollY":        "700px",
+    "sScrollX":        "100%",
+    "aLengthMenu":     [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+    "aoColumnDefs": [
+      { "sClass": "ralign",  "aTargets": [ <% join ',', @numeric_fields %> ] }
+    ],
+    "oColVis": {
+        "aiExclude":    [0],
+        "iOverlayFade": 0, 
+        "fnStateChange": function () {
+          get_excluded();
+        }
+    },
+    "oTableTools": {
+      "sSwfPath": "/swf/copy_csv_xls_pdf.swf",
+      "aButtons": [
+        { "sExtends": "print", "mColumns": "visible", "bShowAll": false, "sMessage": "<% $message %>" }
+      ]
+    },
+    "fnInitComplete": function () {
+      new FixedColumns( oTable );
+    }
+  } );
+
+  $("input.filter").live( "blur", function() {
+    add_filter( $(this).attr('fname'), this.value );
+  } );
+
+  $("select.filter").live( "change", function() {
+    add_filter( $(this).attr('fname'), $(this).val() );
+  } );
+
+  $("th.sort").live( "click", function() {
+    add_sort( $(this).attr('sname') );
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('img.filter').live( {
+    mouseover: function() {
+      $(this).attr( "src", "../images/collection_hover.png" );
+    },
+    mouseout: function() {
+      $(this).attr( "src", "../images/collection.png" );
+    },
+    click: function() { 
+      var fname   = $(this).attr('fname');
+      var sibling = $(this).siblings().get(0);
+
+      var html = [], h = -1;
+      if ( $(sibling).is('input') ) {
+        get_select_options( sibling, fname );
+      }
+      else if ( $(sibling).is('select') ) {
+        $(sibling).replaceWith( '<input type="text" fname="' + fname + '" placeholder="Filter" class="search_init filter" style="width: 90%;"/>' );
+      }
+
+      add_filter( fname, '' );
+    }
+  } );
+
+  $("button#redraw").live( "click", function() {
+    oTable.fnDraw();
+  } );
+
+  $("button#process").live( "click", function() {
+    $("input.filter,select.filter").each( function() {
+      if ( $(this).val() ) {
+        $(this).prop( "disabled", true );
+        var sibling = $(this).siblings().get(0);
+        $(sibling).prop( "disabled", true );
+      }
+    } );
+
+    oTable.fnDraw();
+
+    $("button#save").css({ "display" : "" });
+  } );
+
+  $("button#reset").live( "click", function() {
+    aFilters = [];
+    display_filters();
+
+    aSorting = [];
+    display_sorting();
+
+    $("input.filter,select.filter").each( function() {
+      if ( $(this).val() ) {
+        $(this).prop( "disabled", false );
+        $(this).val('');
+        var sibling = $(this).siblings().get(0);
+        $(sibling).prop( "disabled", false );
+      }
+    } );
+
+    bReset = true;
+
+    $("button#save").css({ "display" : "none" });
+
+    oTable.fnDraw();
+  } );
+
+  $("button#save").live( "click", function() {
+    $('#dummytrigger').attr( 'action', 'store' );
+    $('#modalWindow').jqmShow();
+  } );
+
+  $("button#store").live( "click", function() {
+    store_report();
+  } );
+
+  setInterval( "keepSessionAlive()", 50000 );
+  
+} );
+
+function get_select_options( element, name ) {
+  var column = name.replace( 'filter_', '' );
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/report2.html',
+    data:     { 'values_index': column, 'id': <% $id %> },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+    html[++h] = '<select class="filter" fname="' + name + '" style="width: 90%;">';
+    html[++h] = '<option></option>';
+
+    for ( var i = 0; i < data.data.length; i++ ) {
+      html[++h] = '<option value="' + data.data[i].value + '">' + data.data[i].value + ' (' + data.data[i].count + ')</option>';
+    }
+    html[++h] = '</select>';
+
+    $(element).replaceWith( html.join('') );
+  } );
+}
+
+function store_report() {
+  var name           = $('input#store_name').val();
+  var comment        = $('textarea#store_comment').val();
+  var max_nr_records = $('input#store_nr_records').val();
+
+  if ( name == '' ) {
+    $('#store_feedback')[0].innerHTML = '<font color="red">name is empty</font>';
+    return;
+  }
+
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/report2.html',
+    data:     { 'id': <% $id %>, 'win_user': '<% $m->session->{username} %>', 'name': name, 'comment': comment, 'max_nr_records': max_nr_records },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  request.done( function( data ) {
+    $('button#store').unbind( 'click' );
+    $('button#store').removeClass( 'button' );
+    $('button#store').addClass( 'button_d' );
+
+    var html = [], h = -1;
+    html[++h] = '<font color="red">';
+    if ( data.data.error == '' ) {
+      html[++h] = 'report saved';
+      html[++h] = '<br><br>ID: ' + data.data.id;
+      html[++h] = '<br>Number of records: ' + data.data.nr_records;
+      html[++h] = '<br>Size: ' + data.data.size;
+    }
+    else {
+      html[++h] = data.data.error;
+    }
+    html[++h] = '</font>';
+
+    $('#store_feedback')[0].innerHTML = html.join('');
+  } );
+}
+
+function add_filter( name, filter ) {
+  var column = name.replace( 'filter_', '' );
+  var index = -1;
+  for ( var i = 0; i < aFilters.length; i++ ) {
+    if ( aFilters[i].column == column ) {
+      index = i;
+    }
+  }
+
+  if ( index == - 1 ) {
+    if ( filter != '' ) {
+      var h = new Object();
+      h.column = column;
+      h.filter = filter;
+      aFilters.push( h );
+    }
+  }
+  else {
+    if ( filter == '' ) {
+      aFilters.splice( index, 1 );
+    }
+    else {
+      aFilters[index].filter = filter;
+    }
+  }
+
+  display_filters();
+}
+
+function add_sort( name ) {
+  var column = name.replace( 'sort_', '' );
+  var index = -1;
+  for ( var i = 0; i < aSorting.length; i++ ) {
+    if ( aSorting[i].column == column ) {
+      index = i;
+    }
+  } 
+
+  if ( index == - 1 ) {
+    var h = new Object();
+    h.column    = column;
+    h.direction = 'asc';
+    aSorting.push( h );
+  }
+  else {
+    if ( aSorting[index].direction == 'asc' ) {
+      aSorting[index].direction = 'desc';
+    }
+    else if ( aSorting[index].direction == 'desc' ) {
+      aSorting.splice( index, 1 );
+    }
+  }
+
+  display_sorting();
+}
+
+function get_excluded() {
+  aExcluded = [];
+
+  for ( var i = 1; i < oTable.fnSettings().aoColumns.length; i++ ) {
+    if( oTable.fnSettings().aoColumns[i].bVisible == false ) {
+      aExcluded.push( i )
+    }
+  }
+
+  display_excluded();
+}
+
+function display_filters() {
+  var html = [], h = -1;
+
+  html[++h] = '<table><tr><th style="text-align: left; width: 100px; padding: 4px 10px;">Filters</th>';
+
+  for ( var i = 0; i < aFilters.length; i++ ) {
+    html[++h] = '<td style="background-color: #5970B2; color: #FFFFFF; font-weight: bold; padding: 4px 10px;">' + aColumns[ aFilters[i].column ] + ' : ' + aFilters[i].filter + '</td>';
+  }
+
+  html[++h] = '</tr></table>';
+
+  $('div#filters')[0].innerHTML = html.join('');
+}
+
+function display_sorting() {
+  var html = [], h = -1;
+
+  html[++h] = '<table><tr><th style="text-align: left; width: 100px; padding: 4px 10px;">Sorting</th>';
+
+  for ( var i = 0; i < aSorting.length; i++ ) {
+    var direction = ( aSorting[i].direction == 'asc' ) ? '&uarr;' : '&darr;';
+    html[++h] = '<td style="background-color: #5970B2; color: #FFFFFF; font-weight: bold; padding: 4px 10px;">' + aColumns[ aSorting[i].column ] + ' ' + direction + '</td>';
+  }
+
+  html[++h] = '</tr></table>';
+
+  $('div#sorting')[0].innerHTML = html.join('');
+}
+
+function display_excluded() {
+  var html = [], h = -1;
+
+  html[++h] = '<table><tr><th style="text-align: left; width: 100px; padding: 4px 10px;">Excluded</th>';
+
+  for ( var i = 0; i < aExcluded.length; i++ ) {
+    html[++h] = '<td style="background-color: #5970B2; color: #FFFFFF; font-weight: bold; padding: 4px 10px;">' + aColumns[ aExcluded[i] ] + '</td>';
+  }
+
+  html[++h] = '</tr></table>';
+
+  $('div#excluded')[0].innerHTML = html.join('');
+}
+
+function showStorageForm() {
+  $('#jqmContent').css( 'width', '400px' );
+  $('#jqmContent').css( 'height', '200px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  var html = [], h = -1;
+
+  html[++h] = '<p><div>';
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr><td>Name:</td>';
+  html[++h] = '<td><input type="text" id="store_name" size=20 max=50></input></td></tr>';
+  html[++h] = '<tr><td>Comment:</td>';
+  html[++h] = '<td><textarea id="store_comment" rows=4 cols=50 maxlength=200></textarea></td></tr>';
+  html[++h] = '<tr><td>Number of records:</td>';
+  html[++h] = '<td><input type="text" id="store_nr_records" size=8 max=8></input></td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '<p><button class="button" id="store"> Store </button>';
+  html[++h] = '</div>';
+  html[++h] = '<div style="clear: both;"></div>';
+  html[++h] = '<p><div style="float: left;" id="store_feedback"></div>';
+
+  $('#jqmContent')[0].innerHTML = html.join('');
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var action = $('#dummytrigger').attr('action');
+
+  if ( action == 'store' ) {
+    $('#jqmTitleText').text( '' );
+    $modal.jqmShow();
+
+    showStorageForm();
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function keepSessionAlive() {
+  $.post("/mx/ping.html");
+}
+</script>
+
+<div id="title">Report #<% $id %></div>
+
+<p>
+
+<div id="dummytrigger"></div>
+
+<div id="modalWindow" class="jqmWindow">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result" style="width: 100%;" >
+<thead>
+  <tr>
+  <td></td>
+% for ( my $i = 1; $i <= $#columns; $i++ ) {
+    <th style="background-color: #FFFFCC; padding: 3px 1px 3px 1px;">
+      <input type="text" fname="filter_<% $i %>" placeholder="Filter" class="search_init filter" style="width: 90%;"/>
+      <img src="../images/collection.png" fname="filter_<% $i %>" align="bottom" border=0" class="filter">
+    </th>
+% }
+  </tr>
+ <tr>
+  <th><% $columns[0] %></th>
+% for ( my $i = 1; $i <= $#columns; $i++ ) {
+%   my $column = $columns[$i];
+  <th sname="sort_<% $i %>" class="sort"><% $column %></th>
+% }
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<div id="excluded"><table><tr><th style="text-align: left; width: 100px; padding: 4px 10px;">Excluded</th></tr></table></div>
+<div id="filters"><table><tr><th style="text-align: left; width: 100px; padding: 4px 10px;">Filters</th></tr></table></div>
+<div id="sorting"><table><tr><th style="text-align: left; width: 100px; padding: 4px 10 px;">Sorting</th></tr></table></div>
+
+<button class="button" id="redraw" style="margin: 2px;"> Redraw </button>
+<button class="button" id="process" style="margin: 2px;"> Process </button>
+<button class="button" id="reset" style="margin: 2px;"> Reset </button>
+<button class="button" id="save" style="margin: 2px; display: none;"> Save Result </button>
+
+<%init>
+my $report  = Mx::Datamart::Report->retrieve( id => $id, db_audit => $db_audit, config => $config, logger => $logger );
+my @fields  = $report->format_fields();
+my @columns = $report->columns();
+my $message = $report->directory . '/' . $report->name;
+
+unshift @columns, '#';
+
+my @numeric_fields = ( 0 );
+my $i = 1;
+foreach my $field ( @fields ) {
+    push @numeric_fields, $i unless $field->{type} eq $Mx::Datamart::Report::FIELD_STRING;
+    $i++;
+}
+</%init>
+
+<%args>
+$id
+</%args>

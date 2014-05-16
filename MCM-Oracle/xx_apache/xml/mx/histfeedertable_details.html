@@ -1,0 +1,40 @@
+<h2>Feeder table #<% $table->[0] %></h2>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table;
+    <tr><td class="description" width="20%" nowrap><font color="#FFFFFF"><% $key %>&nbsp;</font></td><td><% ( defined $value ) ? $value : '&nbsp;' %></td></tr>
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onclick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histfeedertable_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $table = $db_audit->retrieve_feedertable( id => $feeder_id );
+my @table;
+push @table, 'Session'            , '<a href="#" onclick="mnavigate( \'histsession_details.html\', { session_id:' . $table->[1] . ' }, { ' . $nav_args . ' } );">' . $table->[1] . '</a>';
+push @table, 'Name'               , $table->[2];
+push @table, 'Batch Name'         , $table->[3];
+push @table, 'Feeder Name'        , $table->[4];
+push @table, 'Entity'             , $table->[5];
+push @table, 'Run Type'           , $table->[6];
+push @table, 'Timestamp'          , Mx::Util->convert_time( $table->[7] );
+push @table, 'Job ID'             , $table->[8];
+push @table, 'Ref data'           , $table->[9];
+push @table, '# Records',         , Mx::Util->separate_thousands( $table->[10] );
+</%init>
+
+<%args>
+$feeder_id
+</%args>

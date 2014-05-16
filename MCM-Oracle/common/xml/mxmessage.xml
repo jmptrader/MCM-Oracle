@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<mxmessage id="__ID__" type="__TYPE__" priority="__PRIORITY__">
+  <userid>__USERID__</userid>
+  <timestamp>__TIMESTAMP__</timestamp>
+  <validity>__VALIDITY__<validity>
+  <title>__TITLE__</title>
+  <environment>__ENVIRONMENT__</environment>
+  <message>__MESSAGE__</message>
+</mxmessage>

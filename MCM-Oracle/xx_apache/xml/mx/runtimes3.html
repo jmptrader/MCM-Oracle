@@ -1,0 +1,154 @@
+<script type="text/javascript">
+var data_array = [ <% join ',', @rows %> ];
+
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "aaData": data_array,
+     "aoColumns": [
+      <% join ',', @columns %>
+     ],
+     "sDom":         'Cft',
+     "oColVis":      { "aiExclude": [ 4 ] },
+     "bPaginate":    false,
+     "sScrollY":     "900px",
+     "sScrollX":     "100%",
+
+     "aoColumnDefs": [
+        { "fnRender": function ( o, val ) {
+        return '<a class="tiptip" href="#" onclick="mnavigate( \'histsessions.html\', { mx_scriptname: \'' + o.aData[0] + '\', mx_scripttype: \'' + o.aData[1] + '\', entity: \'' + o.aData[2] + '\', runtype: \'' + o.aData[3] + '\' } );" title="Average: ' + o.aData[<% $average_index %>] + '">' + o.aData[0] + '</a>';
+        }, "aTargets": [ 0 ] }
+     ]
+  } );
+
+
+  oTable.fnFilter( '_d_u_r_', 4 );
+  $('#duration').addClass('active');
+  installHover();
+  $('.tiptip').tipTip();
+
+  $('#duration').live( "click", function() {
+    $('.button').removeClass('active');
+    $('#duration').addClass('active');
+    oTable.fnFilter( '_d_u_r_', 4 );
+  } );
+
+  $('#cpu_seconds').live( "click", function() {
+    $('.button').removeClass('active');
+    $('#cpu_seconds').addClass('active');
+    oTable.fnFilter( '_c_p_u_', 4 );
+    installHover();
+    $('.tiptip').tipTip();
+  } );
+
+  $('#vsize').live( "click", function() {
+    $('.button').removeClass('active');
+    $('#vsize').addClass('active');
+    oTable.fnFilter( '_m_e_m_', 4 );
+    installHover();
+    $('.tiptip').tipTip();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } ); 
+} );
+</script>
+
+<div>
+<button class="button" id="duration"> Duration </button>
+<button class="button" id="cpu_seconds"> CPU Seconds </button>
+<button class="button" id="vsize"> Vsize </button>
+</div>
+
+<table id="result">
+</table>
+
+<%init>
+my @runtimes = Mx::Runtime->list( scripttype => $scripttype, runtype => $runtype, db_audit => $db_audit, logger => $logger );
+
+my @dates;
+if ( @runtimes ) {
+  @dates = $runtimes[0]->dates;
+}
+
+@dates = reverse @dates;
+
+my $average_index = 5 + @dates;
+
+my @columns = (
+  '{ "sTitle": "NAME",   "sWidth": "140px" }',
+  '{ "sTitle": "TYPE",   "sWidth": "60px" }',
+  '{ "sTitle": "ENTITY", "sWidth": "50px", "sClass": "center" }',
+  '{ "sTitle": "RUN",    "sWidth": "40px" }',
+  '{ "sTitle": "VALUE",  "sWidth": "60px", "bVisible": false }',
+);
+
+foreach my $date ( @dates ) {
+  my ( $year, $month, $day ) = $date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+  my $epoch = timelocal( 0, 0, 0, $day, $month - 1, $year );
+  my $weekday = ( localtime( $epoch ) )[6];
+  my $wd_string = qw( Su Mo Tu We Th Fr Sa )[ $weekday ];
+  my $title = "$wd_string $day/$month";
+  push @columns, '{ "sTitle": "' . $title . '", "sWidth": "59px", "sClass": "ralign", "asSorting": [ "desc", "asc" ], "fnRender": function(o, val) { return val.split(";")[0]; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { var pos = data_array[iRow][iCol].split(";")[1]; heatMapColor2( nTd, pos ); } }';
+}
+
+push @columns, (
+  '{ "sTitle": "AVERAGE",      "sWidth": "80px",  "sClass": "ralign", "asSorting": [ "desc", "asc" ] }',
+  '{ "sTitle": "# RUNS",       "sWidth": "60px",  "sClass": "ralign", "asSorting": [ "desc", "asc" ] }',
+  '{ "sTitle": "# FAIL",       "sWidth": "60px",  "sClass": "ralign", "asSorting": [ "desc", "asc" ] }',
+);
+
+my @rows;
+foreach my $runtime ( @runtimes ) {
+  my @duration_row = my @cpu_row = my @vsize_row = ( 
+    $runtime->scriptname,
+    $runtime->scripttype,
+    $runtime->entity,
+    $runtime->runtype
+  );
+
+  push @duration_row, '_d_u_r_';
+  push @cpu_row, '_c_p_u_';
+  push @vsize_row, '_m_e_m_';
+
+  foreach my $date ( @dates ) {
+    my ( $duration, $duration_delta ) = $runtime->duration( $date );
+    push @duration_row, ( scalar( Mx::Util->convert_seconds( $duration ) ) . ';' . $duration_delta );
+
+    my ( $cpu_seconds, $cpu_seconds_delta ) = $runtime->cpu_seconds( $date );
+    push @cpu_row, ( Mx::Util->separate_thousands( $cpu_seconds ) . ';' . $cpu_seconds_delta );
+
+    my ( $vsize, $vsize_delta ) = $runtime->vsize( $date );
+    push @vsize_row, ( Mx::Util->separate_thousands( $vsize ) . ';' . $vsize_delta );
+  }
+
+  push @duration_row, scalar( Mx::Util->convert_seconds( $runtime->avg_duration ) );
+  push @cpu_row, Mx::Util->separate_thousands( $runtime->avg_cpu_seconds );
+  push @vsize_row, Mx::Util->separate_thousands( $runtime->avg_vsize );
+
+  my @last_columns = ( 
+    Mx::Util->separate_thousands( $runtime->nr_total_runs ),
+    Mx::Util->separate_thousands( $runtime->nr_failures ),
+  );
+
+  push @duration_row, @last_columns; 
+  push @cpu_row, @last_columns; 
+  push @vsize_row, @last_columns;
+
+  @duration_row = map { '"' . $_ . '"' } @duration_row;
+  @cpu_row = map { '"' . $_ . '"' } @cpu_row;
+  @vsize_row = map { '"' . $_ . '"' } @vsize_row;
+
+  my $duration_row = '[ ' . ( join ',', @duration_row ) . ' ]';
+  my $cpu_row = '[ ' . ( join ',', @cpu_row ) . ' ]';
+  my $vsize_row = '[ ' . ( join ',', @vsize_row ) . ' ]';
+     
+  push @rows, ( $duration_row, $cpu_row, $vsize_row );
+}
+</%init>
+
+<%args>
+$scripttype
+$runtype
+</%args>

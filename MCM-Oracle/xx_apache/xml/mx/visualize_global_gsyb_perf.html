@@ -1,0 +1,141 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'});
+} );
+</script>
+<H2>Global Performance on <% $dsquery %></H2>
+
+% my( $start, $end ) = $m->comp( 'timepicker.comp', url => 'visualize_global_gsyb_perf.html', range => $range, date => $date, time => $time, action => $action );
+
+<%perl>
+my %graph_options = (
+  imgformat   => $image_format,
+  width       => $config->GRAPH_WIDTH,
+  height      => $config->GRAPH_HEIGHT,
+  lower_limit => 0,
+  start       => $start,
+  end         => $end
+);
+
+my @files = ();
+
+my $file = "/tmp/${dsquery}_global_perf_percentage_$range" . $image_extension;
+push @files, $file;
+
+$rrd->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    type   => 'area',
+    color  => '00FF00',
+    dsname => 'ucpu',
+    legend => 'User',
+  },
+  draw  => {
+    type   => 'stack',
+    color  => 'FF5500',
+    dsname => 'scpu',
+    legend => 'System',
+  },
+  draw  => {
+    type   => 'stack',
+    color  => '0000FF',
+    dsname => 'wcpu',
+    legend => 'Wait',
+  }
+);
+
+$file = "/tmp/${dsquery}_global_perf_scan_rate_$range" . $image_extension;
+push @files, $file;
+
+$rrd->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'sr',
+    legend => 'Memory Scan Rate',
+  }
+);
+
+$file = "/tmp/${dsquery}_global_perf_run_queue_$range" . $image_extension;
+push @files, $file;
+
+$rrd->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'runq',
+    legend => 'CPU Run Queue',
+  }
+);
+
+$file = "/tmp/${dsquery}_global_perf_entitlement_$range" . $image_extension;
+push @files, $file;
+
+$rrd->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'entc',
+    legend => 'Entitled Capacity',
+  }
+);
+
+$file = "/tmp/${dsquery}_global_perf_physical_$range" . $image_extension;
+push @files, $file;
+
+$rrd2->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'physc',
+    legend => 'Physical CPU number used',
+  }
+);
+
+$file = "/tmp/${dsquery}_global_perf_logical_$range" . $image_extension;
+push @files, $file;
+
+$rrd2->graph(
+  image  => $file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'lbusy',
+    legend => 'Logical CPU percentage used',
+  }
+);
+</%perl>
+
+% foreach my $file ( @files ) {
+<P>
+<IMG SRC="<% $file %>?<% time() %>">
+% }
+
+<%init>
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+
+my $collector  = Mx::Collector->new( name => 'db_server_perf', config => $config, logger => $logger );
+my $rrdfile    = $hires ? $collector->hires_rrdfile : $collector->rrdfile;
+my $rrd        = RRDTool::OO->new( file => $rrdfile );
+
+my $collector2 = Mx::Collector->new( name => 'db_server_perf2', config => $config, logger => $logger );
+my $rrdfile2   = $hires ? $collector2->hires_rrdfile : $collector2->rrdfile;
+my $rrd2       = RRDTool::OO->new( file => $rrdfile2);
+
+my $dsquery    = $config->DSQUERY;
+</%init>
+
+<%args>
+$range  => 'hour';
+$date   => '',
+$time   => '',
+$action => '';
+$hires  => 1;
+</%args>

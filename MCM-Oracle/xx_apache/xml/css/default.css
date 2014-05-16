@@ -1,0 +1,59 @@
+*{
+    font-size: 9pt;
+    font-family: Arial, verdana;
+}
+
+body{
+    margin:5px
+}    
+h1{
+    font-size:150%;
+}
+
+#summary{
+    text-align:center;
+}
+
+table{
+    background: silver;
+}
+
+th{
+    background: #e7e7e7;
+    
+}
+tr{
+    background:white;
+}
+td{
+    font-size:90%;
+}
+.menu{
+    font-size:8pt;
+    color:#333333;
+    text-align: center;
+    height:20px;
+    overflow:hidden;
+}
+a, a.link, a.visited{
+    color:blue;
+}
+.menu a{
+    font-size: 8pt;
+    text-decoration:none;
+}
+.nbr_A{
+    text-align:right;
+    background:#99FFFF;
+}
+.nbr_B{
+    text-align:right;
+    background:#CEFFCE;
+}
+.nbr_D, .nbr_D_err{
+    text-align:right;
+    background:lightyellow;
+}
+.nbr_D_err{
+    color:red;
+}

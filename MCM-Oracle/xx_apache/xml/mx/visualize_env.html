@@ -1,0 +1,106 @@
+<H2>Environments on <% $app_server %></H2>
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_env.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_env.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_env.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_env.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<IMG SRC="<% $cpu_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $mem_file %>?<% time() %>">
+
+<%init>
+my @colors = qw( 000000 FF0000 00FF00 0000FF FFFF00 00FFFF FF66FF 006633 9999FF 660066 666666 );
+my $nr_seconds;
+if ( $range eq 'year' ) {
+  $nr_seconds = 365 * 24 * 3600;
+}
+elsif ( $range eq 'month' ) {
+  $nr_seconds = 31 * 24 * 3600;
+}
+elsif ( $range eq 'week' ) {
+  $nr_seconds = 7 * 24 * 3600;
+}
+else {
+  $nr_seconds = 24 * 3600;
+}
+my $collector = Mx::Collector->new( name => 'env_perf', config => $config, logger => $logger );
+my $rrdfile = $collector->rrdfile;
+my $rrd = RRDTool::OO->new( file => $rrdfile );
+my $app_server = $app_servers[0];
+
+my @envs = Mx::Config->environments( $app_server );
+
+my $cpu_file = "/tmp/${app_server}_env_cpu_$range.svg";
+my $mem_file = "/tmp/${app_server}_env_mem_$range.svg";
+
+my @options = (
+    image          => $cpu_file,
+    imgformat      => 'SVG',
+    vertical_label => 'CPU',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+my $env   = $envs[0];
+my $color = $colors[0];
+
+push @options, (
+    draw  => { type => 'area', dsname => "cpu_$env", color => $color, legend => $env }
+);
+
+for ( my $i = 1; $i <= $#envs; $i++ ) {
+    $env   = $envs[ $i ];
+    $color = $colors[ $i ];
+    push @options, (
+        draw  => { type => 'stack',  dsname => "cpu_$env", color => $color, legend => $env }
+    );
+}
+
+push @options, (
+    draw  => { type => 'stack', dsname => 'cpu_OTHER', color => 'C0C0C0', legend => 'OTHER' }
+);
+
+$rrd->graph( @options );
+
+@options = (
+    image          => $mem_file,
+    imgformat      => 'SVG',
+    vertical_label => 'MEMORY',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+$env   = $envs[0];
+$color = $colors[0];
+
+push @options, (
+    draw  => { type => 'area', dsname => "mem_$env", color => $color, legend => $env }
+);
+
+for ( my $i = 1; $i <= $#envs; $i++ ) {
+    $env   = $envs[ $i ];
+    $color = $colors[ $i ];
+    push @options, (
+        draw  => { type => 'stack',  dsname => "mem_$env", color => $color, legend => $env }
+    );
+}
+
+push @options, (
+    draw  => { type => 'stack', dsname => 'mem_OTHER', color => 'C0C0C0', legend => 'OTHER' }
+);
+
+$rrd->graph( @options );
+
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

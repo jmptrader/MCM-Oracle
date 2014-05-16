@@ -1,0 +1,24 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @indexes = $oracle->table_index_info( table => $table, schema => $schema );
+
+my @data = ();
+foreach my $index ( sort { $a->name cmp $b->name } @indexes ) {
+  push @data, {
+    0 => $index->name,
+    1 => ( join ',', $index->columns ),
+    2 => ( $index->unique ? 'YES' : 'NO' ),
+    3 => $index->timestamp
+  };
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => \@data } );
+</%init>
+
+<%args>
+$table
+$schema
+</%args>

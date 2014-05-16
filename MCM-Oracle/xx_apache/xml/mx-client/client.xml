@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ClientConfig>
+    <ExcelPath ThreadSleep="2000"><% $excelpath %></ExcelPath>
+    <Exceptions DisplayMode="Reduced"/> 
+    <FastDealInputMode Synchronous="N" PrecisionWarning="N" PrecisionWarningDecimals="7" TimerActive="N" TimerPeriod="1000"/>
+    <Locale ExcelDateFormat="NONE"/>
+    <Log>
+        <LogLevels MX="0"/>
+    </Log>
+    <LookAndFeels>
+        <LookAndFeel>
+            <NickName>Murex</NickName>
+            <ClassName>murex.gui.jfcutil.plaf.MxLookAndFeel</ClassName>
+        </LookAndFeel>
+        <LookAndFeel>
+            <NickName>MxLookAndFeel</NickName>
+            <ClassName>murex.gui.jfcutil.plaf.MxLookAndFeel</ClassName>
+        </LookAndFeel>
+    </LookAndFeels>
+    <MainBar>
+        <Dimension Width="-1" Height="80"/>
+        <Title Name="<% $ENV{MXENV} %>: Version [<% $binary_version %>] Database [<% $dbversion %>]"/>
+    </MainBar>
+    <Menus/>
+  <PrintingConfiguration>
+    <PrintSetup>
+      <PaperFormat>
+        <Size>A4</Size>
+        <Orientation>Landscape</Orientation>
+        <Margins>
+          <Left>0.8</Left>
+          <Right>0.8</Right>
+          <Top>1.0</Top>
+          <Bottom>0.8</Bottom>
+        </Margins>
+      </PaperFormat>
+    </PrintSetup> 
+    <PrintMatrixSetup>
+      <RowBorder>Y</RowBorder>
+      <ColumnBorder>Y</ColumnBorder>
+      <FontFactor>0.75</FontFactor>
+      <Preview>N</Preview>
+    </PrintMatrixSetup>
+    <PrintScreenSetup>
+      <XScale>0.5</XScale>
+      <YScale>0.5</YScale>
+    </PrintScreenSetup>
+  </PrintingConfiguration>
+    <Screen>
+        <Dimension Width="1000" Height="800" InternalFrameWidthAdjustment="10" InternalFrameHeightAdjustment="30"/>
+        <Title AddMxInfo="Y" AddUserInfo="Y">
+            <Text><% $ENV{MXENV} %>: Version [<% $binary_version %>] Database [<% $dbversion %>]</Text>
+            <MX_INFO/>
+            <USER_INFO/>
+        </Title>
+        <Font FontFactor="0.9" Name="Verdana"/>
+        <ShowFocus Enable="Y"/>
+        <MultiDesktop Width="800" Height="600" StatusBar="N" AdjustDesktopSize="Y"/>
+    </Screen>
+    <XMLDiffPath><% $xmldiffpath %></XMLDiffPath>
+    <Session/>
+    <DefaultEntry OnExitKillSession="N"/>
+</ClientConfig>
+
+<%init>
+  my $db         = $auth_db->{sybase};
+  my $xmldiffpath= "C:/Program Files/ExamXML/ExamXML.exe";
+  my $excelpath  = "C:/Program Files/Microsoft Office/Office/EXCEL.EXE";
+
+  my ($binary_version, $dbversion);
+
+  my $query  = 'select db_version, binary_version from environment_info ei where environment_id = ( select id from environments where name = ? )';
+  my $result = $db->query( query => $query, values => [ $ENV{MXENV} ] );
+
+  my %hash        = $result->next_hash;
+  $dbversion      = $hash{db_version};
+  $binary_version = $hash{binary_version};
+
+#  $binary_version = $m->cache->get( 'binary_version');
+#  unless ( $binary_version ) {
+#    $binary_version = Mx::Murex->binary_version( logger => $logger, config => $config );
+#    $m->cache->set( binary_version => $binary_version );
+#  }
+#
+#  $db_version = $m->cache->get( 'db_version');
+#  unless ( $db_version ) {
+#    my %db_version = Mx::Murex->db_version( sybase => $sybase, library => $library, logger => $logger, config => $config );
+#    $db_version = \%db_version;
+#    $m->cache->set( db_version => $db_version );
+#  }
+#  $dbversion = $db_version->{timestamp};
+
+</%init>

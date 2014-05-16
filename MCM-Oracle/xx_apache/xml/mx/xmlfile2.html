@@ -1,0 +1,10 @@
+% $r->content_type('text/html');
+% if ( $path ) {
+<& display_xml.comp, path => $path &>
+% }
+% else {
+No XML file specified.
+% }
+<%args>
+$path
+</%args>

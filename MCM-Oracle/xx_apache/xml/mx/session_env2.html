@@ -1,0 +1,20 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my %table;
+if ( my $handle = $handles{$hostname} ) {
+  %table = $handle->soaphandle->env_variables( $pid )->paramsall;
+}
+
+my @env = ();
+foreach my $key ( sort keys %table ) {
+  push @env, { name => $key, value => $table{$key} };
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@env );
+</%init>
+<%args>
+$pid
+$hostname
+</%args>

@@ -1,0 +1,148 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var extract_id = $('#dummytrigger').attr('extract_id');
+  var path       = $('#dummytrigger').attr('path');
+  var action     = $('#dummytrigger').attr('action');
+
+  if ( action == 'show_extract' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showExtract( extract_id );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function showExtract( extract_id ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/log_extract2.html',
+    data:     { 'extract_id': extract_id },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    $('#jqmContent')[0].innerHTML = '<br>' + data.join('<br>');
+  } );
+}
+</script>
+
+<H2>Logfile alerts on <% $ENV{MXENV} %></H2>
+
+<div id="dummytrigger" extract_id="" path="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<br>
+% return unless $nr_results;
+% my $first = ( $page_nr - 1 ) * $recs_per_page + 1;
+% my $last  = $page_nr * $recs_per_page;
+% if ( $nr_results < $last ) {
+%   $last = $nr_results;
+% }
+<B>Displaying alerts <% $first %> to <% $last %></B>
+
+<p>
+
+<table class="center" width="80%">
+  <tr>
+    <TH><A HREF="#" onclick="mnavigate('log_extracts.html', { sort: 'timestamp', reverse: 1, <% $sort_args %> })" STYLE="color: #FFFFFF;">TIMESTAMP</A></TH>
+    <TH><A HREF="#" onclick="mnavigate('log_extracts.html', { sort: 'filename',  reverse: 1, <% $sort_args %> })" STYLE="color: #FFFFFF;">FILENAME</A></TH>
+    <TH><A HREF="#" onclick="mnavigate('log_extracts.html', { sort: 'type',      reverse: 1, <% $sort_args %> })" STYLE="color: #FFFFFF;">TYPE</A></TH>
+    <TH><A HREF="#" onclick="mnavigate('log_extracts.html', { sort: 'extract',   reverse: 1, <% $sort_args %> })" STYLE="color: #FFFFFF;">EXTRACT</A></TH>
+  </tr>
+% foreach my $extract ( @extracts ) {
+  <tr>
+%   my $id = $extract->[1];
+    <td align="center"><% Mx::Util->convert_time($extract->[2]) %></td>
+    <td><% $extract->[3] %></td>
+    <td align="center"><% $extract->[4] %></td>
+%   my $text      = $extract->[5];
+%   my $start_pos = $extract->[6];
+%   my $length    = $extract->[7];
+%   my $before    = int( ( $max_extract_length - $length ) / 2 ); 
+%   $before       = 0 if $before < 0;
+%   my $start_pos_before = $start_pos - $before;
+%   $start_pos_before = 0 if $start_pos_before < 0;
+%   my $display_text = substr( $text, $start_pos_before, $max_extract_length );
+    <td align="center"><a href="#"  onclick="$('#dummytrigger').attr( 'extract_id', <% $id %> ); $('#dummytrigger').attr( 'path', '<% $extract->[3] %>' ); $('#dummytrigger').attr( 'action', 'show_extract' ); $('#modalWindow').jqmShow();">...<% $display_text %>...</a></td>
+  </tr>
+% }
+</table>
+
+<br>
+
+% $m->comp( 'pager.comp', url => 'log_extracts.html', search_url => 'log_extract_search.html', sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+
+<%init>
+my $max_extract_length = 30;
+my @columns         = qw( timestamp filename type extract start_pos length );
+my @numeric_columns = qw( timestamp );
+if ( $reverse ) {
+  $m->session->{log_extracts_reverse} = ! $m->session->{log_extracts_reverse};
+}
+my %where_hash = (); my @sort_args = (); my $sort_args = '';
+foreach my $column ( @columns ) {
+  if ( my $entry = $ARGS{$column} ) {
+    my @values;
+    if ( ref $entry eq 'ARRAY' ) {
+      @values = @{$entry};
+    }
+    elsif ( $entry =~ /,/ ) {
+      @values = split /,/, $entry;
+    }
+    else {
+      @values = ( $entry );
+    }
+    foreach my $value ( @values ) {
+      push @{$where_hash{$column}}, (( grep /^$column$/, @numeric_columns ) ? $value : "\"$value\"");
+      push @sort_args, "$column: '$value'";
+    }
+  }
+}
+$sort_args = join ',', @sort_args;
+my $result = $db_audit->retrieve_logfile_extracts(sort => { $sort => $m->session->{log_extracts_reverse} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+my @extracts = @{$result};
+my $nr_results = @extracts ? $extracts[0][0] : 0;
+</%init>
+
+<%args>
+$recs_per_page => 30
+$page_nr       => 1
+$sort          => 'timestamp'
+$reverse       => 0
+</%args>

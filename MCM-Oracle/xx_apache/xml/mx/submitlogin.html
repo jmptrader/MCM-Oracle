@@ -1,0 +1,37 @@
+<%perl>
+if ($success) {
+  $m->session->{username} = $login;
+  $m->redirect('home.html');
+#  my $req = $m->make_subrequest( comp => 'home.html', args => [ no_navigation => 0 ] );
+#  $req->exec;
+} else {
+  $m->redirect('login.html?err=1');
+}
+</%perl>
+
+<%init>
+my $success = 0;
+my $user = Mx::Auth::User->new( name => $login, db => $auth_db, logger => $logger, config => $config );
+if ( $user->retrieve() ) {
+  if ( $user->check_right( name => 'mon_login' ) ) {
+    if ( $user->check_password( $password ) ) {
+      $success = 1;
+      $logger->info("AUDIT: $login has logged in");
+    }
+    else {
+      $logger->info("AUDIT: $login provided wrong password");
+    }
+  }
+  else {
+    $logger->info("AUDIT: $login has no access");
+  }
+}
+else {
+  $logger->info("AUDIT: $login is not defined as a user");
+}
+</%init>
+
+<%args>
+$login
+$password
+</%args>

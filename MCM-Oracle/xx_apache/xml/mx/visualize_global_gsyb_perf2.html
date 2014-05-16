@@ -1,0 +1,108 @@
+<H2>Global Performance on <% $dsquery %> II</H2>
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_gsyb_perf2.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_gsyb_perf2.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_gsyb_perf2.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_global_gsyb_perf2.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<IMG SRC="<% $percentage_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $physical_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $logical_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $entitlement_file %>?<% time() %>">
+
+<%init>
+my $nr_seconds;
+SWITCH: {
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $nr_seconds = 24 * 3600;
+};
+
+my %graph_options = (
+  imgformat => 'SVG',
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => time() - $nr_seconds,
+  end       => time()
+);
+
+if ( $ENV{MXVERSION} eq '1.00' ) {
+  $graph_options{font} = {
+      name => 'Lucida',
+      size => 10
+  };
+}
+
+my $collector = Mx::Collector->new( name => 'db_server_perf2', config => $config, logger => $logger );
+my $rrdfile   = $collector->rrdfile;
+my $rrd       = RRDTool::OO->new( file => $rrdfile );
+my $dsquery   = $config->DSQUERY;
+
+my $percentage_file = "/tmp/${dsquery}_global_perf2_percentage_$range.svg";
+$rrd->graph(
+  image => $percentage_file,
+  %graph_options,
+  draw => {
+    type   => 'area', 
+    color  => '00FF00',
+    dsname => 'ucpu',
+    legend => 'User',
+  },
+  draw => {
+    type   => 'stack', 
+    color  => 'FF0000',
+    dsname => 'scpu',
+    legend => 'System',
+  },
+  draw => {
+    type   => 'stack', 
+    color  => '0000FF',
+    dsname => 'wcpu',
+    legend => 'Wait',
+  }
+);
+
+my $physical_file = "/tmp/${dsquery}_global_perf2_physical_$range.svg";
+$rrd->graph(
+  image => $physical_file,
+  %graph_options,
+  draw => {
+    color  => 'FF0000',
+    dsname => 'physc',
+    legend => '# Physical CPU\'s used',
+  }
+);
+
+my $logical_file = "/tmp/${dsquery}_global_perf2_logical_$range.svg";
+$rrd->graph(
+  image => $logical_file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'lbusy',
+    legend => 'Logical CPU consumption',
+  }
+);
+
+my $entitlement_file = "/tmp/${dsquery}_global_perf2_entitlement_$range.svg";
+$rrd->graph(
+  image => $entitlement_file,
+  %graph_options,
+  draw  => {
+    color  => 'FF0000',
+    dsname => 'entc',
+    legend => 'Entitled Capacity',
+  }
+);
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

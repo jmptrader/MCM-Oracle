@@ -1,0 +1,407 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+		displayJobCount( json.nr_jobs );
+        displayRefreshTime();
+        installHover();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/ctrlm_jobs2.html',
+	"bServerSide":  false,
+    "bPaginate":    false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 2,3 ] },
+      { "sClass": "ralign",       "aTargets": [ 7,8,9,10 ] },
+
+
+      { "sWidth": "60px",         "aTargets": [ 7,8,9,10 ] },
+      { "sWidth": "70px",         "aTargets": [ 2,3 ] },
+      { "sWidth": "150px",        "aTargets": [ 4 ] },
+      { "sWidth": "200px",        "aTargets": [ 6 ] },
+      { "sWidth": "250px",        "aTargets": [ 0,1,5  ] },
+
+      { "sType": "numeric",       "aTargets": [ 7,8,9,10 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 7,8,9,10 ] }
+       
+    ],
+
+    "fnInitComplete": function() {
+      $("div.datatables_scrollHead tr#columnfilter th").each( function ( i ) {
+        if ( ! $(this).hasClass('nofilter') ) {
+          this.innerHTML = fnCreateSelect( oTable.fnGetColumnData(i).sort() );
+          $('select', this).change( function () {
+            oTable.fnFilter( $(this).val(), i );
+          } );
+        }
+      } );
+      oTable.fnStandingRedraw();
+    }
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+} );
+
+function fnCreateSelect( aData ) {
+    var r = '<select><option value=""></option>', i, iLen = aData.length;
+    for ( i = 0 ; i < iLen ; i++ ) {
+        r += '<option value="' + aData[i] + '">' + aData[i] + '</option>';
+    }
+    return r + '</select>';
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function displayJobCount( nrJobs ) {
+  var html = [], h = -1;
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Number of jobs:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nrJobs;
+  html[++h] = '</td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#jobcount')[0].innerHTML = html.join('');
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split(':');
+      var table = result[0];
+      var name  = result[1];
+      $('#dummytrigger').attr( 'table', table );
+      $('#dummytrigger').attr( 'name', name );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var table  = $('#dummytrigger').attr('table');
+  var name   = $('#dummytrigger').attr('name');
+  var action = $('#dummytrigger').attr('action');
+    
+  var title = 'Table ' + table + ', Job ' + name;  
+
+  if ( action == 'show_conditions' ) {
+    $('#jqmTitleText').text( title );
+    $modal.jqmShow();
+    showConditions( table, name );
+  }
+  else if ( action == 'show_resources' ) {
+    $('#jqmTitleText').text( title );
+    $modal.jqmShow();
+    showResources( table, name );
+  }
+  else if ( action == 'show_autoedit_vars' ) {
+    $('#jqmTitleText').text( title );
+    $modal.jqmShow();
+    showAutoEditVars( table, name );
+  }
+  else if ( action == 'show_xml' ) {
+    $('#jqmTitleText').text( title );
+    var path = '<% $config->CTRLMDIR %>/' + table + '/' + name + '.xml';
+    $modal.jqmShow();
+    showXML( path );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function showXML( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/xmlfile2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     $('#jqmContent')[0].innerHTML = '<br>' + data + '<br>';
+  } );
+}
+
+function showConditions( table, name ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/ctrlm_job2.html',
+    data:     { 'table': table, 'name': name, 'type': 'conditions' },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<p>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<h2>IN Conditions</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>JOBNAME</th><th>AND/OR</th></tr>';
+
+    for ( var i = 0; i < data.in.length; i++ ) {
+      var condition = data.in[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td>' + condition.jobname + '</td>';
+      html[++h] = '<td align="center">' + condition.and_or + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '<p>';
+    html[++h] = '<h2>OUT Conditions</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>JOBNAME</th></tr>';
+
+    for ( var i = 0; i < data.out.length; i++ ) {
+      var condition = data.out[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td>' + condition.jobname + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '<p>';
+    html[++h] = '<h2>ERROR Conditions</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>NAME</th><th>TYPE</th></tr>';
+
+    for ( var i = 0; i < data.err.length; i++ ) {
+      var condition = data.err[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td>' + condition.name + '</td>';
+      html[++h] = '<td align="center">' + condition.type + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showResources( table, name ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/ctrlm_job2.html',
+    data:     { 'table': table, 'name': name, 'type': 'resources' },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<p>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<h2>Control Resources</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>NAME</th><th>EXCLUSIVE</th></tr>';
+
+    for ( var i = 0; i < data.control.length; i++ ) {
+      var resource = data.control[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td>' + resource.name + '</td>';
+      html[++h] = '<td align="center">' + resource.exclusive + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '<p>';
+    html[++h] = '<h2>Quantitative Resources</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>NAME</th><th>QUANTITY</th></tr>';
+
+    for ( var i = 0; i < data.quantitative.length; i++ ) {
+      var resource = data.quantitative[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td>' + resource.name + '</td>';
+      html[++h] = '<td>' + resource.quantity + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showAutoEditVars( table, name ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/ctrlm_job2.html',
+    data:     { 'table': table, 'name': name, 'type': 'vars'  },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<p>';
+    html[++h] = '<div align=center>';
+    html[++h] = '<h2>AUTOEDIT Variables</h2>';
+    html[++h] = '<table class="center" width="80%">';
+    html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+
+    for ( var i = 0; i < data.vars.length; i++ ) {
+      var aevar = data.vars[i];
+      html[++h] = '<tr>';
+      html[++h] = '<td width=35%>' + aevar.name + '</td>';
+      html[++h] = '<td>' + aevar.value + '</td>';
+      html[++h] = '</tr>';
+    }
+
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+</script>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#show_conditions">Show Conditions</a>
+  </li>
+  <li>
+    <a href="#show_resources">Show Resources</a>
+  </li>
+  <li>
+    <a href="#show_autoedit_vars">Show AUTOEDIT variables</a>
+  </li>
+  <li>
+    <a href="#show_xml">Show XML</a>
+  </li>
+</ul>
+
+<div id="title">Control-M Jobs</div>
+
+<div id="jobcount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<p>
+
+<div id="dummytrigger" table="" name="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+<tr id="columnfilter"> 
+  <th><select><option value=""></option></select></th>
+  <th class="nofilter"></th>
+  <th><select><option value=""></option></select></th>
+  <th><select><option value=""></option></select></th>
+  <th><select><option value=""></option></select></th>
+  <th><select><option value=""></option></select></th>
+  <th><select><option value=""></option></select></th>
+  <th class="nofilter"></th>
+  <th class="nofilter"></th>
+  <th class="nofilter"></th>
+  <th class="nofilter"></th>
+</tr>
+ <tr>
+  <th>TABLE</th>
+  <th>NAME</th>
+  <th>JOBTYPE</th>
+  <th>TASKTYPE</th>
+  <th>GROUP</th>
+  <th>OWNER</th>
+  <th>NODE</th>
+  <th># INCOND</th>
+  <th># OUTCOND</th>
+  <th># ERRCOND</th>
+  <th># RESOURC</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<p>
+
+<button class="button" id="refresh"> Refresh </button>

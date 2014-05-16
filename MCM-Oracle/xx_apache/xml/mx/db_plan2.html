@@ -1,0 +1,15 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $db = $schemas{$schema};
+
+my $data = join "\n", $db->sql_plan( sid => $sid, serial => $serial );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $data } );
+</%init>
+<%args>
+$schema
+$sid
+$serial
+</%args>

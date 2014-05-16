@@ -1,0 +1,61 @@
+<%perl>
+my $status = 'NOK'; my $message = '';
+
+TRY: {
+  unless ( $win_user ) {
+    $message = 'no windows user specified';
+    last TRY;
+  }
+
+  my $filename = 'fo_' . $win_user . '_' . Mx::Util->epoch_to_iso( clock => 1, joiner => '' ) . '.xml';
+  my $dest_dir = $config->get_project_variables('xx_md')->{KBC_DATADIR} . '/input/fo';
+
+  unless ( -d $dest_dir ) {
+    $message = "destination directory ($dest_dir) does not exist";
+    last TRY;
+  }
+
+  unless ( $xml ) {
+    $message = 'XML is empty';
+    last TRY;
+  }
+
+  unless ( open FH, ">$dest_dir/$filename" ) {
+    $message = "cannot open the destination file: $!";
+    last TRY;
+  }
+
+  my $decoded_xml = decode_base64url( $xml );
+
+  my $uncompressed_xml;
+  unless ( gunzip \$decoded_xml => \$uncompressed_xml ) {
+    $message = "unzip failed: $GunzipError";
+    last TRY;
+  }
+
+  print FH $uncompressed_xml;
+
+  close FH;
+
+  my $command = $config->KBC_MXHOME . '/kbc/xx_md/bin/marketdata_import_mdml.pl -project xx_md -sched_js ' . $config->PILLAR . 'WMXDXXNMDMLWEB -group fo -user ' . $win_user . ' -file ' . $dest_dir . '/' . $filename . ' -channel web';
+
+  my $process;
+  unless ( $process = Mx::Process->background_run( command => $command, logger => $logger, config => $config, ignore_child => 1 ) ) {
+    $message = 'upload command failed';
+    last TRY;
+  }
+
+  $message = "upload started";
+  $status  = 'OK';
+} 
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { status => $status, message => $message } );
+
+return $json_string;
+</%perl>
+
+<%args>
+$xml
+$win_user
+</%args>

@@ -1,0 +1,146 @@
+@ECHO OFF
+REM --------------------------------------------------------------------------------------
+REM  Filename	 : launchmlc_MX3.cmd
+REM
+REM  Description : Murex Limits Controller programs launcher
+REM  Author 	 : Murex
+REM  Date		 : September 2010
+REM
+REM  Usage		 : launchmlc_MX3.cmd [-jlh|-lts|-tl] [UserParam]*
+REM
+REM  Last Change : $Revision:$ - $Date:$   
+REM
+REM --------------------------------------------------------------------------------------
+
+SET HOMEDIR=%CD%
+SET JAVAHOME=%CD%\jre_1.6.0_14
+
+if [%1]==[] goto :noEnvSet
+if [%ENVIR%]==[] goto :noEnvSet
+
+cd %ENVIR%
+
+REM in order to avoid Network speed problems, try to create a local environment for it
+IF EXIST ..\runlocal.cmd call ..\runlocal.cmd
+
+REM read specific environment settings
+call mxg2000_settings.cmd
+
+REM define a setting for routing over central site
+set JAVAARGS_DESTSITE=
+if not [%MXJ_DESTINATION_SITE_NAME%]==[] set JAVAARGS_DESTSITE=/MXJ_DESTINATION_SITE_NAME:%MXJ_DESTINATION_SITE_NAME%
+if [%MXJ_DESTINATION_SITE_NAME%]==[%MXJ_SITE_NAME%] set JAVAARGS_DESTSITE=
+
+REM --------------------------------------------------------------------------------------
+REM  Java settings
+REM --------------------------------------------------------------------------------------
+
+SET PATH=%JAVAHOME%\jre\bin;%JAVAHOME%\jre\bin\client;%JAVAHOME%\bin;%PATH%
+
+REM Sybase home used to locate interface files and Open Client dynamic libraries
+SET SYBASE=C:\APPS\WSYS_0622\OCS-12_5
+SET PATH=%SYBASE%\dll;%SYBASE%\bin;%PATH%
+
+REM Oracle home used to locate Oracle Client
+SET ORACLE_HOME=u:\tools\oracle\10202
+SET PATH=%ORACLE_HOME%\bin;%PATH%
+SET LD_LIBRARY_PATH=%ORACLE_HOME%\lib;%LD_LIBRARY_PATH%
+SET NLS_LANG=AMERICAN_AMERICA.AL32UTF8
+
+REM Define your default Murexnet port
+REM Also specified into the launcher.xml configuration file
+REM Warning : Must be the same as specified into the launcher.xml configuration file
+REM by /IPHOST:localhost:8000
+REM The Murexnet usually run on 8000 port, but you can use another one.
+REM SET MUREXNET_PORT=7777
+
+SET MLC_POLICY=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/public/mxres/mxmlc/mlc.policy
+SET MLC_BOOT=mxjboot.jar
+
+REM This file contains the complete path to the .jar files that are provided by the Mx G2000 File server.
+REM It is also used as a parameter for the other servers and the client.
+REM PATH to mlc.download file on the file server. default is : fs/murex/download/mlc/mlc.download
+SET MXJ_JAR_FILE=murex.download.mlcclient.download
+SET MXJ_CODEBASE="-Djava.rmi.server.codebase=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILE%"
+SET MXJ_PLATFORM_NAME=MX
+SET MXJ_PROCESS_NICK_NAME=MXMLC
+SET MXJ_MLC_PROPS_FILE=public.mxres.mxmlc.mlc.mxres
+SET MXJ_MLC_LOGGER_FILE=public.mxres.mxmlc.mlclogger.xml
+SET MLC_STARTER=murex.rmi.loader.RmiLoader /MXJ_SITE_NAME:%MXJ_SITE_NAME% %JAVAARGS_DESTSITE% /MXJ_LOGGER_FILE:%MXJ_MLC_LOGGER_FILE% /MXJ_CLASS_NAME:murex.util.misc.MLCStarter /MXJ_PLATFORM_NAME:%MXJ_PLATFORM_NAME% /MXJ_PROCESS_NICK_NAME:%MXJ_PROCESS_NICK_NAME% /MXJ_MLC_PROPS_FILE:%MXJ_MLC_PROPS_FILE% /MXJ_MLC_CLASS_NAME
+REM /MXJ_MLC_CLASS_NAME:%MLC_CLASS_NAME%
+REM SET MLC_CLASS_NAME=murex.limits.progs.client.gui.homebase.XLimitsHomeBase
+
+SET PROPS=
+
+SET LTS_PROPS=
+SET JLH_PROPS=-DJAVA_LRB
+SET TL_PROPS=
+SET PROPS_PROPS=-DfsPropsFileName=public.mxres.mxmlc.mlc.mxres
+SET BENCHMARK_PROPS=
+
+REM -------------------------------------------------------------------------------
+REM  User defined Arguments passed to the java program:
+REM  XXX_ARGS  contains specific user arguments
+REM  syntax :	XXX_ARGS=ARG1 ARG2
+REM -------------------------------------------------------------------------------
+
+SET PROPS_ARGS=
+SET LTS_ARGS=../mlc/xml/ltstask.xml
+SET JLH_ARGS=-title %ENVIR%
+SET TL_ARGS=mlc_tick_launcher.xml
+SET BENCHMARK_ARGS=
+
+REM -------------------------------------------------------------------------------
+REM  PLEASE check WITH_FILE_SERVER variable
+REM
+REM -------------------------------------------------------------------------------
+
+SET CLASSPATH=%MLC_BOOT%
+
+IF EXIST jar\%MLC_BOOT% copy jar\%MLC_BOOT% . >NUL
+IF NOT EXIST %MLC_BOOT% COPY %HOMEDIR%\..\BIN\mxjboot_MX3.jar %MLC_BOOT%
+
+REM ------------------------------
+REM CHECK XP/VISTA PC
+REM ------------------------------
+SET GLOW_PARAM=-Dsun.java2d.noddraw
+IF [%PROGRAMDATA%]=="%PROGRAMDATA%" goto :contJAVACMD
+SET GLOW_PARAM=%GLOW_PARAM% -Dsun.java2d.d3d=false -Dsun.java2d.noddraw=true
+SET J2D_D3D=false
+
+:contJAVACMD
+SET JAVA=%JAVAHOME%\bin\java
+SET POLICY="-Djava.security.policy=%MLC_POLICY%"
+SET JAVACOMMAND=%JAVA% -Xmx512M -Xbootclasspath/p:jar\xercesImpl-2.6.2.jar;jar\xml-apis-1.0.b2.jar;jar\xalan-2.6.0m.jar %POLICY% %PROPS% %MXJ_CODEBASE% -classpath %CLASSPATH% %GLOW_PARAM%
+
+SET PROG=%1
+SHIFT
+
+SET EXTRA_ARGS=%1 %2 %3 %4 %5 %6 %7 %8 %9
+
+IF "%PROG%" == "-jlh"		GOTO JLH
+
+:JLH
+	TITLE %ENVIR% LIMIT CONTROLLER MLC-JLH
+		ECHO Starting MLC Homebase :
+		IF NOT "%PROPS%" == ""		 ECHO Global Properties : %PROPS%
+		IF NOT "%JLH_PROPS%" == "" ECHO    JLH Properties : %JLH_PROPS%
+		IF NOT "%JLH_ARGS%" == ""	 SET EXTRA_ARGS=%JLH_ARGS% %1 %2 %3 %4 %5
+		IF NOT "%EXTRA_ARGS%" == ""  ECHO	  JLH Arguments  : %EXTRA_ARGS%
+		SET MLC_CLASS_NAME=murex.limits.progs.client.gui.homebase.XLimitsHomeBase
+		%JAVACOMMAND% %JLH_PROPS% %MLC_STARTER%:%MLC_CLASS_NAME% %EXTRA_ARGS%
+GOTO END
+
+:NO_JAVAHOME
+  ECHO	-- MLC launch script  ERROR : Please specify the path to JAVAHOME
+  ECHO.
+  GOTO END
+
+:noEnvSet
+echo Script called without an environment indicated.
+echo This script should not be called directly, please contact TSMurex T. +32 242 99853
+pause
+goto :end
+
+:END
+TITLE %ENVIR% : %~n0 - ended

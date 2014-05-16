@@ -1,0 +1,7 @@
+<%perl>
+my $value;
+$value .= 'Environment: ' . $ENV{MXENV} . "<br>\n";
+$value .= 'User: ' . $m->session->{username} . "<br>\n";
+$value .= 'Remote IP: ' . $ENV{REMOTE_ADDR} . "<br>\n";
+return $value;
+</%perl>

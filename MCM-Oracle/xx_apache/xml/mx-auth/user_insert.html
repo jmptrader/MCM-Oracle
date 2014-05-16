@@ -1,0 +1,110 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    <% $title %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="form" class="grid_12">
+    <form action="user_action.html" method="POST">
+% if ( $id ) { 
+    <input type="hidden" name="id" value="<% $id %>">
+% }
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+    <tr>
+      <td class="description">Login</td>
+      <td class="entryfield"><input type="text" name="name" value="<% $name %>" size="30"></td>
+    </tr>
+    <tr>
+      <td class="description">First Name</td>
+      <td class="entryfield"><input type="text" name="first_name" value="<% $first_name %>" size="30"></td>
+    </tr>
+    <tr>
+      <td class="description">Surname</td>
+      <td class="entryfield"><input type="text" name="last_name" value="<% $last_name %>" size="30"></td>
+    </tr>
+    <tr>
+      <td class="description">Password</td>
+      <td class="entryfield"><input type="text" name="password" size="10" maxlength="8"></td>
+    </tr>
+    <tr>
+      <td class="description">Location</td>
+      <td>
+        <select name="location">
+%  foreach my $clocation ( @locations ) {
+          <option <% ( $location eq $clocation ) ? 'selected' : '' %>><% $clocation %></option>
+%  }
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="description">Type</td>
+      <td>
+        <select name="type">
+%  foreach my $ctype ( @types ) {
+          <option <% ( $type eq $ctype ) ? 'selected' : '' %>><% $ctype %></option>
+%  }
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="description">Config Data</td>
+      <td class="entryfield"><input type="text" name="config_data" value="<% $config_data %>" size="50"></td>
+    </tr>
+    <tr>
+      <td class="description">Disabled</td>
+      <td class="entryfield"><input type="checkbox" name="disabled" <% $disabled ? 'checked' : '' %> ></td>
+    </tr>
+    <tr>
+      <td class="description">Groups</td>
+      <td class="entryfield">
+%       $m->comp( 'group_swapper.comp', group_ids => \@group_ids );
+      </td>
+    </tr>
+    </table>
+
+    <input type="submit" class="button" right="auth_master" name="action" value=" <% $name ? 'Update' : 'Insert' %> " onClick="selectAll(group)">
+    <input type="button" class="button" value=" Cancel " onClick="history.back()">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my ($name, $first_name, $last_name, $password, $location, $type, $config_data, $disabled);
+  my @group_ids = ();
+  if ( $id ) {
+    my $user = Mx::Auth::User->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+    $user->retrieve;
+    $name          = $user->name;
+    $first_name    = $user->first_name;
+    $last_name     = $user->last_name;
+    $location      = $user->location;
+    $type          = $user->type;
+    $config_data   = $user->config_data;
+    $disabled      = $user->disabled;
+    @group_ids     = map { $_->id } $user->groups;
+  }
+
+  my $title = ( $id ) ? "Update user $name": "Insert new user";
+
+  my @locations = Mx::Auth::User->locations;
+  my @types     = Mx::Auth::User->types;
+</%init>
+
+<%args>
+$id => 0
+</%args>

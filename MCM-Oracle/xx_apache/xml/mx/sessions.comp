@@ -1,0 +1,30 @@
+<%init>
+map { $_->sessions_async } @handles;
+
+my @sessions;
+foreach my $handle ( @handles ) {
+  push @sessions, $handle->poll_async;
+}
+
+if ( @ids ) {
+  my %present = ();
+  map { $present{$_} = 1 } @ids;
+
+  my @asessions = ();
+  foreach my $session ( @sessions ) {
+    if ( $present{ $session->mx_sessionid } or $present{ $session->hostname . ':' . $session->pid } ) {
+      push @asessions, $session;
+    }
+  }
+
+  map { $_->unprepare_for_serialization( logger => $logger, config => $config ) } @asessions;
+  return \@asessions;
+}
+
+map { $_->unprepare_for_serialization( logger => $logger, config => $config ) } @sessions;
+return \@sessions;
+</%init>
+
+<%args>
+@ids => ()
+</%args>

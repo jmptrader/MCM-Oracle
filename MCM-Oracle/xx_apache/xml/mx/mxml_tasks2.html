@@ -1,0 +1,33 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @tasks = (); my $total_nr_tasks = 0; my $nr_blocked_tasks = 0; my $nr_not_loading_tasks = 0; my $nr_stopped_tasks = 0;
+foreach my $task ( $db_audit->retrieve_mxml_tasks() ) {
+  $total_nr_tasks++;
+
+  my $unblocked = ( $task->[4] eq 'Y' ) ? 'YES' : 'NO';
+  $nr_blocked_tasks++ if $unblocked eq 'NO';
+
+  my $loading = ( $task->[5] eq 'Y' ) ? 'YES' : 'NO';
+  $nr_not_loading_tasks++ if $loading eq 'NO';
+
+  my $started = ( $task->[6] eq 'Y' ) ? 'YES' : 'NO';
+  $nr_stopped_tasks++ if $started eq 'NO';
+
+  push @tasks, {
+    0 => $task->[0],
+    1 => $task->[1],
+    2 => $task->[2],
+    3 => $task->[3],
+    4 => $unblocked,
+    5 => $loading,
+    6 => $started,
+    7 => $task->[7],
+    8 => Mx::Util->convert_time_short( $task->[8] )
+  };
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@tasks }, total_nr_tasks => $total_nr_tasks, nr_blocked_tasks => $nr_blocked_tasks, nr_not_loading_tasks => $nr_not_loading_tasks, nr_stopped_tasks => $nr_stopped_tasks } );
+</%init>

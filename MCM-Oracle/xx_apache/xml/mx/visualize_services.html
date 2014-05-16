@@ -1,0 +1,122 @@
+<H2>Services on <% $env %></H2>
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_services.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_services.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_services.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_services.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+<P>
+<IMG SRC="<% $cpu_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $mem_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $lwp_file %>?<% time() %>">
+
+<%init>
+my @colors = qw( 00FF00 FF0000 000000 0000FF FFFF00 00FFFF FF66FF 006633 9999FF 660066 666666 FF3399 666600 );
+my $nr_seconds;
+if ( $range eq 'year' ) {
+  $nr_seconds = 365 * 24 * 3600;
+}
+elsif ( $range eq 'month' ) {
+  $nr_seconds = 31 * 24 * 3600;
+}
+elsif ( $range eq 'week' ) {
+  $nr_seconds = 7 * 24 * 3600;
+}
+else {
+  $nr_seconds = 24 * 3600;
+}
+my $collector = Mx::Collector->new( name => 'service', config => $config, logger => $logger );
+my $rrdfile = $collector->rrdfile;
+my $rrd = RRDTool::OO->new( file => $rrdfile );
+
+my $env = $ENV{MXENV};
+
+my $cpu_file = "/tmp/${env}_services_cpu_$range.png";
+my $mem_file = "/tmp/${env}_services_mem_$range.png";
+my $lwp_file = "/tmp/${env}_services_lwp_$range.png";
+
+my @services_to_monitor = (); my %services_to_monitor = ();
+if ( my $ref = $config->retrieve('MONITOR_SERVICE_PERF') ) {
+    if ( ref($ref) eq 'ARRAY' ) {
+        @services_to_monitor = @{$ref};
+    }
+    else {
+        @services_to_monitor = ( $ref );
+    }
+}
+map { $services_to_monitor{$_} = 1 } @services_to_monitor;
+
+my @labels = ();
+foreach my $service ( Mx::Service->list( config => $config, logger => $logger ) ) {
+    next unless $services_to_monitor{ $service->name };
+    foreach my $label ( $service->labels ) {
+        push @labels, $label if $label;
+    }
+}
+
+my @options = (
+    image          => $cpu_file,
+    vertical_label => 'CPU',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+for ( my $i = 0; $i <= $#labels; $i++ ) {
+    my $label = $labels[$i];
+    my $color = $colors[$i];
+    push @options, (
+        draw  => { dsname => "cpu_$label", color => $color, legend => $label }
+    );
+}
+
+$rrd->graph( @options );
+
+@options = (
+    image          => $mem_file,
+    vertical_label => 'MEMORY',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+for ( my $i = 0; $i <= $#labels; $i++ ) {
+    my $label = $labels[$i];
+    my $color = $colors[$i];
+    push @options, (
+        draw  => { dsname => "mem_$label", color => $color, legend => $label }
+    );
+}
+
+$rrd->graph( @options );
+
+@options = (
+    image          => $lwp_file,
+    vertical_label => '# LWP',
+    width          => $config->GRAPH_WIDTH,
+    height         => $config->GRAPH_HEIGHT,
+    start          => time() - $nr_seconds,
+    end            => time()
+);
+
+for ( my $i = 0; $i <= $#labels; $i++ ) {
+    my $label = $labels[$i];
+    my $color = $colors[$i];
+    push @options, (
+        draw  => { dsname => "lwp_$label", color => $color, legend => $label }
+    );
+}
+
+$rrd->graph( @options );
+
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

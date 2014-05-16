@@ -1,0 +1,243 @@
+<commonData>
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<delegation><% $row{'DELEGATION'} %></delegation>
+<assetClass><% $row{'ASSET_CLASS'} %></assetClass>
+%}
+%else {
+%if ( $row{'DELEGATION'} ) {
+<delegation><% $row{'DELEGATION'} %></delegation>
+%}
+%if ( $row{'ASSET_CLASS'} ) {
+<assetClass><% $row{'ASSET_CLASS'} %></assetClass>
+%}
+%} #end else
+<contractType>
+<taxonomy>
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<taxonomyUsed><% $row{'TAXON_TYPE'} %></taxonomyUsed>
+<productId1><% $row{'PROD_ID1'} %></productId1>
+%}
+%else {
+%if ( $row{'TAXON_TYPE'} ) {
+<taxonomyUsed><% $row{'TAXON_TYPE'} %></taxonomyUsed>
+%}
+%if ( $row{'PROD_ID1'} ) {
+<productId1><% $row{'PROD_ID1'} %></productId1>
+%}
+%} #end else
+%if ( $row{'PROD_ID2'} ) {
+<productId2><% $row{'PROD_ID2'} %></productId2>
+%}
+</taxonomy>
+%if ( $row{'UNDERL_ID_TYPE'} ) {
+<underlyingIdType><% $row{'UNDERL_ID_TYPE'} %></underlyingIdType>
+%}
+%if ( $row{'UNDERL_ID'} ) {
+<underlyingId><% $row{'UNDERL_ID'} %></underlyingId>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<currency1><% $row{'CUR_LEG1'} %></currency1>
+%}
+%else {
+%if ( $row{'CUR_LEG1'} ) {
+<currency1><% $row{'CUR_LEG1'} %></currency1>
+%}
+%} # end else
+%if ( $row{'CUR_LEG2'} ) {
+<currency2><% $row{'CUR_LEG2'} %></currency2>
+%}
+%if ( $row{'CUR_DLV'} ) {
+<deliverableCurrency><% $row{'CUR_DLV'} %></deliverableCurrency>
+%}
+</contractType>
+<transactionDetails>
+%if ( $row{'TRD_TYPE_REGIS'} ne 'Backloading' || ( $row{'TRD_TYPE_REGIS'} eq 'Backloading' && $row{'UTI'} ) ) {
+%if ( $row{'TRD_TYPE_REGIS'} ne 'Modification' ) {
+<tradeId><% $row{'UTI'} %></tradeId>
+%}
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<venue><% $row{'EXEC_VENUE'} %></venue>
+%}
+%else {
+%if ( $row{'EXEC_VENUE'} ) {
+<venue><% $row{'EXEC_VENUE'} %></venue>
+%}
+%} #end else
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'COMPRESSION'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<compression><% $row{'COMPRESSION'} %></compression>
+%}
+%if ( $row{'PRICE'} ) {
+<price><% $row{'PRICE'} %></price>
+%}
+%if ( $row{'PRICE_NOT'} ) {
+<priceNotation><% $row{'PRICE_NOT'} %></priceNotation>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<notionalAmount><% $row{'NOTIONAL'} %></notionalAmount>
+%}
+%else {
+%if ( $row{'NOTIONAL'} ) {
+<notionalAmount><% $row{'NOTIONAL'} %></notionalAmount>
+%}
+%} #end else
+%if ( $row{'PRICE_MULT'} ) {
+<priceMultiplier><% $row{'PRICE_MULT'} %></priceMultiplier>
+%}
+%if ( $row{'QUANTITY'} ) {
+<quantity><% $row{'QUANTITY'} %></quantity>
+%}
+%if ( $row{'UPFRONT_PAY'} ) {
+<upfrontPayment><% $row{'UPFRONT_PAY'} %></upfrontPayment>
+%}
+%if ( $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' || $row{'TRD_TYPE_REGIS'} eq 'Backloading' ) {
+<deliveryType><% $row{'DLV_TYPE'} %></deliveryType>
+<executionTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'EXEC_DATETIME'} ) %></executionTimestamp>
+<effectiveDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'EFF_DATE'} ) %></effectiveDate>
+<maturityDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'MAT_DATE'} ) %></maturityDate>
+%}
+%else {
+%if ( $row{'DLV_TYPE'} ) {
+<deliveryType><% $row{'DLV_TYPE'} %></deliveryType>
+%}
+%if ( $row{'EXEC_DATETIME'} ) {
+<executionTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'EXEC_DATETIME'} ) %></executionTimestamp>
+%}
+%if ( $row{'EFF_DATE'} ) {
+<effectiveDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'EFF_DATE'} ) %></effectiveDate>
+%}
+%if ( $row{'MAT_DATE'} ) {
+<maturityDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'MAT_DATE'} ) %></maturityDate>
+%}
+%} #end else
+%if ( $row{'SETTL_DATES'} ) {
+<settlementDate><% $m->comp( 'convert_to_gtr_date.comp', date => $row{'SETTL_DATES'} ) %></settlementDate>
+%}
+%if ( $row{'MAGR_TYPE'} ) {
+<masterAgreementType><% $row{'MAGR_TYPE'} %></masterAgreementType>
+%}
+%if ( $row{'MAGR_VERSION'} ) {
+<masterAgreementVersion><% $row{'MAGR_VERSION'} %></masterAgreementVersion>
+%}
+</transactionDetails>
+<reporting>
+%if ( $row{'CONFO_DATETIME'} ) {
+<confirmationTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'CONFO_DATETIME'} ) %></confirmationTimestamp>
+%}
+%if ( $row{'CONFO_MEANS'} ) {
+<confirmationMeans><% $row{'CONFO_MEANS'} %></confirmationMeans>
+%}
+</reporting>
+<clearing>
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'CLEAR_OBL'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<clearingObligation><% $row{'CLEAR_OBL'} %></clearingObligation>
+%}
+%if ( $row{'CLEARED'} ) {
+<cleared><% $row{'CLEARED'} %></cleared>
+%}
+%if ( $row{'CLEAR_DATETIME'} ) {
+<clearingTimestamp><% $m->comp( 'convert_to_gtr_timestamp.comp', date => $row{'CLEAR_DATETIME'} ) %></clearingTimestamp>
+%}
+%if ( $row{'CCP_ID_TYPE'} ) {
+<ccpIdType><% $row{'CCP_ID_TYPE'} %></ccpIdType>
+%}
+%if ( $row{'CCP_ID'} ) {
+<ccpIdentification><% $row{'CCP_ID'} %></ccpIdentification>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'INTRAGROUP'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<intragroup><% $row{'INTRAGROUP'} %></intragroup>
+%}
+</clearing>
+<interestRateDerivatives>
+%if ( $row{'FIX_RATE1'} ) {
+<fixedRateLeg1><% $row{'FIX_RATE1'} %></fixedRateLeg1>
+%}
+%if ( $row{'FIX_RATE2'} ) {
+<fixedRateLeg2><% $row{'FIX_RATE2'} %></fixedRateLeg2>
+%}
+%if ( $row{'FIX_BASIS'} ) {
+<fixedRateDayCount><% $row{'FIX_BASIS'} %></fixedRateDayCount>
+%}
+%if ( $row{'FIX_PAYFREQ'} ) {
+<fixedLegPaymentFrequency><% $row{'FIX_PAYFREQ'} %></fixedLegPaymentFrequency>
+%}
+%if ( $row{'FLOAT_PAYFREQ'} ) {
+<floatingRatePaymentFrequency><% $row{'FLOAT_PAYFREQ'} %></floatingRatePaymentFrequency>
+%}
+%if ( $row{'FIXING_FREQ'} ) {
+<floatingRateResetFrequency><% $row{'FIXING_FREQ'} %></floatingRateResetFrequency>
+%}
+%if ( $row{'FLOAT_IND1'} ) {
+<floatingRateLeg1><% $row{'FLOAT_IND1'} %></floatingRateLeg1>
+%}
+%if ( $row{'FLOAT_IND2'} ) {
+<floatingRateLeg2><% $row{'FLOAT_IND2'} %></floatingRateLeg2>
+%}
+</interestRateDerivatives>
+<currencyDerivatives>
+%if ( $row{'CUR_CROSS'} ) {
+<currency2><% $row{'CUR_CROSS'} %></currency2>
+%}
+%if ( $row{'EXCH_RATE1'} ) {
+<exchangeRate1><% $row{'EXCH_RATE1'} %></exchangeRate1>
+%}
+%if ( $row{'EXCH_RATE2'} ) {
+<forwardRate><% $row{'EXCH_RATE2'} %></forwardRate>
+%}
+%if ( $row{'EXCH_BASIS'} ) {
+<quoteBasis><% $row{'EXCH_BASIS'} %></quoteBasis>
+%}
+</currencyDerivatives>
+<commodities>
+%if ( $row{'COMM_BASE'} ) {
+<commodityBase><% $row{'COMM_BASE'} %></commodityBase>
+%}
+%if ( $row{'COMM_DETAILS'} ) {
+<commodityDetails><% $row{'COMM_DETAILS'} %></commodityDetails>
+%}
+<energy>
+%if ( $row{'ENERGY_DLVPOINT'} ) {
+<deliveryPoint><% $row{'ENERGY_DLVPOINT'} %></deliveryPoint>
+%}
+%if ( $row{'ENERGY_INTERCONN'} ) {
+<interconnectionPoint><% $row{'ENERGY_INTERCONN'} %></interconnectionPoint>
+%}
+%if ( $row{'ENERGY_LOADTYPE'} ) {
+<loadType><% $row{'ENERGY_LOADTYPE'} %></loadType>
+%}
+%if ( $row{'ENERGY_START_DATETIME'} ) {
+<delivery>
+%if ( $row{'ENERGY_START_DATETIME'} ) {
+<deliveryStartDate><% $row{'ENERGY_START_DATETIME'} %></deliveryStartDate>
+%}
+%if ( $row{'ENERGY_END_DATETIME'} ) {
+<deliveryEndDate><% $row{'ENERGY_END_DATETIME'} %></deliveryEndDate>
+%}
+%if ( $row{'ENERGY_CAPAC'} ) {
+<contractCapacity><% $row{'ENERGY_CAPAC'} %></contractCapacity>
+%}
+%if ( $row{'ENERGY_UNIT'} ) {
+<quantityUnit><% $row{'ENERGY_UNIT'} %></quantityUnit>
+%}
+%if ( $row{'ENERGY_PRICE'} ) {
+<priceTimeIntervalQuantities><% $row{'ENERGY_PRICE'} %></priceTimeIntervalQuantities>
+%}
+</delivery>
+%} # end ENERGY_START_DATETIME delivery block check
+</energy>
+</commodities>
+<options>
+%if ( $row{'OPT_CALLPUT'} ) {
+<optionType><% $row{'OPT_CALLPUT'} %></optionType>
+%}
+%if ( $row{'OPT_STYLE'} ) {
+<exerciseStyle><% $row{'OPT_STYLE'} %></exerciseStyle>
+%}
+%if ( $row{'OPT_STRIKE'} ) {
+<strikePrice><% $row{'OPT_STRIKE'} %></strikePrice>
+%}
+</options>
+</commonData>
+<%args>
+%row
+</%args>

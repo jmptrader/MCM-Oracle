@@ -1,0 +1,79 @@
+<counterpartyData>
+<partyDetails>
+<partyIdType><% $row{'RP_EMIR_ID_TYPE'} %></partyIdType>
+<partyId><% $row{'RP_EMIR_ID'} %></partyId>
+%if ( $prop_regis && $row{'ACC_TYPE'} ne 'TP' ) {
+<accountId><% $prop_regis %></accountId>
+%}
+%if ( $row{'RP_OFFICE_NAME'} ) {
+<name><% $row{'RP_OFFICE_NAME'} |h %></name>
+%}
+%if ( $row{'RP_OFFICE_ADDRESS'} ) {
+<domicile><% $row{'RP_OFFICE_ADDRESS'} %></domicile>
+%}
+%if ( $row{'RP_EMIR_SECT'} ) {
+<corporateSector><% $row{'RP_EMIR_SECT'} %></corporateSector>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'RP_FINANCIAL'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<financialSector><% $row{'RP_FINANCIAL'} %></financialSector>
+%}
+</partyDetails>
+<counterpartyDetails>
+<counterpartyIdType><% $row{'OP_EMIR_ID_TYPE'} |h %></counterpartyIdType>
+<counterpartyId><% $row{'OP_EMIR_ID'} |h %></counterpartyId>
+</counterpartyDetails>
+<otherDetails>
+%if ( $row{'RP_BROKER_ID_TYPE'} ) {
+<brokerIdType><% $row{'RP_BROKER_ID_TYPE'} %></brokerIdType>
+%}
+%if ( $row{'RP_BROKER_ID'} ) {
+<brokerId><% $row{'RP_BROKER_ID'} %></brokerId>
+%}
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+<reportingEntityIdType><% $row{'TP_EMIR_ID_TYPE'} %></reportingEntityIdType>
+<reportingEntityId><% $row{'TP_EMIR_ID'} %></reportingEntityId>
+%}
+%if ( $row{'RP_CL_MEMBER_ID_TYPE'} ) {
+<clearingMemberIdType><% $row{'RP_CL_MEMBER_ID_TYPE'} %></clearingMemberIdType>
+%}
+%if ( $row{'RP_CL_MEMBER_ID'} ) {
+<clearingMemberId><% $row{'RP_CL_MEMBER_ID'} %></clearingMemberId>
+%}
+%if ( $row{'RP_BENEF_ID_TYPE'} ) {
+<beneficiaryIdType><% $row{'RP_BENEF_ID_TYPE'} %></beneficiaryIdType>
+%}
+%if ( $row{'RP_BENEF_ID'} ) {
+<beneficiaryId><% $row{'RP_BENEF_ID'} %></beneficiaryId>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'RP_TRD_CAPACITY'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<tradingCapacity><% $row{'RP_TRD_CAPACITY'} %></tradingCapacity>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'RP_BUYSELL'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<counterpartySide><% $row{'RP_BUYSELL'} %></counterpartySide>
+%}
+%if ( ( $row{'TRD_TYPE_REGIS'} ne 'ReportedTrade' && $row{'RP_NON_EEA'} ) || $row{'TRD_TYPE_REGIS'} eq 'ReportedTrade' ) {
+<nonEuropeanCounterparty><% $row{'RP_NON_EEA'} %></nonEuropeanCounterparty >
+%}
+%if ( $row{'RP_EMIRHED'} ) {
+<commercialActivity><% $row{'RP_EMIRHED'} %></commercialActivity>
+%}
+%if ( $row{'RP_EMIRTHRES'} ) {
+<clearingThreshold><% $row{'RP_EMIRTHRES'} %></clearingThreshold>
+%}
+</otherDetails>
+<exposures>
+%if ( $row{'RP_COLL_TYPE'} ) {
+<collateralisation><% $row{'RP_COLL_TYPE'} %></collateralisation>
+%}
+%if ( $row{'RP_COLL_PTF_YN'} ) {
+<collateralPortfolio><% $row{'RP_COLL_PTF_YN'} %></collateralPortfolio>
+%}
+%if ( $row{'RP_COLL_PTF_CODE'} ) {
+<collateralPortfolioCode><% $row{'RP_COLL_PTF_CODE'} %></collateralPortfolioCode>
+%}
+</exposures>
+</counterpartyData>
+<%args>
+%row
+$prop_regis
+</%args>

@@ -1,0 +1,198 @@
+<%perl>
+my $comp_name = $m->fetch_next->name; 
+
+if ( $no_visu{$comp_name} ) {
+  $m->call_next;
+  $m->abort;
+}
+
+unless ( $no_auth{$comp_name} ) {
+  unless ( $m->session->{username} ) {
+    $r->headers_out->add( Location => 'notloggedon.html' );
+    $r->status(302);
+    $m->abort;
+  }
+} 
+
+$environments ||= $m->cache->get('environments');
+unless ( $environments ) {
+  foreach my $env ( Mx::Config->environments() ) {
+    my $configfile = $config->CONFIGDIR . '/' . $env . '.cfg';
+    my $tmp_config = Mx::Config->new( $configfile );
+    $environments->{$env}->{WEB_HOST} = $tmp_config->WEB_HOST;
+    $environments->{$env}->{WEB_PORT} = $tmp_config->WEB_PORT;
+  }
+  $m->cache->set( environments => $environments ); 
+}
+
+
+$r->headers_out->add('Expires' => 'now');
+$r->headers_out->add('Cache-Control' => 'no-cache');
+$r->headers_out->add('Pragma' => 'no-cache');
+
+if ( $no_enrich{$comp_name} ) {
+  $m->call_next;
+  $m->abort;
+}
+
+if ( $ARGS{body_only} ) {
+  $m->call_next;
+}
+else {
+  $m->comp('header.html');
+  print "<body>\n";
+  unless ( $ARGS{no_navigation} or $no_navi{$comp_name} ) {
+    $m->comp( 'navigation.comp' );
+    $m->comp( 'messenger.comp', username => $m->session->{username} );
+  }
+  print "<div id='result_processing2' class='dataTables_processing' style='visibility: hidden;'></div>\n";
+  print "<div id='body_content'>\n";
+  $m->call_next;
+  print "</div>\n";
+  print "</body>\n";
+  $m->comp('footer.html');
+}
+</%perl>
+
+<%once>
+$app_name = 'Mx Dashboard';
+
+my %no_visu = (
+  'client_info.html'         => 1,
+  'webservice.html'          => 1,
+  'launch_webcommand.html'   => 1,
+  'kill_session.html'        => 1,
+  'kill_connection.html'     => 1,
+  'sessions2.html'           => 1,
+  'scripts2.html'            => 1,
+  'services2.html'           => 1,
+  'collectors2.html'         => 1,
+  'sybase_errors2.html'      => 1,
+  'db_indexes2.html'         => 1,
+  'db_tables2.html'          => 1,
+  'db_table_size2.html'      => 1,
+  'sybase_table_index2.html' => 1,
+  'sybase_table_ddl2.html'   => 1,
+  'tws_jobs2.html'           => 1,
+  'tws_executions2.html'     => 1,
+  'tws_dates.html'           => 1,
+  'tws_stdout.html'          => 1,
+  'mxml_nodes2.html'         => 1,
+  'mxml_task2.html'          => 1,
+  'mxml_tasks2.html'         => 1,
+  'mxml_messages2.html'      => 1,
+  'mxml_route2.html'         => 1,
+  'mxml_bodies2.html'        => 1,
+  'mxml_body2.xml'           => 1,
+  'mxml_details2.html'       => 1,
+  'statements_tables2.html'  => 1,
+  'report2.html'             => 1, 
+  'gtr_messages2.html'       => 1,
+  'gtr_message2.html'        => 1,
+  'gtr_dates.html'           => 1,
+  'gtr_files2.html'          => 1,
+  'gtr_upload.html'          => 1,
+  'logging2.html'            => 1,
+  'raw_logging2.html'        => 1,
+  'tws_stdout2.html'         => 1,
+  'job_stdout2.html'         => 1,
+  'logfiles2.html'           => 1,
+  'index_action.html'        => 1,
+  'xmlservices2.html'        => 1,
+  'stop_service.html'        => 1,
+  'stop_collector.html'      => 1,
+  'start_service.html'       => 1,
+  'start_collector.html'     => 1,
+  'full_stop.html'           => 1,
+  'service_details2.html'    => 1,
+  'service_cmdline2.html'    => 1,
+  'collector_details2.html'  => 1,
+  'job_details2.html'        => 1,
+  'gc2.html'                 => 1,
+  'session_stdout2.html'     => 1,
+  'session_mms2.html'        => 1,
+  'session_timings2.html'    => 1,
+  'session_env2.html'        => 1,
+  'session_cmdline2.html'    => 1,
+  'script_cmdline2.html'     => 1,
+  'script_source2.html'      => 1,
+  'transfer_keyfile2.html'   => 1,
+  'db_connections2.html'     => 1,
+  'db_statements2.html'      => 1,
+  'db_plan2.html'            => 1,
+  'db_locks2.html'           => 1,
+  'statement_plan2.html'     => 1,
+  'statement_waits2.html'    => 1,
+  'log_extract2.html'        => 1,
+  'xmlfile2.html'            => 1,
+  'mxusers2.html'            => 1,
+  'decrypt.html'             => 1,
+  'session_sql2.html'        => 1,
+  'session_trace2.html'      => 1,
+  'session_io2.html'         => 1,
+  'session_memory2.html'     => 1,
+  'session_sybase2.html'     => 1,
+  'session_dtrace2.html'     => 1,
+  'session_dm2.html'         => 1,
+  'core_pstack2.html'        => 1, 
+  'md_uploads2.html'         => 1, 
+  'md_upload_matrix2.html'   => 1,
+  'ctrlm_jobs2.html'         => 1,
+  'ctrlm_job2.html'          => 1,
+  'histmessage_details2.html' => 1,
+);
+
+my %no_auth = (
+  'notloggedon.html'         => 1,
+  'login.html'               => 1,
+  'submitlogin.html'         => 1,
+  'logout.html'              => 1,
+);
+
+my %no_enrich = (
+  'filebrowser.html'         => 1,
+);
+
+my %no_navi = (
+  'login.html'               => 1,
+  'submitlogin.html'         => 1,
+  'logout.html'              => 1,
+  'logging3.html'            => 1,
+  'raw_logging3.html'        => 1,
+  'mxml_route3.html'         => 1,
+  'webcommand.html'          => 1,
+);
+
+$db_audit = Mx::DBaudit->new( config => $config, logger => $logger );
+$auth_db  = Mx::Auth::DB->new( config => $config, logger => $logger );
+@handles  = Mx::Secondary->handles( webhandle => $m, config => $config, logger => $logger );
+map { $handles{ $_->short_hostname } = $_ } @handles;
+
+$oracle_fin->open();
+$oracle_rep->open();
+$oracle_mon = $db_audit->oracle;
+
+$schemas{ $config->MON_DBUSER } = $oracle_mon;
+
+%full_names = Mx::Auth::User->retrieve_full_names( db => $auth_db, config => $config, logger => $logger );
+
+%client_map = $db_audit->retrieve_client_map();
+
+while ( my ( $key, $value ) = each %client_map ) {
+  my @list = ();
+  foreach my $element ( @{$value} ) {
+    my ( $user, $cnt ) = split ':', $element;
+    $user = $full_names{$user} || $user;
+    $user =~ s/'/\\'/g;
+    push @list, "$user ($cnt)";
+  }
+
+  $client_map{$key} = join ',', @list;
+}
+
+my ( $nodes_ref, $tasks_ref ) = Mx::MxML::Node->retrieve_all( logger => $logger, config => $config, db_audit => $db_audit );
+my @mxml_thresholds = Mx::MxML::Threshold->retrieve_all( logger => $logger, config => $config );
+Mx::MxML::Task->apply_thresholds( tasks => $tasks_ref, thresholds => \@mxml_thresholds, logger => $logger );
+%mxml_nodes = %{$nodes_ref};
+%mxml_tasks = %{$tasks_ref};
+</%once>

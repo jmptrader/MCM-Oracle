@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use File::Basename;
+
+exit unless @ARGV;
+
+my $nr_copies = 1;
+my $filename = $ARGV[-1];
+
+my @command = ( '/usr/bin/lpr' );
+foreach my $arg ( @ARGV ) {
+    if ( $arg =~ /^-#(\d+)$/ ) {
+        $nr_copies = $1;
+    }
+    else {
+        push @command, $arg;
+    }
+}
+
+my $rc = 0;
+while ( $nr_copies-- > 0 ) {
+    $rc += system( @command );
+}
+
+if ( $rc ) {
+    print STDERR "printing of $filename failed\n";
+    exit 1;
+}
+
+$filename =~ s/\.ps$//;
+
+my $file = basename( $filename );
+my $dir  = dirname( $filename );
+
+my $targetfile = "$dir/.$file";
+
+unless ( rename $filename, $targetfile ) {
+    print STDERR "cannot rename $filename to $targetfile\n";
+    exit 1;
+}

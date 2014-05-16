@@ -1,0 +1,65 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $SYBASE_MAX_POINTS = 300;
+
+my @performance = $db_audit->retrieve_sybase( session_id => $id );
+
+my @timestamps = map { Mx::Util->convert_time_short( $_->[1] ) } @performance;
+my @cpu        = map { $_->[2] } @performance;
+my @io         = map { $_->[3] } @performance;
+my @mem        = map { $_->[4] } @performance;
+my $nr_points  = @performance;
+
+my ( @data, @legend, $graph, $gd, $fh );
+
+my $x_label_skip = int ( scalar(@timestamps) / 12 );
+
+@data = ( \@timestamps, \@cpu );
+
+$graph = ( $nr_points < $SYBASE_MAX_POINTS ) ? GD::Graph::bars->new(900, 300) : GD::Graph::area->new(900, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%6d", title => 'CPU', dclrs => [ 'red' ], textclr => 'red' );
+$graph->set_text_clr('black');
+
+my $cpu_file = "/tmp/sybase_cpu_${id}.png";
+
+$fh = IO::File->new( $cpu_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@timestamps, \@io );
+
+$graph = ( $nr_points < $SYBASE_MAX_POINTS ) ? GD::Graph::bars->new(900, 300) : GD::Graph::area->new(900, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%6d", title => 'IO', dclrs => [ 'green' ], textclr => 'green' );
+$graph->set_text_clr('black');
+
+my $io_file = "/tmp/sybase_io_${id}.png";
+
+$fh = IO::File->new( $io_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+@data = ( \@timestamps, \@mem );
+
+$graph = ( $nr_points < $SYBASE_MAX_POINTS ) ? GD::Graph::bars->new(900, 300) : GD::Graph::area->new(900, 300);
+
+$graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, y_number_format => "%6d", title => 'Memory', dclrs => [ 'blue' ], textclr => 'blue' );
+$graph->set_text_clr('black');
+
+my $mem_file = "/tmp/sybase_mem_${id}.png";
+
+$fh = IO::File->new( $mem_file, '>' );
+$gd = $graph->plot(\@data) or die $graph->error;
+print $fh $gd->png;
+$fh->close;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { cpu_path => $cpu_file, io_path => $io_file, mem_path => $mem_file } );
+</%init>
+<%args>
+$id
+</%args>

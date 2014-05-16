@@ -1,0 +1,52 @@
+<H2>Search Transfers</H2>
+<form onsubmit="return msubmit(this, 'histlist.html')">
+<INPUT TYPE='hidden' NAME='object' VALUE='histtransfer'>
+<TABLE class="center" WIDTH=70%>
+% foreach my $entry ( @columns ) {
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF"><% $entry->{description} %>&nbsp;</FONT></TD>
+    <TD>
+%   if ( $entry->{type} eq 'free' ) {
+      <INPUT TYPE="text" NAME="<% $entry->{column} %>" SIZE="<% $entry->{length} %>" MAXLENGTH="<% $entry->{length} %>">
+%   }
+%   elsif ( $entry->{type} eq 'list' ) {
+      <SELECT NAME="<% $entry->{column} %>">
+%     my @values = $db_audit->get_distinct_values( column => $entry->{column}, table => 'transfers' );
+        <OPTION></OPTION>
+%     foreach my $value ( sort @values ) {
+        <OPTION><% $value %></OPTION>
+%     }      
+      </SELECT>
+%   }
+%   elsif ( $entry->{type} eq 'checkbox' ) {
+      <INPUT TYPE="checkbox" NAME="<% $entry->{column} %>">
+%   }
+    </TD>
+  </TR>
+% }
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Records per Page</FONT></TD>
+    <TD><INPUT TYPE="text" NAME="recs_per_page" SIZE=3 VALUE="50"></TD>
+  </TR>
+</TABLE>
+<BR>
+<INPUT TYPE="submit" CLASS="table_button" VALUE=" Search ">
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Cancel " onclick="mgoback('home.html')">
+</FORM>
+
+<%init>
+my @columns = (
+  { column => 'id',              description => 'ID',                     type => 'free', length => 6 },
+  { column => 'hostname',        description => 'Hostname',               type => 'list' },
+  { column => 'pid',             description => 'PID',                    type => 'free', length => 6 },
+  { column => 'exitcode',        description => 'Exit Code',              type => 'list' },
+  { column => 'project',         description => 'Project',                type => 'list' },
+  { column => 'sched_jobstream', description => 'Jobstream',              type => 'list' },
+  { column => 'entity',          description => 'Entity',                 type => 'list' },
+  { column => 'content',         description => 'Content',                type => 'list' },
+  { column => 'target',          description => 'Target',                 type => 'list' },
+  { column => 'business_date',   description => 'Business Date',          type => 'list' },
+  { column => 'username',        description => 'Username',               type => 'list' },
+  { column => 'killed',          description => 'Killed',                 type => 'list' },
+);
+</%init>

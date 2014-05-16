@@ -1,0 +1,334 @@
+<script type="text/javascript">
+var oTable; var $modal;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      var schema = $('#schemas').val();
+      var type   = $('#types').val();
+      aoData.push(
+        { "name": "schema",   "value": schema },
+        { "name": "type",     "value": type   }
+      );
+      $.getJSON( sSource, aoData, function( json ) {
+        displayIndexCount( json.index_count );
+        fnCallback( json.datatables );
+        displayRefreshTime();
+        installHover();
+        checkRights();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/db_indexes2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "750px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          if ( sData == "ok" ) {
+            $(nTd).css('background-color', '#70C070')
+          }
+          else if ( sData == "undefined" ) {
+            $(nTd).css('background-color', '#FFCC33')
+          }
+          else {
+            $(nTd).css('background-color', '#FF9900')
+          }
+        }, "aTargets": [ 8 ] },
+
+      { "sClass": "center",       "aTargets": [ 5,6,7,8 ] },
+
+      { "bVisible": false,        "aTargets": [ 0,4 ] },
+
+      { "sWidth": "60px",         "aTargets": [ 5 ] },
+      { "sWidth": "80px",         "aTargets": [ 7 ] },
+      { "sWidth": "100px",        "aTargets": [ 0,6,8 ] },
+      { "sWidth": "175px",        "aTargets": [ 1 ] },
+      { "sWidth": "200px",        "aTargets": [ 2 ] },
+      { "sWidth": "700px",       "aTargets": [ 3,4 ] }
+    ],
+
+    "aaSorting": [[ 1, "asc" ], [ 2, "asc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#schemas').change( function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#types').change( function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function displayIndexCount( aList ) {
+  var html = [], h = -1;
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+
+  for ( var i = 0; i < aList.length; i++ ) {
+    html[++h] = '<tr><td align=right>';
+
+    if ( aList[i].description == 'total' ) {
+      html[++h] = 'Total number of defined indexes';
+    }
+    else if ( aList[i].description == 'existing' ) {
+      html[++h] = 'Existing indexes';
+    }
+    else if ( aList[i].description == 'missing' ) {
+      html[++h] = 'Missing/Incorrect indexes';
+    }
+    else if ( aList[i].description == 'undefined' ) {
+      html[++h] = 'Undefined indexes';
+    }
+
+    html[++h] = ':</td><td align=right>';
+    html[++h] = aList[i].count;
+    html[++h] = '</td></tr>';
+  }
+
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#indexcount')[0].innerHTML = html.join('');
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split(':');
+      var type     = result[0];
+      var schema   = result[1];
+      var table    = result[2];
+      var name     = result[3];
+
+      $('#dummytrigger').attr( 'type', type );
+      $('#dummytrigger').attr( 'schema', schema );
+      $('#dummytrigger').attr( 'table', table );
+      $('#dummytrigger').attr( 'name', name );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var action   = $('#dummytrigger').attr('action');
+  var type     = $('#dummytrigger').attr('type');
+  var schema   = $('#dummytrigger').attr('schema');
+  var table    = $('#dummytrigger').attr('table');
+  var name     = $('#dummytrigger').attr('name');
+
+  if ( action == 'create' ) {
+    $('#jqmTitleText').text( 'Create index ' + name );
+    $modal.jqmShow();
+    drawIndexAction( action, type, name, table, schema );
+  }
+  else if ( action == 'drop' ) {
+    $('#jqmTitleText').text( 'Drop index ' + name );
+    $modal.jqmShow();
+    drawIndexAction( action, type, name, table, schema );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function drawIndexAction( action, type, name, table, schema ){
+  var html = [], h = -1; 
+	
+  $('#jqmContent').css( 'width', '600px' );
+  $('#jqmContent').css( 'height', '150px' );
+  $('.jqmWindow').css( 'display', 'block' );
+ 
+  var message; var ok; 
+  if ( action == 'create' && type == 'extra' ) {
+    message  = 'Create index ' + name + ' on table ' + table + '?';
+    ok = true;
+  }
+  else if ( action == 'create' ) {
+    message = 'Only indexes of type extra can be created.';
+    ok = false;
+  }
+  else if ( action == 'drop' ) {
+    message  = 'Drop index ' + name + ' on table ' + table + '?';
+    ok = true;
+  }
+
+  html[++h] = '<br>';
+  html[++h] = '<p><div>';
+  html[++h] = message;
+  html[++h] = '<br><br>';
+  if ( ok ) {
+    html[++h] = '<input type="button" class="button" id="executebutton" value=" Execute " onclick="handleClick(\'' + action + '\',\'' + name + '\',\'' + table + '\',\'' +  schema + '\'); $(\'#modalWindow\').jqmHide();"></input>';
+  }
+  html[++h] = '<input type="button" class="button" id="cancelbutton" value=" Cancel " onclick="$(\'#modalWindow\').jqmHide();"></input>';
+ 
+  $('#jqmContent')[0].innerHTML = html.join('');
+}
+
+function handleClick( action, name, table, schema ) {
+  $('div.execution').css( 'display', 'block' );
+
+  var message;
+  if ( action == 'drop' ) {
+    message = 'dropping index ' + name + ' on table ' + table;
+  }
+  else {
+    message = 'creating index ' + name + ' on table ' + table;
+  }
+
+  updateExecutionLog( 'OK', message );
+
+  var request = $.ajax( {
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/index_action.html',
+    data:     { 'action': action, 'name': name, 'table': table, 'schema': schema },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  request.done( function( data ) {
+    updateExecutionLog( data.status, data.data );
+  } );
+}
+
+function updateExecutionLog( status, message ) {
+  var textarea = $('#executionlog');
+
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+
+  if ( status == 'OK' ) {
+    textarea.append( timestamp + ' - INFO    - ' + message + "\n" );
+  }
+  else {
+    textarea.append( timestamp + ' - ERROR - ' + message + "\n" );
+  }
+
+  textarea.scrollTop( textarea[0].scrollHeight - textarea.height() );
+}
+</script>
+
+<div id="title">Database Indexes</div>
+
+<div id="indexcount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh:</div>
+
+<div style="clear: both;"></div>
+
+<span style="float: left; padding: 4px 4px 0px 0px;">Database: </span>
+
+<div style="float: left; padding: 0px 4px;">
+<select id="schemas">
+% foreach my $schema ( @schemas ) {
+  <option value="<% $schema %>"><% $schema %></option>
+% }
+</select>
+</div>
+
+<span style="float: left; padding: 4px 4px 0px 16px;">Index Type: </span>
+
+<div style="float: left; padding: 0px 4px;">
+<select id="types">
+  <option value="murex">murex</option>
+  <option value="extra">extra</option>
+</select>
+</div>
+
+<br>
+
+<ul id="contextmenu" class="contextMenu"  style="text-align: left;">
+  <li>
+    <a href="#create" right="create_index">Create index</a>
+  </li>
+  <li>
+    <a href="#drop" right="drop_index">Drop index</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" action="" type="" name="" table="" schema=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<table id="result">
+<thead>
+  <tr>
+    <th>DATABASE</th>
+    <th>TABLE</th>
+    <th>NAME</th>
+    <th>COLUMNS (defined)</th>
+    <th>COLUMNS (actual)</th>
+    <th>UNIQUE</th>
+    <th>TIMESTAMP</th>
+    <th>TYPE</th>
+    <th>STATUS</th>
+  </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<br>
+
+<button class="button" id="refresh" style="margin: 4px;"> Refresh </button>
+
+<div class="execution" style="display: none; padding: 4px 0px 0px 20px;"><textarea cols=300 rows=10 readonly id="executionlog"></textarea></div>
+
+<%init>
+my @schemas = $schema ? ( $schema ) : (
+  $config->FIN_DBUSER,
+  $config->REP_DBUSER,
+  $config->MON_DBUSER,
+);
+</%init>
+<%args>
+$schema => ''
+</%args>

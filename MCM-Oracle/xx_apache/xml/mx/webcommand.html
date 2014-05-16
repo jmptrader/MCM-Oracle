@@ -1,0 +1,124 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  var intervalId; var startTime;
+
+  $('#launchform').submit( function() {
+    $.ajax({
+      type:     'POST',
+      dataType: 'text',
+      cache:    false,
+      url:      '/mx/launch_webcommand.html',
+      data:     { 'command':'<% $command %>' },
+      beforeSend: function() {
+        $('#launchbutton').attr( 'disabled', 'disabled' );
+        $('#launchbutton').attr( 'value', ' Command Launched ' );
+
+        var d = new Date();
+        var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+        $('#starttime').html( 'Start Time: ' + timestamp );
+
+        startTime = d.getTime();
+      },
+      success:  function( data ) {
+        intervalId = window.setInterval( function() { check_log( data ) } , <% $poll_interval * 1000 %> );
+      },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        $('#error').html( textStatus + ': ' + errorThrown );
+      }
+    });
+
+    return false;
+  });
+
+  function check_log( weblog ) {
+    $.ajax({
+      type:     'HEAD',
+      cache:    false,
+      url:      weblog,
+      success:  function( data, status, response ) {
+        var oldsize = $('#logsize').val();
+        var newsize = response.getResponseHeader( 'Content-Length' );
+
+        if ( oldsize != newsize ) {
+          get_chunk( weblog, oldsize );
+        }
+
+        $('#logsize').val( newsize );
+
+        var d = new Date();
+        var duration = Math.round( ( d.getTime() - startTime ) / 1000 );
+        $('#duration').html( 'Duration: ' + duration + ' seconds' );
+      },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        $('#error').html( textStatus + ': ' + errorThrown );
+      }
+    });
+  }
+
+  function get_chunk( weblog, offset ) {
+    $.ajax({
+      type:     'GET',
+      cache:    false,
+      url:      weblog,
+      headers:  { 'Range': 'bytes=' + offset + '-' },
+      success: function( data ) {
+        var console = $('#log');
+        console.val( console.val() + data );
+        console.scrollTop(
+            console[0].scrollHeight - console.height()
+        );
+
+        var lastpart = data.substr( data.length - 3 );
+        if ( lastpart == '---' ) {
+            $('#launchbutton').attr( 'value', ' Command Finished ' );
+            window.clearInterval( intervalId );
+        }
+      },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        $('#error').html( textStatus + ': ' + errorThrown );
+      }
+    });
+  }
+   
+});
+</script>
+
+<body>
+<center>
+
+<br>
+<code style="font-size: 14px;"><% $command %></code>
+
+<p>
+<form id="launchform">
+<input type="hidden" name="logsize" id="logsize" value="0">
+<table>
+  <tr>
+    <td><input type="submit" class="button" value=" Launch Command " id="launchbutton"></td>
+  </tr>
+</table>
+</form>
+
+<p>
+<div id="starttime">&nbsp;</div>
+
+<p>
+<div id="duration">&nbsp;</div>
+
+<p>
+<div id="error">&nbsp;</div>
+
+<p>
+<textarea cols=250 rows=50 readonly id="log"></textarea>
+
+<p>
+
+<input type="button" class="table_button" value=" Close " onClick="window.close()">
+
+</center>
+</body>
+
+<%args>
+$command
+$poll_interval => 2
+</%args>

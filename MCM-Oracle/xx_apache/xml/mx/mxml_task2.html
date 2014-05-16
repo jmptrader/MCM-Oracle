@@ -1,0 +1,13 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $task = $mxml_tasks{$taskname};
+
+my $hash = $task->TO_JSON;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $hash } );
+</%init>
+<%args>
+$taskname
+</%args>

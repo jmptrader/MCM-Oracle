@@ -1,0 +1,150 @@
+% $m->comp( 'results.comp', description => 'service event', nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr );
+
+<table class="center" width="50%">
+  <thead>
+  <tr>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
+    <th colspan=2>SERVICE START</th>
+    <th colspan=2>POST START</th>
+    <th colspan=2>PRE STOP</th>
+    <th colspan=2>SERVICE STOP</th>
+  </tr>
+  <tr>
+% foreach my $column ( @columns ) {
+%   if ( $column->{visible} ) {
+    <th><a href="#" onclick="mnavigate('<% $url %>', { sort:'<% $column->{name} %>', reverse:1 <% $sort_args %> })" style="color: #FFFFFF;"><% $column->{label} %></a></th>
+%   }
+% }
+  </tr>
+  </thead>
+  <tbody>
+% foreach my $result ( @results ) {
+  <tr align=center>
+    <td><a class="select" href="#" onclick="mnavigate('histservice_details.html', { service_id:<% $result->[1] %> }, { <% join ',', @nav_args %> })""><% $result->[1] %></a></td>
+    <td align=LEFT>&nbsp;<a class="select" href="#" onclick="mnavigate('service_details.html', { name:'<% $result->[2] %>', hist_url:'histservices.html' }, { <% join ',', @nav_args %>} )"><% $result->[2] %></a></td>
+    <td><% Mx::Util->convert_time( $result->[3] ) %></td>
+    <td><% Mx::Util->convert_time( $result->[4] ) %></td>
+%   my $duration = $result->[5]; my $rc = $result->[6];
+%   if ( defined $duration ) {
+    <td align=right><% $duration %> s&nbsp;</td>
+%   }
+%   else {
+    <td></td>
+%   }
+%   if ( $rc ) { 
+    <td style="background-color: #FF9900;"><% $rc %></td>
+%   }
+%   else {
+    <td><% $rc %></td>
+%   }
+%   $duration = $result->[7]; $rc = $result->[8];
+%   if ( defined $duration ) {
+    <td align=right><% $duration %> s&nbsp;</td>
+%   }
+%   else {
+    <td></td>
+%   }
+%   if ( $rc ) { 
+    <td style="background-color: #FF9900;"><% $rc %></td>
+%   }
+%   else {
+    <td><% $rc %></td>
+%   }
+%   $duration = $result->[9]; $rc = $result->[10];
+%   if ( defined $duration ) {
+    <td align=right><% $duration %> s&nbsp;</td>
+%   }
+%   else {
+    <td></td>
+%   }
+%   if ( $rc ) { 
+    <td style="background-color: #FF9900;"><% $rc %></td>
+%   }
+%   else {
+    <td><% $rc %></td>
+%   }
+%   $duration = $result->[11]; $rc = $result->[12];
+%   if ( defined $duration ) {
+    <td align=right><% $duration %> s&nbsp;</td>
+%   }
+%   else {
+    <td></td>
+%   }
+%   if ( $rc ) { 
+    <td style="background-color: #FF9900;"><% $rc %></td>
+%   }
+%   else {
+    <td><% $rc %></td>
+%   }
+  </tr>
+% }
+  </tbody>
+</table>
+
+<p>
+% $m->comp( 'pager.comp', url => $url, search_url => 'histservice_search.html', refresh => 1, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+
+<%init>
+my @columns = (
+    { name => 'id',                     label => 'ID',        visible => 1, numeric => 1 },
+    { name => 'name',                   label => 'NAME',      visible => 1, numeric => 0 },
+    { name => 'starttime',              label => 'START',     visible => 1, numeric => 1 },
+    { name => 'endtime',                label => 'END',       visible => 1, numeric => 1 },
+    { name => 'service_start_duration', label => '&lt;-&gt;', visible => 1, numeric => 1 },
+    { name => 'service_start_rc',       label => 'RC',        visible => 1, numeric => 1 },
+    { name => 'post_start_duration',    label => '&lt;-&gt;', visible => 1, numeric => 1 },
+    { name => 'post_start_rc',          label => 'RC',        visible => 1, numeric => 1 },
+    { name => 'pre_stop_duration',      label => '&lt;-&gt;', visible => 1, numeric => 1 },
+    { name => 'pre_stop_rc',            label => 'RC',        visible => 1, numeric => 1 },
+    { name => 'service_stop_duration',  label => '&lt;-&gt;', visible => 1, numeric => 1 },
+    { name => 'service_stop_rc',        label => 'RC',        visible => 1, numeric => 1 },
+    { name => 'business_date',          label => '',          visible => 0, numeric => 1 },
+);
+
+my $url   = 'histservices.html';
+
+if ( $reverse ) {
+  $m->session->{services_reverse} = ! $m->session->{services_reverse};
+}
+
+my %where_hash = (); my @sort_args = (); my $sort_args = '';
+foreach my $column ( @columns ) {
+  if ( my $entry = $ARGS{$column} ) {
+    my @values;
+    if ( ref $entry eq 'ARRAY' ) {
+      @values = @{$entry};
+    }
+    elsif ( $entry =~ /,/ ) {
+      @values = split /,/, $entry;
+    }
+    else {
+      @values = ( $entry );
+    }
+    foreach my $value ( @values ) {
+      push @{$where_hash{$column}}, ( $column->{numeric} ? $value : "\"$value\"" );
+      push @sort_args, "$column: '$value'";
+    }
+  }
+}
+$sort_args = join ',', @sort_args;
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'reverse';
+  push @nav_args, "$k:'$v'";
+}
+
+my $result  = $db_audit->retrieve_services( sort => { $sort => $m->session->{services_reverse} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+my @results = @{$result};
+my $nr_results = @results ? $results[0][0] : 0;
+</%init>
+
+<%args>
+$recs_per_page => 50
+$page_nr       => 1
+$sort          => 'id'
+$reverse       => 0
+</%args>

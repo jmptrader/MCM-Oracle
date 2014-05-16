@@ -1,0 +1,36 @@
+<%perl>
+$app_name = 'M.A.F'; 
+
+my @exclude  = qw(notloggedon.html login.html submitlogin.html logout.html right_check.html);
+my @exclude2 = qw(right_check.html);
+
+my $next_comp = $m->fetch_next;
+my $comp_name = $next_comp->name;
+
+if ( grep /^$comp_name$/, @exclude2 ) {
+  $m->call_next;
+  $m->abort;
+}
+
+unless (grep /^$comp_name$/, @exclude) {
+  unless ($m->session->{username}) {
+    $r->headers_out->add(Location => 'notloggedon.html');
+    $r->status(302);
+    $m->abort;
+  }
+} 
+
+$r->headers_out->add('Expires' => 'now');
+$r->headers_out->add('Cache-Control' => 'no-cache');
+$r->headers_out->add('Pragma' => 'no-cache');
+
+$m->autoflush(1);
+
+$m->comp('header.html');
+$m->call_next;
+$m->comp('footer.html');
+</%perl>
+
+<%once>
+$auth_db  = Mx::Auth::DB->new( config => $config, logger => $logger );
+</%once>

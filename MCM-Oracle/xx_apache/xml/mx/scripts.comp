@@ -1,0 +1,30 @@
+<%init>
+map { $_->scripts_async } @handles;
+
+my @scripts = ();
+foreach my $handle ( @handles ) {
+  push @scripts, $handle->poll_async;
+}
+
+if ( @ids ) {
+  my %present = ();
+  map { $present{$_} = 1 } @ids;
+
+  my @ascripts = ();
+  foreach my $script ( @scripts ) {
+    if ( $present{ $script->hostname . ':' . $script->pid } ) {
+      push @ascripts, $script;
+    }
+  }
+
+  map { $_->unprepare_for_serialization( logger => $logger, config => $config ) } @ascripts;
+  return \@ascripts;
+}
+
+map { $_->unprepare_for_serialization( logger => $logger, config => $config ) } @scripts;
+return \@scripts;
+</%init>
+
+<%args>
+@ids => ()
+</%args>

@@ -1,0 +1,57 @@
+<H2>Blocker #<% $blocker_id %></H2>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr><td class="description" width="20%" nowrap><font color="#FFFFFF"><% $key %>&nbsp;</font></td><td><% ( defined $value ) ? $value : '&nbsp;' %></td></tr>
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onclick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histblocker_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $blocker = $db_audit->retrieve_blocker( id => $blocker_id );
+my @table;
+push @table, 'Sybase SPID'        , $blocker->[2];
+push @table, 'Database Name'      , $blocker->[3];
+push @table, 'Login'              , $blocker->[5];
+push @table, 'Unix PID'           , $blocker->[4];
+push @table, 'Hostname'           , $blocker->[6];
+push @table, 'Application'        , $blocker->[7];
+push @table, 'Transaction'        , $blocker->[8];
+push @table, 'Command'            , $blocker->[9];
+push @table, 'Status'             , $blocker->[10];
+push @table, 'Start Time'         , Mx::Util->convert_time( $blocker->[11] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $blocker->[12] ) );
+my $sql_tag = $blocker->[14];
+push @table, 'SQL Tag'            , $sql_tag;
+
+my $sql_text = $blocker->[13];
+
+$sql_text =~ s/#/__SHARP__/g;
+
+my $sql = SQL::Beautify->new( spaces => 2, space => '&nbsp;', break => '<br>', wrap => { keywords => [ '<b>', '</b>' ], constants => [ '<font color="green">', '</font>' ] } );
+
+$sql->query($sql_text);
+
+my $nice_sql = $sql->beautify; 
+
+$nice_sql =~ s/__SHARP__/#/g;
+
+push @table, 'SQL Text', $nice_sql;
+</%init>
+
+<%args>
+$blocker_id
+</%args>

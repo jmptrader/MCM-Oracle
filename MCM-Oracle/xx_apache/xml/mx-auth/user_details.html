@@ -1,0 +1,85 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    User: <% $name %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="table" class="grid_12">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr>
+      <td class="description"><% $key %></td>
+      <td>
+%   if ( $key eq 'Groups' ) {
+%     foreach my $group ( @{$value} ) {
+        <a href="group_details.html?id=<% $group->id %>"><% $group->name %></a>
+        <br>
+%     } 
+%   }
+%   else {
+        <% $value %>
+%   }
+      </td>
+    </tr>
+% }
+    </table>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="actions" class="grid_8">
+    <input type="button" class="button" value=" Go Back " onClick="history.back()">
+    <form action="user_insert.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Update ">
+    </form>
+    <form action="user_action.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="hidden" name="name" value="<% $name %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Delete " onClick="return confirm('Are you sure?')">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my $user;
+  if ( $id ) {
+    $user = Mx::Auth::User->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+  }
+  else {
+    $user = Mx::Auth::User->new( name => $name, db => $auth_db, config => $config, logger => $logger );
+  }
+  $user->retrieve;
+  $name = $user->name;
+  my @table;
+  push @table, 'Login'        , $user->name;
+  push @table, 'First Name'   , $user->first_name;
+  push @table, 'Surname'      , $user->last_name;
+  push @table, 'Location'     , $user->location;
+  push @table, 'Type'         , $user->type;
+  push @table, 'Config Data'  , $user->config_data;
+  push @table, 'Disabled'     , ( $user->disabled ) ? 'Yes' : 'No';
+  push @table, 'Groups'       , [ $user->groups ];
+</%init>
+
+<%args>
+$id => 0
+$name => ''
+</%args>

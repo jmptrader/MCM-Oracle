@@ -1,0 +1,60 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @all_lines;
+tie @all_lines, 'Tie::File', $path;
+
+my $nr_lines = @all_lines;
+
+my $last;
+if ( $iDisplayLength == -1 ) {
+  $iDisplayStart = 0;
+  $last = $nr_lines;
+}
+else {
+  $last = $iDisplayStart + $iDisplayLength;
+  $last = $nr_lines if $last > $nr_lines;
+}
+
+my @lines = (); my $nr_display_lines = 0;
+for ( my $i = $iDisplayStart; $i < $last; $i++ ) {
+  my $line = $all_lines[ $i ];
+  chomp($line);
+
+  if ( $line =~ /^\[(\d\d\d\d\/\d\d\/\d\d) (\d\d:\d\d:\d\d)\] (\S+)\s+([A-Z]+)\s+- (\d+)\s+- (.*)$/ ) {
+    push @lines, {
+      0        => $1,
+      1        => $2,
+      2        => $3,
+      3        => $4,
+      4        => $5,
+      5        => $6,
+      DT_RowId => $i
+    };
+  }
+  else {
+    push @lines, {
+      0        => '',
+      1        => '',
+      2        => '',
+      3        => '',
+      4        => '',
+      5        => $line,
+      DT_RowId => $i
+    };
+  }
+
+  $nr_display_lines++;
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { iTotalRecords => $nr_lines, iTotalDisplayRecords => $nr_lines, sEcho => $sEcho, aaData => \@lines } } );
+</%init>
+
+<%args>
+$path
+$iDisplayStart  => 0
+$iDisplayLength => 500
+$sEcho          => ''
+</%args>

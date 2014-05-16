@@ -1,0 +1,99 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayJobCount( json.nr_jobs );
+        displayRefreshTime();
+        installHover();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/tws_jobs2.html',
+    "bPaginate":    false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 0, 3, 4, 5, 6, 7, 8, 11 ] },
+
+      { "bVisible": false,        "aTargets": [ 0, 3, 4 ] },
+
+      { "sWidth": "30px",         "aTargets": [ 0, 7 ] },
+      { "sWidth": "50px",         "aTargets": [ 6, 8 ] },
+      { "sWidth": "70px",         "aTargets": [ 3, 4, 5 ] },
+      { "sWidth": "100px",        "aTargets": [ 9 ] },
+      { "sWidth": "150px",        "aTargets": [ 2, 11 ] },
+      { "sWidth": "200px",        "aTargets": [ 10  ] },
+      { "sWidth": "320px",        "aTargets": [ 1 ] },
+      { "sWidth": "1300px",       "aTargets": [ 12 ] },
+    ],
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function displayJobCount( nrJobs ) {
+  var html = [], h = -1;
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Number of jobs:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nrJobs;
+  html[++h] = '</td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#jobcount')[0].innerHTML = html.join('');
+}
+</script>
+
+<div id="title">TWS Jobs</div>
+
+<div id="jobcount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh: </div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ID</th>
+  <th>NAME</th>
+  <th>JOBSTREAM</th>
+  <th>USERNAME</th>
+  <th>WSTATION</th>
+  <th>STARTTIME</th>
+  <th>REMOTE</th>
+  <th>INST</th>
+  <th>NOWAIT</th>
+  <th>PROJECT</th>
+  <th>SCRIPTNAME</th>
+  <th>TIMESTAMP</th>
+  <th>COMMAND</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="button" id="refresh"> Refresh </button>

@@ -1,0 +1,30 @@
+<%perl>
+$app_name = 'Murex-Client-Installer'; 
+
+my $next_comp = $m->fetch_next;
+my $comp_name = $next_comp->name;
+
+$environments ||= $m->cache->get('environments');
+unless ( $environments ) {
+  foreach my $env ( Mx::Config->environments() ) {
+    my $configfile = $config->CONFIGDIR . '/' . $env . '.cfg';
+    my $tmp_config = Mx::Config->new( $configfile );
+    $environments->{$env}->{WEB_HOST} = $tmp_config->WEB_HOST;
+    $environments->{$env}->{WEB_PORT} = $tmp_config->WEB_PORT;
+  }
+  $m->cache->set( environments => $environments );
+}
+
+$r->headers_out->add('Server' => 'Apache/1.3.27 (Unix) (SunOS 5.10 Generic_144489-11 i86pc i386 i86pc)');
+
+$m->autoflush(1);
+
+$m->call_next;
+
+</%perl>
+
+<%once>
+$db_audit      = Mx::DBaudit->new( config => $config, logger => $logger );
+$auth_db       = Mx::Auth::DB->new( config => $config, logger => $logger );
+$sybase->open();
+</%once>

@@ -1,0 +1,31 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $message = 'failed';
+if ( my $service = $m->comp( 'services.comp', name => $name, location => $location ) ) {
+  if ( $service->status eq 'started' ) {
+    $message = 'already started';
+  }
+  elsif ( $service->status eq 'disabled' ) {
+    $message = 'skipped (disabled)';
+  }
+  elsif ( $service->manual && ! $manual ) {
+    $message = 'skipped (manual)';
+  }
+  elsif ( my $handle = $handles[ $service->location ] ) {
+    $logger->info("starting service $name");
+    if ( $handle->soaphandle->service_action( name => $service->name, action => 'start' ) ) {
+      $message = 'started';
+    }
+  }
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => $message } );
+</%init>
+
+<%args>
+$name
+$location
+$manual => 0
+</%args>

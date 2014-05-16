@@ -1,0 +1,54 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => [] } } );
+
+if ( $tws_date =~ /^\d{8}$/ ) {
+  my $result = $db_audit->retrieve_tws_executions( tws_date => $tws_date );
+
+  my @executions; my $total_nr_executions = 0; my $nr_failed_executions = 0; my $nr_active_executions = 0;
+  if ( $result ) {
+    foreach my $execution ( @{$result} ) {
+      my $jobstream = $execution->[3];
+      my $command   = $execution->[4];
+      my $endtime   = $execution->[7];
+      my $exitcode  = $execution->[9];
+      $command =~ s/\$UNISON_SCHED/$jobstream/g;
+
+      push @executions, {
+        0  => $execution->[0],
+        1  => $execution->[1],
+        2  => $execution->[2],
+        3  => $jobstream,
+        4  => $execution->[5],
+        5  => Mx::Util->convert_time( $execution->[6] ),
+        6  => Mx::Util->convert_time( $endtime ),
+        7  => scalar( Mx::Util->convert_seconds( $execution->[8] ) ),
+        8  => $exitcode,
+        9  => ( $execution->[10] eq 'Y' ) ? 'YES' : '',
+        10 => $execution->[11],
+        11 => $execution->[12],
+        12 => $execution->[13],
+        13 => $command,
+        14 => $execution->[14],
+        15 => $execution->[15],
+        DT_RowId => $execution->[0] . ':' . $execution->[2] . ':' . $execution->[3] . ':' . $execution->[14]
+      };
+
+      $total_nr_executions++; 
+      $nr_failed_executions++ if $exitcode;
+      $nr_active_executions++ if ! $endtime;
+    }
+  }
+
+  my $nr_executions = @executions;
+
+  $json_string = $coder->encode( { datatables => { aaData => \@executions }, total_nr_executions => $total_nr_executions, nr_failed_executions => $nr_failed_executions, nr_active_executions => $nr_active_executions } );
+}
+</%init>
+
+<%args>
+$tws_date => ''
+</%args>

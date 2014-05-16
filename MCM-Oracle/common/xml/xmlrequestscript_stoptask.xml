@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE XmlRequestScript>
+<XmlRequestScript>
+ <ServicePlatformName>MX</ServicePlatformName>
+ <ServiceNickName>MXMLEXCHANGE</ServiceNickName>
+ <Family>Generic</Family>
+ <Query>killXmlFlowTask</Query>
+ <Header>__$XMLDIR__/headerStopTask.xml</Header>
+ <Answer>__ANSWERFILE__</Answer>
+ <Log>__LOGFILE__</Log>
+</XmlRequestScript>

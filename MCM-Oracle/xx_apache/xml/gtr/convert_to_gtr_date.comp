@@ -1,0 +1,7 @@
+%my $year  = substr( $date, 0, 4 );
+%my $month = substr( $date, 4, 2 );
+%my $day   = substr( $date, 6, 2 );
+%return( $year.'-'.$month.'-'.$day );
+<%args>
+$date => ''
+</%args>

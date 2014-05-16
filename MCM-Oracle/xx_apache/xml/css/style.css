@@ -1,0 +1,171 @@
+body {
+	background-color: #FFFFCC; 
+	color: #000000; 
+	font-family : Verdana, Arial; 
+	font-size: 10px; 
+}
+	
+
+.blend {background-color: #FFFFCC;}
+
+.inputfield {
+  background-color: #FFFFFF;
+}
+
+.inverse {
+  color: #FFFFCC;
+  background-color: 000000;
+}
+
+a:link {  font-family: Verdana, Arial;
+    color: #0033FF;
+    font-weight: bold;
+    text-decoration: none; ; font-size: 10px}
+    
+a:active {  font-family: Verdana, Arial;
+    font-weight: bold;
+    text-decoration: underline; ; font-size: 10px; color: #000000}
+    
+a:visited {  font-family: Verdana, Arial;
+    color: #0033FF;
+    font-weight: bold;
+    text-decoration: none; ; font-size: 10px}
+
+a:hover {  font-family: Verdana, Arial;
+    font-weight: bold;
+    text-decoration: underline; ; color: #000000; font-size: 10px}
+
+a.details:link, a.details:active, a.details:visited {  font-family: Verdana, Arial;
+    color: #0033FF;
+    text-decoration: none; font-size: 10px}
+
+a.details:hover {  font-family: Verdana, Arial;
+    color: #CC0033;
+    text-decoration: none; font-size: 10px}
+
+a.disabled:link, a.disabled:active, a.disabled:visited {  font-family: Verdana, Arial;
+    color: #CCCCFF;
+    text-decoration: none; font-size: 10px}
+
+a.insert:link, a.insert:active, a.insert:visited {  font-family: Verdana, Arial;
+    color: #FFFF00;
+    text-decoration: none; font-size: 10px}
+
+a.select:link, a.select:active, a.select:visited {  font-family: Verdana, Arial;
+    color: #0033FF;
+    text-decoration: none; font-size: 10px}
+
+a.insert:hover {  font-family: Verdana, Arial;
+    color: #CC0033;
+    text-decoration: none; font-size: 10px; }
+
+p {  font-family: Verdana, Arial ; font-size: 10px; }
+tr              {  background-color: #FFFFCC; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.s_even       {  background-color: #FFFFCC; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.s_odd        {  background-color: #FFFFCC; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.milestone    {  background-color: #CCCCCC; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.s_even:hover {  background-color: #FFCC33; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.s_odd:hover  {  background-color: #FFCC33; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.milestone:hover {  background-color: #FFCC33; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+tr.label        {  background-color: #FFCC33; font-family: Verdana, Arial ; font-size: 10px ; word-break: break-all; }
+th {  background-color: #CC0033; color: #FFFFFF; font-family: Verdana, Arial ; font-size: 10px; font-weight: bold; text-shadow: #333 0px 0px 1px; }
+th a:link,th a:visited { color: #FFFFFF; text-decoration: none; }
+th.fk_objects {  background-color: #000066; color: #FFFFFF; font-family: Verdana, Arial ; font-size: 10px; }
+tfoot tr        { background-color: #CCCCCC; font-weight: bold; }
+ul {  font-family: Verdana, Arial ; font-size: 10px; }
+h1 {  font-family: "Times New Roman", Verdana, Arial ; font-size: 24pt; }
+h2 {  font-family: Verdana, Arial ; font-size: 12pt; }
+form {  margin-bottom: 0; padding-bottom:0; font-family: Verdana, Arial ; font-size: 10px; }
+input {  font-family: Verdana, Arial ; font-size: 10px;  background: #FFFFDD; color: black; }
+input.disabled { font-family: Verdana, Arial ; font-size: 10px;  background: #FFFFCC; color: red; }
+.button       { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: black; border: 1px solid; margin-bottom: 0px; }
+.table_button { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: black; border: 1px solid; margin-bottom: 0px; }
+.button:hover,.table_button:hover { font-family: Verdana, Arial; font-size: 10px; background: #49A3FF; color: black; border: 1px solid; }
+.button_a     { font-family: Verdana, Arial; font-size: 10px; background: #49A3FF; color: black; border: 1px solid; margin-bottom: 0px; }
+.button_d     { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: grey;  border: 1px solid; }
+textarea { font-family: Verdana, Arial; font-size: 10px; background: #FFFFDD; color: black; }
+td { padding: 2px; }
+td.description { font-family: Verdana, Arial; font-size: 10px; color: #FFFFFF; background-color: #000066; width: 20%; white-space: nowrap; }
+td.warning     { font-family: Verdana, Arial; font-size: 10px; color: red; }
+td.warning2     { font-family: Verdana, Arial; font-size: 10px; background-color: #FF9900; }
+select {  font-family: Verdana, Arial; font-size: 10px; color: #000066; background: #FFFFDD; }
+td.entryfield {  text-align: left;  }
+div#csv { position:absolute;  top:75; right:50; width:50px; }
+div#title { font-family: Verdana, Arial ; font-size: 14pt; text-shadow: #333 0px 0px 1px; text-align: center; margin-top: 1em; margin-bottom: 1em; }
+div#feedback { font-family: Verdana, Arial ; font-size: 12pt; font-weight: bold; text-align: center; margin-top: 2em; margin-bottom: 2em; }
+div#count { text-align: center; }
+div#actions div { float: left; }
+div#table table, div#form table { border-collapse: separate; border-spacing: 1px; margin-top: 1em; margin-bottom: 1em; background-color: #000066; }
+div#extra_title { font-family: Verdana, Arial ; font-size: 12pt; font-weight: bold; text-align: center; margin-top: 0.5em; margin-bottom: 1em; }
+div#extra_tables table { border-collapse: separate; border-spacing: 1px; margin-top: 2em; margin-bottom: 0.5em; }
+div.swapper div { float: left; }
+div.swapper select { width: 200px; }
+input[type="checkbox"] { margin: 0px 0px 0px 0px; }
+div .button { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: black; border: 1px solid; float: left; margin-right: 4px; margin-bottom: 4px; }
+div .button_a { font-family: Verdana, Arial; font-size: 10px; background: #49A3FF; color: black; border: 1px solid; float: left; margin-right: 4px; margin-bottom: 4px; }
+.button[disabled] { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: grey;  border: 1px solid; }
+.table_button[disabled] { font-family: Verdana, Arial; font-size: 10px; background: #FFFFCC; color: grey;  border: 1px solid; }
+
+div#body_content { margin: 20px auto; width: 100%; text-align: center; }
+table.center     { margin-left:auto; margin-right:auto; border: 0px; border-spacing: 1px; padding: 0px; background-color: #000066; }
+table.center_nb  { margin-left:auto; margin-right:auto; border: 0px; border-spacing: 1px; padding: 0px; background-color: #FFFFCC; }
+
+.left {
+  float: left;
+  width: 20%;
+  margin-left: 30%;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.right {
+  float: left;
+  padding-left: 2em;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.reset {
+  clear: both;
+}
+
+::-webkit-scrollbar-track-piece{
+	background-color:#000;
+	-webkit-border-radius:0;
+}
+::-webkit-scrollbar{
+	width:12px;
+	height:12px;
+}
+::-webkit-scrollbar-thumb{
+	height:50px;
+	background-color:#FFFFDD;
+	outline:1px solid #000;
+	outline-offset:-2px;
+	border: 1px solid #000;
+}
+::-webkit-scrollbar-thumb:hover{
+	height:50px;
+	background-color:#FFF;
+
+}
+#loading {
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  left: 0px;
+  position: fixed;
+  display: block;
+  opacity: 0.7;
+  background-color: #fff;
+  z-index: 99;
+  text-align: center;
+  background-image: url(../images/loading_pink.gif);
+}
+
+#loading-image {
+  position: absolute;
+  top: 100px;
+  left: 240px;
+  z-index: 100;
+}

@@ -1,0 +1,34 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $db_fin = $config->DB_FIN;
+
+my @data = (); my $total_logical = 0; my $total_physical = 0;
+foreach my $entry ( $db_audit->retrieve_sqlio( session_id => $id ) ) {
+  my $table = $entry->[1];
+  my $db    = $db_fin;
+  if ( $table =~ /^([^.]+)\.\.([^.]+)$/ ) {
+    $db    = $1;
+    $table = $2;
+  }
+
+  if ( $table eq 'TOTAL' ) {
+    $total_logical  = Mx::Util->separate_thousands( $entry->[2] );
+    $total_physical = Mx::Util->separate_thousands( $entry->[3] );
+    next;
+  }
+
+  push @data, [
+    $table,
+    $db,
+    Mx::Util->separate_thousands( $entry->[2] ),
+    Mx::Util->separate_thousands( $entry->[3] )
+  ];
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => \@data, total_logical => $total_logical, total_physical => $total_physical } );
+</%init>
+<%args>
+$id
+</%args>

@@ -1,0 +1,22 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $transferdir = $config->get_project_variables( 'bo_gtr' )->{KBC_TRANSFERDIR};
+$transferdir =~ s/\d+$//;
+
+my @dates = ();
+if ( opendir DIR, $transferdir ) {
+  while ( my $date = readdir(DIR) ) {
+    push @dates, $date if $date =~ /^\d{8}$/;
+  }
+}
+else {
+  $logger->error("cannot access $transferdir: $!");
+}
+
+@dates = sort { $b <=> $a } @dates;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@dates );
+</%init>

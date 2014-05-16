@@ -1,0 +1,52 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @data = ();
+
+if ( my $filter = $db_audit->retrieve_dm_filter( id => $id ) ) {
+  push @data, { name => 'Batch Name', value => $filter->[2] };
+
+  $filter->[3] =~ s/:/<BR>/g;
+  push @data, { name => 'Dates', value => $filter->[3] };
+
+  $filter->[4] =~ s/:/<BR>/g;
+  push @data, { name => 'Market Data Sets', value => $filter->[4] };
+
+  $filter->[5] =~ s/:/<BR>/g;
+  push @data, { name => 'Product Filter', value => $filter->[5] };
+
+  $filter->[6] =~ s/:/<BR>/g;
+  push @data, { name => 'Portfolio Filter', value => $filter->[6] };
+
+  my $expression = ''; my $expression_label = $filter->[7];
+  if ( $expression_label !~ /^\s*$/ ) {
+    my $sql_library = Mx::SQLLibrary->new( file => $config->DM_BATCH_SQLFILE, logger => $logger );
+    $expression = $sql_library->query( $expression_label, undef, 1 );
+  }
+  push @data, { name => 'Expression Filter', value => $expression };
+
+  if ( my @info = $db_audit->retrieve_scanner_info( session_id => $session_id ) ) {
+    push @data, { name => 'Number of Engines',       value => $info[0] };
+    push @data, { name => 'Batch Size',              value => $info[1] };
+    push @data, { name => 'Max Number of Retries',   value => $info[2] };
+    push @data, { name => 'Number of Batches',       value => $info[3] };
+    push @data, { name => 'Number of Items',         value => Mx::Util->separate_thousands( $info[4] ) };
+    push @data, { name => 'Number of Missing Items', value => $info[5] };
+    if ( $info[5] ) {
+      push @data, { name => 'Missing Items',         value => ( join ',', @{$info[6]} ) };
+    }
+    push @data, { name => 'Number of Dynamic Table Records', value => Mx::Util->separate_thousands( $info[7] ) };
+    push @data, { name => 'Total Elapsed Time',      value => scalar(Mx::Util->convert_seconds( $info[8] )) };
+    push @data, { name => 'Total CPU Time',          value => scalar(Mx::Util->convert_seconds( $info[9] )) };
+    push @data, { name => 'Total IO Time',           value => scalar(Mx::Util->convert_seconds( $info[10] )) };
+    push @data, { name => 'Total # CPU Seconds',     value => Mx::Util->separate_thousands( $info[11] ) };
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@data );
+</%init>
+<%args>
+$id
+$session_id
+</%args>

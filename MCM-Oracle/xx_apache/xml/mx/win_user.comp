@@ -1,0 +1,15 @@
+% if ( $win_user ) {
+%   my $full_name = $full_names{$win_user};
+%   if ( $full_name ) {
+    <td><a class="select" href="/mx-auth/user_details.html?name=<% $win_user %>"><% $full_name %></a></td>
+%   }
+%   else {
+    <td><% $win_user %></td>
+%   }
+% }
+% else {
+    <td>&nbsp;</td>
+% }
+<%args>
+$win_user => ''
+</%args>

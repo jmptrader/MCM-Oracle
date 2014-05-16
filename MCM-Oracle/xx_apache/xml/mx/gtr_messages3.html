@@ -1,0 +1,218 @@
+<script type="text/javascript">
+var oTable; var gtr_date; var waitString = '';
+$(document).ready( function() {
+  showDate();
+
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      gtr_date = $('#gtr_date').val();
+      var debug = $('#debug').attr('checked') ? 1 : 0;
+      aoData.push(
+        { "name": "xml_date", "value": gtr_date },
+        { "name": "debug",    "value": debug    }
+      );
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables);
+        $("#result_wrapper").css('width', '800px');
+        $("#result_wrapper").css('float', 'left');
+        displayRefreshTime();
+        installModal();
+        installHover();
+        installContextMenu();
+        if ( debug ) {
+          $('#debuglog').val( json.debug );
+        }
+      } );
+    },
+    "sDom":         'r<"clear">t<"debug">',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/gtr_messages2.html',
+    "bPaginate":    false,
+    "bStateSave":   true,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 0, 1, 2, 3, 4 ] },
+
+      { "sWidth": "60px",         "aTargets": [ 4 ] },
+      { "sWidth": "80px",         "aTargets": [ 0, 1, 2, 3 ] },
+      { "sWidth": "250px",        "aTargets": [ 5 ] },
+    ],
+
+    "aaSorting":    [[ 3, "desc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#gtr_date').change( function() {
+    oTable.fnReloadAjax();
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+$('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+} );
+
+$('#debug').live( "click", function() {
+    if ( $(this).is(':checked') ) {
+       $('div.debug').css( 'display', 'block' );
+    } else {
+       $('div.debug').css( 'display', 'none' );
+       $('#debuglog').val( '' );
+    }
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function showDate() {
+  var d = new Date();
+  var datestring = d.getFullYear() + '-' + ( '0' + ( d.getMonth() + 1 ) ).slice(-2) + '-' + ( '0' + d.getDate() ).slice(-2);
+  $('#date').html('<input type="text" class="date-pick dp-applied" name="date" id="gtr_date" value="' + datestring + '"></input>');
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2013-01-01'});
+}
+
+function installContextMenu() {
+  oTable.$('tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('+');
+      var xml_date  = result[0];
+      var xml_name  = result[1];
+      $('#dummytrigger').attr( 'xml_date', xml_date );
+      $('#dummytrigger').attr( 'xml_name', xml_name );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var xml_date = $('#dummytrigger').attr('xml_date');
+  var xml_name = $('#dummytrigger').attr('xml_name');
+  var action   = $('#dummytrigger').attr('action');
+
+  if ( action == 'display' ) {
+    $('#jqmTitleText').text( xml_name );
+    $modal.jqmShow();
+
+    displayMessage( xml_date, xml_name );
+  }
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
+
+function displayMessage( xml_date, xml_name ) {
+  var debug = $('#debug').attr('checked') ? 1 : 0;
+  var tid = setInterval( displayWaitString, 100 );
+
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/gtr_message2.html',
+    data:     { 'xml_date': xml_date, 'xml_name': xml_name, 'debug': debug },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1000px' );
+  $('#jqmContent').css( 'height', '600px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+     clearInterval(tid);
+     waitString = '';
+     $('#jqmContent')[0].innerHTML = data.xml;
+     if ( debug ) {
+       $('#debuglog').val( data.debug );
+     }
+  } );
+}
+
+function displayWaitString() {
+  waitString = waitString + '. ';
+  $('#jqmContent')[0].innerHTML = '<b>' + waitString + '</b>';
+}
+</script>
+
+<div id="title">GTR Messages</div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime">Last Refresh:</div>
+
+<div style="clear: both;"></div>
+
+<span style="float: left; padding: 4px 4px 0px 0px;">Date: </span>
+<div style="float: left; padding: 0px 4px;" id="date"></div>
+<span style="float: left; padding: 4px 4px 0px 16px;">Debug: </span>
+<input id="debug" style="float: left; padding: 4px 4px 0px 4px; margin: 4px;" type="checkbox"></input>
+
+<br><br>
+
+<ul id="contextmenu" class="contextMenu" style="text-align: left;">
+  <li>
+    <a href="#display">Display Message</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" taskname=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<br>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>ACCOUNT</th>
+  <th>CODE</th>
+  <th>DATE</th>
+  <th>TIME</th>
+  <th>INSTANCE</th>
+  <th>FILE</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<div class="debug" style="float: right; display: none;"><textarea cols=200 rows=70 readonly id="debuglog"></textarea></div>
+
+<button class="button" style="clear: left;" id="refresh"> Refresh </button>

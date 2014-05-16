@@ -1,0 +1,44 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+$xml_date =~ s/-//g;
+
+my $transferdir = $config->get_project_variables( 'bo_gtr' )->{KBC_TRANSFERDIR};
+$transferdir =~ s/(\d+)$/$xml_date/;
+
+my @files = ();
+foreach my $dir ( $transferdir, "$transferdir/done" ) {
+  my $status = ( $dir eq $transferdir ) ? 'not sent' : 'sent';
+
+  if ( opendir DIR, $dir ) {
+    while ( my $filename = readdir( DIR ) ) {
+      next unless $filename =~ /\.xml$/i;
+
+      my $file = $dir . '/' . $filename;
+
+      my ( $size, $timestamp ) = ( stat( $file ) )[7,9]; 
+
+      $size      = Mx::Util->convert_bytes( $size );
+      $timestamp = Mx::Util->convert_time( $timestamp );
+
+      push @files, {
+        0 => $timestamp,
+        1 => $size,
+        2 => $filename,
+        3 => $status,
+        DT_RowId => $file
+      }
+    }
+  }
+
+  closedir(DIR);
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@files } } );
+</%init>
+
+<%args>
+$xml_date
+</%args>

@@ -1,0 +1,16 @@
+<%perl>
+my $display   = $ENV{REMOTE_ADDR} . ':0';
+my $env       = $ENV{MXENV};
+my $xterm     = ( -e '/usr/dt/bin/dtterm' ) ? '/usr/dt/bin/dtterm' : '/usr/bin/xterm';
+my $command   = "$xterm -ls -sb -sl 10000 -bg black -fg green -geometry 240x80 -title $env";
+my $message   = 'xterm launched';
+
+TRY: {
+  unless ( Mx::Process->run( command => $command, logger => $logger, config => $config, apache_request => $r, display => $display ) ) {
+    $message = 'xterm launch failed';
+    last TRY;
+  }
+}
+
+return $message;
+</%perl>

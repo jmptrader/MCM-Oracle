@@ -1,0 +1,13 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+Mx::MxML::Node->refresh_nr_messages( logger => $logger, db_audit => $db_audit, nodes => \%mxml_nodes ) if $refresh;
+
+my @list = map { $_->TO_JSON } values %mxml_nodes;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list } } );
+</%init>
+<%args>
+$refresh => 0
+</%args>

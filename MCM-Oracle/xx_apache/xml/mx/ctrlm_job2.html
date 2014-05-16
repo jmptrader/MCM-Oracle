@@ -1,0 +1,24 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $job = Mx::ControlM::Job->new( name => $name, table => $table, logger => $logger, config => $config );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+
+my $json_string;
+if ( $type eq 'conditions' ) {
+  $json_string = $coder->encode( { in => [ $job->in_conditions ], out => [ $job->out_conditions ], err => [ $job->err_conditions ] } );
+}
+elsif ( $type eq 'vars' ) {
+  $json_string = $coder->encode( { vars => [ $job->auto_edit_vars ] } );
+}
+elsif ( $type eq 'resources' ) {
+  $json_string = $coder->encode( { control => [ $job->ctrl_resources ], quantitative => [ $job->quant_resources ] } );
+}
+</%init>
+<%args>
+$name
+$table
+$type
+</%args>

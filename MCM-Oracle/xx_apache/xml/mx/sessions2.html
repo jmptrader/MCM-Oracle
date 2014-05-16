@@ -1,0 +1,39 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $sessions_ref  = $m->comp( 'sessions.comp' );
+my %session_count = $db_audit->retrieve_user_session_counts();
+my %session_map   = Mx::Process->session_map( logger => $logger, config => $config );
+
+my @session_count = (); my $total_count = 0;
+foreach my $hostname ( @app_servers ) {
+  my $count = $session_count{$hostname} || 0;
+  $total_count += $count;
+  push @session_count, { hostname => $hostname, count => $count };
+}
+
+unshift @session_count, { hostname => 'total_users', count => $total_count };
+unshift @session_count, { hostname => 'total',       count => scalar( @{$sessions_ref} ) };
+
+foreach my $session ( @{$sessions_ref} ) {
+  my $pid      = $session->pid;
+  my $hostname = $session->hostname;
+  my $win_user = $session->win_user;
+  my $mx_login = $session_map{"$pid:$hostname"} || $session_map{"$pid:_"};
+
+  $session->mx_user(  $mx_login->{user} );
+  $session->mx_group( $mx_login->{group} );
+ 
+  my $full_name = $full_names{$win_user};
+  $session->full_name( $full_name );
+
+  $session->session_count( $session_count{$win_user} );
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => $sessions_ref }, session_count => [ @session_count ] } );
+</%init>
+
+<%args>
+</%args>

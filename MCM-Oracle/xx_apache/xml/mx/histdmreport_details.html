@@ -1,0 +1,82 @@
+<H2>DM Report #<% $report->id %></H2>
+
+<table class="center" width="70%">
+  <TR>
+    <TH>Name</TH>
+    <TH COLSPAN=4>Value</TH>
+  </TR>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD COLSPAN=4><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+% if ( @fields ) {
+  <TR>
+    <TD CLASS="description"><FONT COLOR="#FFFFFF">Format</FONT></TD>
+    <TH>Position</TH>
+    <TH>Name</TH>
+    <TH>Type</TH>
+    <TH>Length</TH>
+  </TR>
+%   foreach my $field ( @fields ) {
+    <TR>
+      <TD CLASS="description">&nbsp;</TD>
+      <TD><% $field->{position} %></TD>
+      <TD><% $field->{name} %></TD>
+      <TD><% $field->{type} %></TD>
+      <TD ALIGN=RIGHT><% $field->{length} %></TD>
+    </TR>
+%   }
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onclick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'report_id';
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histdmreport_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my @table;
+my $report = Mx::Datamart::Report->retrieve( id => $report_id, db_audit => $db_audit, config => $config, logger => $logger );
+
+push @table, 'Label'              , $report->label;
+push @table, 'Path',              , '<a href="#" onclick="mnavigate( \'report3.html\', { id:' . $report_id . ' }, { ' . $nav_args . ' } );">' . $report->directory . '/' . $report->name . '</a>';
+push @table, 'Mode'               , $report->mode;
+push @table, 'Project'            , $report->project;
+push @table, 'Entity'             , $report->entity;
+push @table, 'Run Type'           , $report->runtype;
+push @table, 'Start Time'         , Mx::Util->convert_time( $report->starttime );
+push @table, 'End Time'           , Mx::Util->convert_time( $report->endtime );
+push @table, 'Size'               , Mx::Util->separate_thousands( $report->size );
+push @table, '# Records',         , Mx::Util->separate_thousands( $report->nr_records );
+if ( $report->script_id ) {
+  push @table, 'Corresponding Script', '<a href="#" onclick="mnavigate( \'histscript_details.html\', { script_id:' . $report->script_id . ' }, { ' . $nav_args . ' } );">#' . $report->script_id . '</a>';
+}
+else {
+  push @table, 'Corresponding Script', '-';
+}
+push @table, 'Business Date'      , $report->business_date;
+push @table, 'Header Included'    , ( $report->header_included ) ? 'Yes' : 'No';
+push @table, 'Type'               , $report->type;
+ 
+my @fields;
+if ( $report->type eq 'fixed' ) {
+  @fields = $report->format_fields;
+}
+elsif ( $report->type eq 'csv' ) {
+  push @table, 'Separator'        , $report->separator_name;
+  push @table, 'Quote Char'       , $report->quote_char_name;
+  push @table, 'Actions'          , ( join ',', $report->actions );
+}
+</%init>
+
+<%args>
+$report_id
+</%args>

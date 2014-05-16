@@ -1,0 +1,34 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @locks = (); my %schemas = ();
+
+foreach my $db ( $oracle_fin, $oracle_rep, $oracle_mon ) {
+  foreach my $lock ( $db->locks() ) {
+    my $hostname = $lock->[4];
+
+    $hostname =~ s/^(\w+)\..*$/$1/;
+
+    push @locks, {
+      0  => $lock->[0],   # schema
+      1  => $lock->[1],   # sid
+      2  => $lock->[3],   # username
+      3  => $hostname,    # hostname
+      4  => $lock->[5],   # pid
+      5  => $lock->[6],   # program_name
+      6  => $lock->[7],   # type
+      7  => $lock->[8],   # object name
+      8  => $lock->[9],   # lock type
+      9  => Mx::Util->separate_thousands( $lock->[10] ),  # timestamp
+	  10 => $lock->[2],   # serial#
+	  DT_RowId => $lock->[0] . '|' . $lock->[1] . '|' . $lock->[2] . '|' . $hostname . '|' . $lock->[5]
+    };
+
+    $schemas{ $lock->[0] }++;
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@locks }, schemas => \%schemas } );
+</%init>

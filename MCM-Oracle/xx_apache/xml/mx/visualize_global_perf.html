@@ -1,0 +1,113 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'});
+} );
+</script>
+
+% my( $start, $end ) = $m->comp( 'timepicker.comp', url => 'visualize_global_perf.html', range => $range, date => $date, time => $time, action => $action );
+
+<%perl>
+my %graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => $start,
+  end       => $end
+);
+
+for ( my $i = 0; $i <= $#app_servers; $i++ ) {
+  my $hostname       = $app_servers[$i];
+  my $collector_name = 'app_server_' . $i . '_perf';
+  my $collector      = Mx::Collector->new( name => $collector_name, config => $config, logger => $logger );
+
+  unless ( -f $collector->hires_rrdfile ) {
+    next;
+  }
+
+  my $rrd = RRDTool::OO->new( file => $collector->hires_rrdfile );
+
+  my $percentage_file = "/tmp/${collector_name}_percentage_${range}" . $image_extension;
+  $rrd->graph(
+    image => $percentage_file,
+    %graph_options,
+    draw => {
+      color  => 'FF0000',
+      dsname => 'ucpu',
+      legend => 'CPU',
+    },
+    draw => {
+      color  => '00FF00',
+      dsname => 'umem',
+      legend => 'Memory',
+    },
+    draw => {
+      color  => '0000FF',
+      dsname => 'udisk',
+      legend => 'Disk',
+    },
+    draw => {
+      color  => '000000',
+      dsname => 'unet',
+      legend => 'Network',
+    }
+  );
+
+  my $saturation_file = "/tmp/${collector_name}_saturation_${range}" . $image_extension;
+  $rrd->graph(
+    image => $saturation_file,
+    %graph_options,
+    draw => {
+      color  => 'FF0000',
+      dsname => 'scpu',
+      legend => 'CPU Run Queue',
+    },
+    draw => {
+      color  => '00FF00',
+      dsname => 'smem',
+      legend => 'Memory Scan Rate',
+    },
+    draw => {
+      color  => '0000FF',
+      dsname => 'sdisk',
+      legend => 'Disk Wait Queue',
+    },
+    draw => {
+      color  => '000000',
+      dsname => 'snet',
+      legend => 'Network Buffer Errors',
+    }
+  );
+
+  my $load_file = "/tmp/${collector_name}_load_${range}" . $image_extension;
+  $rrd->graph(
+    image => $load_file,
+    %graph_options,
+    draw => {
+      color  => 'FF0000',
+      dsname => 'load',
+      legend => 'Load',
+    }
+  );
+</%perl>
+
+<H2>Global Performance on <% $hostname %></H2>
+<P>
+<IMG SRC="<% $percentage_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $saturation_file %>?<% time() %>">
+<P>
+<IMG SRC="<% $load_file %>?<% time() %>">
+% }
+
+<%init>
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+</%init>
+
+<%args>
+$range  => 'hour';
+$date   => '';
+$time   => '';
+$action => '';
+</%args>

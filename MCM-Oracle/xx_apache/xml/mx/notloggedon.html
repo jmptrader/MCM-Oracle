@@ -1,0 +1,39 @@
+<BODY>
+
+<TABLE WIDTH=100% BORDER=0 CELLSPACING=0 CELLPADDING=0>
+<TR>
+<TD ALIGN=LEFT VALIGN=TOP>
+  <IMG SRC="pics/logo.gif" HEIGHT="100" WIDTH="142">
+</TD>
+<TD ALIGN=RIGHT VALIGN=TOP>
+  <H1><% $app_name %></H1>
+  <H2>Not Logged On</H2>
+</TD>
+</TR>
+<TR BGCOLOR="#000000"> 
+<TD COLSPAN=2><IMG SRC="pics/pixeltransp.gif" WIDTH=1 HEIGHT=1>
+</TD>
+</TR>
+</TABLE>
+
+<BR><BR><BR>
+
+<CENTER>
+<TABLE WIDTH=700 CELLPADDING=0 CELLSPACING=0 BORDER=0>
+<TR>
+<TD>
+  <B>A Login information loss error occurred. There are two possible causes to this problem : </B><BR><BR>
+  <LI> You attempted to access a page directly by typing its filename into the URL field in your browser. This is not allowed. Access to the <% $app_name %> site is always initiated at the root.
+  <LI> A timeout occurred, causing the webserver to assume that you left the <% $app_name %> site without logging out. This happens when you don't initiate any requests on the <% $app_name %> site for more than one half hour. All changes made during this session are therefor lost.<BR>
+</TD>
+</TR>
+<TR>
+<TD ALIGN=RIGHT>
+  <BR><BR>
+  <A HREF="login.html">To Login Screen</A>
+</TD>
+</TR>
+</TABLE>
+</CENTER>
+
+</BODY>

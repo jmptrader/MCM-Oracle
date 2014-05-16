@@ -1,0 +1,105 @@
+<script type="text/javascript">
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayTaskCount( json.total_nr_tasks, json.nr_blocked_tasks, json.nr_not_loading_tasks, json.nr_stopped_tasks );
+        installHover();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/mxml_tasks2.html',
+    "bPaginate":    false,
+    "sScrollY":     "800px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          if ( sData != 'YES' ) {
+            $(nTd).css('background-color', '#FF0000')
+          }
+        }, "aTargets": [ 4, 5, 6 ] },
+
+      { "sClass": "center",       "aTargets": [ 4, 5, 6, 7, 8 ] },
+
+      { "bVisible": false,        "aTargets": [ 7 ] },
+
+      { "sWidth": "75px",         "aTargets": [ 3, 7, 8 ] },
+      { "sWidth": "100px",        "aTargets": [ 4, 5, 6 ] },
+      { "sWidth": "130px",        "aTargets": [ 1 ] },
+      { "sWidth": "280px",        "aTargets": [ 2 ] },
+      { "sWidth": "330px",        "aTargets": [ 0 ] },
+    ],
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+
+  $('#result tr').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+} );
+
+function displayTaskCount( total_nr_tasks, nr_blocked_tasks, nr_not_loading_tasks, nr_stopped_tasks ) {
+  var html = [], h = -1;
+
+  html[++h] = '<div align=center>';
+  html[++h] = '<table border=0>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Total number of tasks:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = total_nr_tasks;
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Blocked tasks:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nr_blocked_tasks;
+  html[++h] = '</td></tr>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Not loading tasks:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nr_not_loading_tasks;
+  html[++h] = '</td></tr>';
+  html[++h] = '<tr><td align=right>';
+  html[++h] = 'Stopped tasks:';
+  html[++h] = '</td><td align=right>';
+  html[++h] = nr_stopped_tasks;
+  html[++h] = '</td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '</div>';
+
+  $('#taskcount')[0].innerHTML = html.join('');
+}
+</script>
+
+<div id="title">MXML TASKS</div>
+
+<div id="taskcount"></div>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>TASKNAME</th>
+  <th>TASKTYPE</th>
+  <th>SHEETNAME</th>
+  <th>WORKFLOW</th>
+  <th>UNBLOCKED</th>
+  <th>LOADING DATA</th>
+  <th>STARTED</th>
+  <th>STATUS</th>
+  <th>TIMESTAMP</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<br>
+
+<button class="button" id="refresh"> Refresh </button>

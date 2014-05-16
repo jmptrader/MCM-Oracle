@@ -1,0 +1,41 @@
+<h2>Table: <% $table %></h2>
+
+<table border=1>
+  <tr>
+% foreach my $name ( @column_names ) {
+    <th><% $name %></th>
+% }
+  </tr>
+% foreach my $row ( @rows ) {
+  <tr>
+%   foreach my $field ( @{$row} ) {
+    <td>&nbsp;<% $field %>&nbsp;</td>
+%   }
+  </tr>
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onClick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'table';
+  push @nav_args, "$k:'$v'";
+}
+my $nav_args = join ',', @nav_args;
+
+$table =~ s/\//#/g;
+my $owner = $config->retrieve('TABLEOWNER');
+my @column_names = (); my @rows = ();
+if ( my ($result, $names_ref) = $sybase->query( query => "select top 100 * from $owner.$table" ) ) {
+    @column_names = @{$names_ref};
+    @rows = @{$result};
+}
+</%init>
+
+<%args>
+$table
+</%args>

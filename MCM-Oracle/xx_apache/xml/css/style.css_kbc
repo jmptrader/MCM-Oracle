@@ -1,0 +1,81 @@
+BODY {background-color: #AADDFF; color: #000000; font-family : Verdana, Arial; font-size: 11px; scrollbar-face-color: #AADDFF;}
+
+
+a:link {  font-family: Verdana, Arial;
+    color: #0033FF;
+    font-weight: bold;
+    text-decoration: none; ; font-size: 11px}
+    
+a:active {  font-family: Verdana, Arial;
+    font-weight: bold;
+    text-decoration: underline; ; font-size: 11px; color: #000000}
+    
+a:visited {  font-family: Verdana, Arial;
+    color: #0033FF;
+    font-weight: bold;
+    text-decoration: none; ; font-size: 11px}
+
+a:hover {  font-family: Verdana, Arial;
+    font-weight: bold;
+    text-decoration: underline; ; color: #000000; font-size: 11px}
+
+a.details:link, a.details:active, a.details:visited {  font-family: Verdana, Arial;
+    color: #000066;
+    text-decoration: none; font-size: 11px}
+
+a.details:hover {  font-family: Verdana, Arial;
+    color: #CC0033;
+    text-decoration: none; font-size: 11px}
+
+a.disabled:link, a.disabled:active, a.disabled:visited {  font-family: Verdana, Arial;
+    color: #CCCCFF;
+    text-decoration: none; font-size: 11px}
+
+a.insert:link, a.insert:active, a.insert:visited {  font-family: Verdana, Arial;
+    color: #FFFF00;
+    text-decoration: none; font-size: 11px}
+
+a.select:link, a.select:active, a.select:visited {  font-family: Verdana, Arial;
+    color: #000066;
+    text-decoration: none; font-size: 11px}
+
+a.insert:hover {  font-family: Verdana, Arial;
+    color: #CC0033;
+    text-decoration: none; font-size: 11px}
+
+p {  font-family: Verdana, Arial ; font-size: 11px}
+td {  background-color: #AADDFF; font-family: Verdana, Arial ; font-size: 11px ; word-break: break-all; }
+th {  background-color: #CC0033; color: #FFFFFF; font-family: Verdana, Arial ; font-size: 14px}
+th.fk_objects {  background-color: #000066; color: #FFFFFF; font-family: Verdana, Arial ; font-size: 11px}
+ul {  font-family: Verdana, Arial ; font-size: 11px}
+h1 {  font-family: "Times New Roman", Verdana, Arial ; font-size: 24pt; }
+h2 {  font-family: Verdana, Arial ; font-size: 12pt}
+form {  margin-bottom: 0; padding-bottom:0; font-family: Verdana, Arial ; font-size: 11px}
+input {  font-family: Verdana, Arial ; font-size: 11px;  background: #FFFFDD; color: black; }
+input.disabled {  font-family: Verdana, Arial ; font-size: 11px;  background: #AADDFF; color: red; }
+button {  font-family: Verdana, Arial ; font-size: 11px;  background: #AADDFF; color: black; }
+button_d {  font-family: Verdana, Arial ; font-size: 11px;  background: #AADDFF; color: grey; }
+input.button {  font-family: Verdana, Arial ; font-size: 11px;  background: #AADDFF; color: black; }
+input.button_d {  font-family: Verdana, Arial ; font-size: 11px;  background: #AADDFF; color: grey; }
+textarea {  font-family: Verdana, Arial ; font-size: 11px; background: #FFFFDD; color: black; }
+td.description {  font-family: Verdana, Arial ; font-size: 11px; background: #000066; }
+select {  font-family: Verdana, Arial ; font-size: 11px; color: #000066; background: #FFFFDD; }
+td.entryfield {  text-align: left;  }
+
+#left {
+  left: 5px;
+  padding: 0px; 
+  width: 200px;
+  float: left;
+}
+
+#right {
+  padding: 0px; 
+  width: 200px;
+  float: left;
+}
+
+#reset {
+  clear: left;
+}
+

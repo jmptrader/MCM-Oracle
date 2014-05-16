@@ -1,0 +1,60 @@
+<BODY>
+<CENTER>
+<BR>
+<H2>Performance of session #<% $session_id %></H2>
+<TABLE BORDER=0 CELLSPACING=1 CELLPADDING=3 WIDTH="70%" BGCOLOR="#000066">
+  <TR>
+    <TH>Time</TH>
+    <TH>USR</TH>
+    <TH>SYS</TH>
+    <TH>TRP</TH>
+    <TH>TFL</TH>
+    <TH>DFL</TH>
+    <TH>LCK</TH>
+    <TH>SLP</TH>
+    <TH>LAT</TH>
+    <TH>VCX</TH>
+    <TH>ICX</TH>
+    <TH>SCL</TH>
+  </TR>
+% foreach my $entry ( @performance ) {
+  <TR ALIGN=RIGHT>
+    <TD ALIGN="center"><% Mx::Util->convert_time( $entry->[1] ) %></TD> 
+    <TD><% $entry->[2] %></TD>
+    <TD><% $entry->[3] %></TD>
+    <TD><% $entry->[4] %></TD>
+    <TD><% $entry->[5] %></TD>
+    <TD><% $entry->[6] %></TD>
+    <TD><% $entry->[7] %></TD>
+    <TD><% $entry->[8] %></TD>
+    <TD><% $entry->[9] %></TD>
+    <TD><% $entry->[10] %></TD>
+    <TD><% $entry->[11] %></TD>
+    <TD><% $entry->[12] %></TD>
+  </TR>
+% }
+</TABLE>
+<BR>
+<TABLE>
+  <TR>
+    <TD>
+      <INPUT TYPE="button" CLASS="button" VALUE=" Go Back " onClick="history.back()">
+    </TD>
+    <TD>
+      <FORM ACTION="visualize_perf.html" METHOD=POST>
+        <INPUT TYPE="hidden" NAME="session_id" VALUE="<% $session_id %>">
+        <INPUT TYPE="submit" CLASS="button" VALUE=" Visualize ">
+      </FORM>
+    </TD
+  </TR>
+<TABLE>
+</CENTER>
+</BODY>
+
+<%init>
+my @performance = $db_audit->retrieve_performance( session_id => $session_id );
+</%init>
+
+<%args>
+$session_id
+</%args>

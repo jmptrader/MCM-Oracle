@@ -1,0 +1,212 @@
+<H2>Database Server</H2>
+
+<H2>AIX</H2>
+
+<TABLE class="center" WIDTH="70%">
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Hostname</FONT></TD><TD><% $db_server{hostname} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Asset Tag</FONT></TD><TD><% $db_server{asset_tag} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">IP</FONT></TD><TD><% $db_server{ip} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">OS Version</FONT></TD><TD><% $db_server{os_version} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">LPAR Type</FONT></TD><TD><% $db_server{lpar_type} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Entitlement</FONT></TD><TD><% $db_server{entitlement} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"># Virtual CPU's</FONT></TD><TD><% $db_server{virtual_cpus} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Physical Memory</FONT></TD><TD><% $db_server{memory_gb} %> GB</TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Date</FONT></TD><TD><% $db_server{date} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Uptime</FONT></TD><TD><% $db_server{uptime} %></TD></TR>
+</TABLE>
+
+<BR>
+
+<H2>Sybase</H2>
+
+<TABLE class="center" WIDTH="70%">
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Version</FONT></TD><TD><% $sybase{version} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Server Name</FONT></TD><TD><% $config->DSQUERY %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Port Number</FONT></TD><TD><% $config->SYB_PORT %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Uptime</FONT></TD><TD><% $sybase{uptime} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Server page size</FONT></TD><TD><% $sybase{server_page_size} %></TD></TR>
+  <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Number of online engines</FONT></TD><TD><% $sybase{nr_engines} %></TD></TR>
+</TABLE>
+
+<BR>
+
+<TABLE class="center" WIDTH="70%">
+<TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><B>Parameter name</B></FONT></TD><TH>class</TH><TH>Current value</TH><TH>Default value</TH><TH>Murex recom</TH><TH>KBC recom</TH></TR> 
+
+<%perl>
+ my $syb_ref=$sybase_config->SYBASE_PARAMETERS;
+ foreach my $syb_conf ( keys %{$syb_ref} ) {
+ my $current_val; 
+ my $default_val; 
+ my $category  = @{$syb_ref}{$syb_conf}->{category};
+ my $kbc_val   = @{$syb_ref}{$syb_conf}->{kbc_value};
+ my $mx_val    = @{$syb_ref}{$syb_conf}->{mx_value};
+ my $check_val = @{$syb_ref}{$syb_conf}->{check_value};
+ my $param_descr = @{$syb_ref}{$syb_conf}->{param_descr};
+     foreach my $sp_configline(@sp_configuration) {
+        foreach my $sp_config(@$sp_configline) {
+                if (index($sp_config->[0] , $syb_conf) ge 0) {
+                        $default_val=$sp_config->[1];
+                        $default_val=~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+                        $current_val=$sp_config->[4];
+                        $current_val=~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+                }
+           }
+     }
+ my ($color0,$color1,$color2,$color3);
+ if ( $check_val == 1 ) {
+      if ($current_val == $kbc_val ) {
+         $color0="lightgreen";
+      } else {
+         if ( $kbc_val && ($current_val > $kbc_val)) {
+           $color0="darkgreen";
+         } else {
+            if ( "$current_val" eq "$mx_val" && !$kbc_val)  {
+               $color0="lightgreen";
+            } else {
+               if ( $current_val == $default_val && !$kbc_val && !$mx_val) {
+                  $color0="lightgreen";
+               } else {
+                  $color0="#FF6666";
+               }
+            }
+         }
+      }
+ } 
+ $color1="lightgreen" if ( $check_val == 1 && ("$current_val" eq "$default_val" )); 
+ if ( $check_val == 1 ) {
+    if ( "$mx_val" ne "" ) {
+      if ( $check_val == 1 && ( "$current_val" eq "$mx_val" )) {
+         $color2="lightgreen";
+      } else {
+         $color2="#FF6666";
+      }
+    }
+ }
+ if ( $check_val == 1) {
+    if  ("$current_val" eq "$kbc_val" ) {
+       $color3="lightgreen";
+    } else {
+       if ( "$current_val" ne "$kbc_val" && "$kbc_val" ne "" ) {
+          $color3="#FF6666";
+       }
+    }
+ }
+</%perl>
+ 
+<TR><TD><span title="<% $syb_conf %>"><b><% $param_descr %></b></span></TD><TD WIDTH="10%" ALIGN="CENTER"><% $category %></TD>
+<TD BGCOLOR="<% $color0 %>"><% $current_val %></TD>
+<TD BGCOLOR="<% $color1 %>"><% $default_val %></TD>
+<TD BGCOLOR="<% $color2 %>">  
+% if ( @{$syb_ref}{$syb_conf}->{mx_descr} ) {
+<span title="<% @{$syb_ref}{$syb_conf}->{mx_descr} %>"><b><% $mx_val %></b></span>
+% } else {
+<% $mx_val %>
+% }
+</TD>
+<TD BGCOLOR="<% $color3 %>">
+% if ( @{$syb_ref}{$syb_conf}->{kbc_descr} ) {
+<span title="<% @{$syb_ref}{$syb_conf}->{kbc_descr} %>"><b><% $kbc_val %></b></span>
+% } else {
+<% $kbc_val %>
+% }
+</TD></TR>
+% }
+</TABLE>
+
+<br>
+
+<TABLE class="center" WIDTH="70%">
+<TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><b>Device Names</b></FONT></TD><TH><% "Physical devices" %></TH><TH>Device Options</TH></TR>
+% my $tempdbsa = 0;
+% foreach my $sybase_device ( @sybase_devices ) { 
+%    foreach my $column( @$sybase_device ) {
+%      if  ( lc($column->[0]) =~ m/sa/i ) { $tempdbsa = 1; }     
+       <TR>
+       <TD WIDTH="20%" NOWRAP><FONT COLOR="#000000"><% "$column->[0]" %></FONT></TD>
+       <TD WIDTH="20%" NOWRAP><FONT COLOR="#000000"><% "$column->[1]" %></FONT></TD>
+       <TD WIDTH="20%" NOWRAP><FONT COLOR="#000000"><% "$column->[2]" %></FONT></TD>
+       </TR>
+%    }
+%    if ( ! $tempdbsa ) { 
+       <TR><TD BGCOLOR="#FF6666"><b> No 'sa tempdb' found </b></TD><TD>Action required</TD><TD>create an sa tempdb and bind it to the sa user</TD></TR>
+%    }
+%}
+</TABLE>
+<BR>
+
+% my $first = 0;
+% foreach my $type ( keys %size ) {
+%   my %info = %{$size{$type}};
+%   my $name = $name{$type}; 
+<TABLE class="center" WIDTH="70%">
+%   if ( ++$first == 1 ) {
+<TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><B><% "$type - $name" %></B></FONT></TD><TH>Size</TH><TH>Available</TH><TH>% Used</TH></TR>
+%   }
+%   else {
+<TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><B><% "$type - $name" %></B></FONT></TD><TD COLSPAN=3>&nbsp;</TD></TR>
+%   }
+<TR>
+  <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Data Segments</FONT></TD>
+  <TD ALIGN="right" WIDTH="26%"><% $info{total_data_size_gb} %> GB</TD>
+  <TD ALIGN="right" WIDTH="26%"><% $info{free_data_size_gb} %> GB</TD>
+% my $percentage = sprintf "%.2f", ( 1 - $info{free_data_size_gb} / $info{total_data_size_gb} ) * 100; 
+% if ( $percentage < 80 ) {
+  <TD ALIGN="right" STYLE="background-color: #70C070;"><% $percentage %> %</TD>
+% }
+% else {
+  <TD ALIGN="right" STYLE="background-color: #FF9900;"><% $percentage %> %</TD>
+% }
+</TR>
+%   unless ( $type eq 'TEMP' ) {
+<TR>
+  <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Log Segments</FONT></TD>
+  <TD ALIGN="right" WIDTH="26%"><% $info{total_log_size_gb} %> GB</TD>
+  <TD ALIGN="right" WIDTH="26%"><% $info{free_log_size_gb} %> GB</TD>
+% $percentage = sprintf "%.2f", ( 1 - $info{free_log_size_gb} / $info{total_log_size_gb} ) * 100; 
+% if ( $percentage < 80 ) {
+  <TD ALIGN="right" STYLE="background-color: #70C070;"><% $percentage %> %</TD>
+% }
+% else {
+  <TD ALIGN="right" STYLE="background-color: #FF9900;"><% $percentage %> %</TD>
+% }
+</TR>
+%   } 
+</TABLE>
+<BR>
+% }
+
+<%init>
+my %db_server = $system->aix_info( $config->SYB_SRV );
+
+$sa_sybase->open();
+
+my %sybase = ();
+$sybase{version}                          = $sa_sybase->version();
+$sybase{nr_engines}                       = $sa_sybase->nr_engines();
+$sybase{uptime}                           = $sa_sybase->uptime();
+$sybase{max_connections}                  = $sa_sybase->max_connections();
+$sybase{server_page_size}                 = $sa_sybase->server_page_size();
+
+my @sybase_devices                        = $sa_sybase->sp_helpdevice();
+my @sp_configuration                      = $sa_sybase->sp_configure();
+my @sp_monitorconfig                      = $sa_sybase->sp_monitorconfig();
+
+my %size = (); my %name = ();
+$size{MX}         = { $sa_sybase->size_info( $config->DB_NAME ) };
+$name{MX}         = $config->DB_NAME;
+$size{MONITORING} = { $sa_sybase->size_info( $config->MONDB_NAME ) };
+$name{MONITORING} = $config->MONDB_NAME;
+$size{MLC}        = { $sa_sybase->size_info( $config->DB_MLC ) };
+$name{MLC}        = $config->DB_MLC;
+$size{REPORTING}  = { $sa_sybase->size_info( $config->DB_REP ) };
+$name{REPORTING}  = $config->DB_REP;
+$size{TEMP}       = { $sa_sybase->size_info( 'tempdb' ) };
+$name{TEMP}       = 'tempdb';
+
+$sa_sybase->close();
+
+my $sybase_config_file = $config->SYBASE_CONFIGFILE;
+my $sybase_config = Mx::Config->new( $sybase_config_file );
+
+</%init>

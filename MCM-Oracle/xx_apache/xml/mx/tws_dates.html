@@ -1,0 +1,9 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @dates = $db_audit->retrieve_tws_dates();
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@dates );
+</%init>

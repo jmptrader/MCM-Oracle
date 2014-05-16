@@ -1,0 +1,4 @@
+REM @echo off
+echo %0 %1 %2 %3 %4 %5
+net use \\%1\%2 %3 /USER:%2
+start explorer.exe \\%1\%2

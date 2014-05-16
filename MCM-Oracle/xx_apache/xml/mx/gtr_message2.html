@@ -1,0 +1,25 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $gtr_url  = 'https://formacion.regis-tr.com:8082/regis_tr_xml_load/services/regis_tr_xml_load';
+my $gtr_user = 'KBCSOAP01';
+my $gtr_pass = 'we3uCh5t';
+
+my $webservice = Mx::Webservice::GTR->new( url => $gtr_url, gtr_user => $gtr_user, gtr_password => $gtr_pass, config => $config, logger => $logger, debug => $debug );
+
+$xml_date =~ s/-//g;
+
+my ( $size, $xml, $debug_data ) = $webservice->recover_xml( date => $xml_date, name => $xml_name );
+
+my $xml_data = $m->scomp( 'display_xml.comp', xml => $xml );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { xml => $xml_data, debug => $debug_data } );
+</%init>
+
+<%args>
+$xml_date
+$xml_name
+$debug => 0
+</%args>

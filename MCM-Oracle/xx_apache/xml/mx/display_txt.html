@@ -1,0 +1,26 @@
+<BODY>
+<BR>
+<CENTER><H2><% $title %></H2></CENTER>
+<BR>
+% print @txt;
+<BR>
+</BODY>
+
+<%init>
+my @txt;
+if ( my $fh = IO::File->new( $path, '<' ) ) {
+  while ( my $line = <$fh> ) {
+    $line =~ s/\n/<BR>\n/;
+    push @txt, $line;
+  }
+  $fh->close();
+}
+else {
+  push @txt, "<CENTER><H2>$path cannot be opened.</H2></CENTER>";
+}
+</%init>
+
+<%args>
+$path
+$title => ''
+</%args>

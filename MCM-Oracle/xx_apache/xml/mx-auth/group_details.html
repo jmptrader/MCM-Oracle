@@ -1,0 +1,100 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    Group: <% $name %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="table" class="grid_12">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr>
+      <td class="description"><% $key %></td>
+      <td>
+%   if ( $key eq 'Users' ) {
+        <div style=" float: left;">
+%     foreach my $user ( @{$value} ) {
+          <a href="user_details.html?id=<% $user->id %>"><% $user->name %></a>
+          <br>
+%     } 
+        </div>
+        <div style=" float: left; margin-left: 10px; ">
+%     foreach my $user ( @{$value} ) {
+          <a href="user_details.html?id=<% $user->id %>"><% $user->full_name %></a>
+          <br>
+%     } 
+        </div>
+%   }
+%   else {
+        <% $value %>
+%   }
+      </td>
+    </tr>
+% }
+    </table>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="actions" class="grid_8">
+    <input type="button" class="button" value=" Go Back " onClick="history.back()">
+    <form action="group_insert.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Update ">
+    </form>
+    <form action="group_users.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Assign Users ">
+    </form>
+    <form action="group_action.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="hidden" name="name" value="<% $name %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Delete " onClick="return confirm('Are you sure?')">
+    </form>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="extra_title" class="grid_12">Rights</div>
+
+  <div id="extra_tables" class="grid_12"> 
+%   $m->comp( "user_group_rights.comp", environment_id => 0, environment_name => 'ALL', user_group_id => $id );
+%   foreach my $environment ( sort { $a->name cmp $b->name } @environments ) {
+%     $m->comp( "user_group_rights.comp", environment_id => $environment->id, environment_name => $environment->name, user_group_id => $id );
+%   }
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my $group = Mx::Auth::Group->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+  $group->retrieve;
+  my $name = $group->name;
+  my @table;
+  push @table, 'Name'        , $group->name;
+  push @table, 'Type'        , $group->type;
+  push @table, 'Description' , $group->description;
+  push @table, 'Config Data' , $group->config_data;
+  push @table, 'Users'       , [ $group->users ];
+
+  my @environments = Mx::Auth::Environment->retrieve_all( db => $auth_db, config => $config, logger => $logger );
+</%init>
+
+<%args>
+$id
+</%args>

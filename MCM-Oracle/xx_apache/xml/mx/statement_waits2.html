@@ -1,0 +1,21 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @waits = ();
+if ( my $result = $db_audit->retrieve_statement_waits( statement_id => $statement_id ) ) {
+  foreach my $wait ( @{$result} ) {
+    push @waits, [
+      $wait->[0],
+      $wait->[1],
+      Mx::Util->separate_thousands( $wait->[2] ),
+      Mx::Util->separate_thousands( $wait->[3] )
+    ];
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@waits );
+</%init>
+<%args>
+$statement_id
+</%args>

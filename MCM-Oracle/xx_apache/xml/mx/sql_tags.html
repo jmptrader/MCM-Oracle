@@ -1,0 +1,30 @@
+<BODY>
+<& navigation.comp &>
+<CENTER>
+<BR>
+<H2>SQL Tags</H2>
+<TABLE BORDER=0 WIDTH=10% CELLSPACING=1 CELLPADDING=3 BGCOLOR="#000066">
+  <TR>
+    <TH>Count</TH>
+    <TH>Tag</TH>
+  </TR>
+% foreach my $tag ( @tags ) {
+  <TR>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $tag->[0] ) %></TD>
+    <TD ALIGN=RIGHT><A HREF="histstatements.html?sql_tag=<% $tag->[1] %>"><% $tag->[1] %></A></TD>
+% }
+</TABLE>
+<BR>
+<TABLE>
+  <TR>
+    <TD>
+      <INPUT TYPE="button" CLASS="button" VALUE=" Go Back " onClick="history.back()">
+    </TD>
+  </TR>
+</TABLE>
+</CENTER>
+</BODY>
+
+<%init>
+my @tags = $db_audit->retrieve_sql_tags();
+</%init>

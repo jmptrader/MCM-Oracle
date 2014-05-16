@@ -1,0 +1,11 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $data = Mx::MxUser->decrypt( $password );
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => $data } );
+</%init>
+<%args>
+$password
+</%args>

@@ -1,0 +1,95 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    Environment: <% $name %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="table" class="grid_12">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <tr>
+      <td class="description"><% $key %></td>
+      <td><% $value %></td>
+    </tr>
+% }
+% while ( @extratable ) {
+%   my $key   = shift @extratable;
+%   my $value = shift @extratable;
+    <tr>
+      <td class="description"><% $key %></td>
+      <td><% $value %></td>
+    </tr>
+% }
+    </table>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="actions" class="grid_8">
+    <input type="button" class="button" value=" Go Back " onClick="history.back()">
+    <form action="environment_insert.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Update ">
+    </form>
+    <form action="environment_action.html" method="POST">
+      <input type="hidden" name="id" value="<% $id %>">
+      <input type="hidden" name="name" value="<% $name %>">
+      <input type="submit" class="button" right="auth_master" name="action" value=" Delete " onClick="return confirm('Are you sure?')">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my $environment = Mx::Auth::Environment->new( id => $id, db => $auth_db, config => $config, logger => $logger );
+  $environment->retrieve;
+
+  my $name = $environment->name;
+  my @table;
+  push @table, 'Name'           , $environment->name;
+  push @table, 'Description'    , $environment->description;
+  push @table, 'Pillar'         , $environment->pillar;
+  push @table, 'Samba Read UNC' , $environment->samba_read;
+  push @table, 'Samba Write UNC', $environment->samba_write;
+  push @table, 'Config Data'    , $environment->config_data;
+  push @table, 'Disabled'       , ( $environment->disabled ) ? 'Yes' : 'No';
+
+  my @extratable;
+  if ($environment->retrieve_extended())  {
+
+    my $db = $environment->{db};
+    my $result = $db->query ( query_key => 'user_or_group_select', values => [ $environment->contactid, $environment->contactid ] );
+
+    push @extratable, 'Sybase version' , $environment->sybversion; 
+    push @extratable, 'DB version'     , $environment->dbversion;
+    push @extratable, 'Binary version' , $environment->binversion;
+
+    if ( defined( $result ) && ( $result->size == 1 ) ) {
+      my %hash = $result->next_hash;
+      push @extratable, 'Responsible Contact' , $hash{description};
+    } else {
+      push @extratable, 'Contact id' , $environment->contactid;
+    }
+  }
+
+</%init>
+
+<%args>
+$id
+</%args>

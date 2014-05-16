@@ -1,0 +1,99 @@
+% while ( my ( $workflow, $file ) = each %files ) {
+<H2><% $workflow %> Workflow</H2>
+<IMG SRC="<% $file %>?<% time() %>">
+<BR>
+% }
+<P>
+<P>
+<form onsubmit="return msubmit(this, 'mxml_nr_messages.html')">
+  <INPUT TYPE="hidden" NAME="date" VALUE="<% $date %>">
+  <INPUT TYPE="hidden" NAME="start_time" VALUE="<% $start_time %>">
+  <INPUT TYPE="hidden" NAME="end_time" VALUE="<% $end_time %>">
+  <INPUT TYPE="submit" CLASS="table_button" VALUE=" Refresh "> 
+</form>
+
+<%init>
+my ( $year, $month, $day ) = $date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+$month--;
+
+my ($hours, $minutes) = $start_time =~ /^(\d+):(\d+)$/;
+my $begin_timestamp   = timelocal( 0, $minutes, $hours, $day, $month, $year );
+
+($hours, $minutes) = $end_time =~ /^(\d+):(\d+)$/;
+my $end_timestamp  = timelocal( 59, $minutes, $hours, $day, $month, $year );
+
+my @ids        = $db_audit->retrieve_mxml_nodes_hist( begin_timestamp => $begin_timestamp, end_timestamp => $end_timestamp );
+my @timestamps = $db_audit->retrieve_mxml_timestamps( begin_timestamp => $begin_timestamp, end_timestamp => $end_timestamp );
+
+my %nodes = (); my %workflows = (); my %nr_messages = (); my %max_nr_messages = ();
+foreach my $id ( @ids ) {
+    next if $id == 0;
+    my $node = Mx::MxML::Node->retrieve( id => $id, db_audit => $db_audit, logger => $logger, config => $config );
+    $nodes{$id} = $node;
+
+    my $workflow = $node->workflow;
+    push @{$workflows{$workflow}}, $id;
+
+    my %result = $node->retrieve_nr_messages( db_audit => $db_audit, begin_timestamp => $begin_timestamp, end_timestamp => $end_timestamp  );
+
+    $nr_messages{$id} = []; my $prev_nr_messages = 0;
+    foreach my $timestamp ( @timestamps ) {
+       if ( exists $result{$timestamp} ) {
+           my $nr_messages = $result{$timestamp};
+           push @{$nr_messages{$id}}, $nr_messages;
+           $prev_nr_messages = $nr_messages;
+           $max_nr_messages{$id} = $nr_messages if $nr_messages > $max_nr_messages{$id};
+       }
+       else {
+           push @{$nr_messages{$id}}, $prev_nr_messages;
+       }
+    }
+}
+
+my @colors  = qw( black lred green lblue purple cyan orange pink marine lgreen ); 
+my @xlabels = map { Mx::Util->convert_time_short( $_ ) } @timestamps;
+
+my %files = ();
+foreach my $workflow ( sort keys %workflows ) {
+    my @data   = ( \@xlabels );
+    my @legend = ();
+
+    my $nr_nodes = 0;
+    foreach my $id ( sort { $max_nr_messages{$b} <=> $max_nr_messages{$a} } @{$workflows{$workflow}} ) {
+        my $max = $max_nr_messages{$id};
+        last if $max == 0;
+        my $node     = $nodes{$id};
+        my $taskname = $node->taskname;
+        my $nodename = $node->nodename;
+        push @data, $nr_messages{$id};
+        push @legend, "$taskname:$nodename ($max)";
+        $nr_nodes++;
+        last if $nr_nodes == $max_nr_nodes;
+    }
+ 
+    next if $nr_nodes == 0;
+ 
+    my $graph = GD::Graph::lines->new(900, 600 + $nr_nodes * 20);
+
+    my $x_label_skip = int ( scalar(@timestamps) / 12 );
+ 
+    $graph->set( x_labels_vertical => 1, x_label_skip => $x_label_skip, legend_spacing => 10 );
+    $graph->set_text_clr('black');
+    $graph->set( dclrs => [ @colors ] );
+    $graph->set_legend( @legend );
+ 
+    my $file = "/tmp/mxml_${workflow}_nr_messages.png";
+    $files{$workflow} = $file;
+ 
+    my $fh = IO::File->new( $file, '>' );
+    print $fh $graph->plot(\@data)->png;
+    $fh->close;
+}
+</%init>
+
+<%args>
+$date
+$start_time   => '00:00'
+$end_time     => '23:59'
+$max_nr_nodes => 10
+</%args>

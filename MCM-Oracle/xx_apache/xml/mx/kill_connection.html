@@ -1,0 +1,20 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+$logger->info("killing database connection (schema: $schema - sid: $sid)");
+
+my $db = $schemas{$schema};
+
+my $message = 'failed';
+if ( $db->kill( sid => $sid, serial => $serial ) ) {
+  $message = 'done';
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => $message } );
+</%init>
+<%args>
+$schema
+$sid
+$serial
+</%args>

@@ -1,0 +1,4 @@
+@ECHO OFF
+W:
+CD /SPI/000465/
+MurexStarter.hta

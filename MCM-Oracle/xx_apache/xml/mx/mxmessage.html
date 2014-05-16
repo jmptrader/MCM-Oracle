@@ -1,0 +1,14 @@
+<% $value %>
+<%init>
+
+my $value = 'blablabla';
+if ($uname =~ m/(jd|u|JD|U)/i) {
+my $user = Mx::User->retrieve(name => $uname,logger => $logger, config => $config );
+$value = $user->full_name;
+} else {
+  $value = 'not a valid username';
+ }
+ </%init>
+<%args>
+$uname
+</%args>

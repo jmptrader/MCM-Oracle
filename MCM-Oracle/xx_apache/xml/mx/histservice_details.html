@@ -1,0 +1,49 @@
+<H2>Service event #<% $service->[0] %></H2>
+<TABLE class="center" WIDTH="70%">
+  <TR><TH>Name</TH><TH>Value</TH></TR>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</TABLE>
+<BR>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('histservices.html', { <% join ',', @nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'hist_url';
+  push @nav_args, "$k:'$v'";
+}
+
+my $service = $db_audit->retrieve_service( id => $service_id );
+my @table;
+push @table, 'Name'                  , '<A CLASS="select" HREF="#" onclick="mnavigate(\'service_details.html\', { name:\'' . $service->[1] . '\', hist_url:\'histservice_details.html\' }, { ' . ( join ',', @nav_args ) . ' })">' . $service->[1] . '</A>';
+push @table, 'Start Time'            , Mx::Util->convert_time( $service->[2] );
+push @table, 'End Time'              , Mx::Util->convert_time( $service->[3] );
+push @table, 'Service Start Duration', $service->[4];
+push @table, 'Service Start RC'      , $service->[5];
+push @table, 'Post Start Duration'   , $service->[6];
+push @table, 'Post Start RC'         , $service->[7];
+push @table, 'Pre Stop Duration'     , $service->[8];
+push @table, 'Pre Stop RC'           , $service->[9];
+push @table, 'Service Stop Duration' , $service->[10];
+push @table, 'Service Stop RC'       , $service->[11];
+push @table, 'Business Date'         , $service->[12];
+
+foreach my $process ( $db_audit->retrieve_service_processes( id => $service_id ) ) {
+  push @table, '&nbsp;'     , '&nbsp;';
+  push @table, 'Label'      , '<B>' . $process->[0] . '</B>';
+  push @table, 'Hostname'   , $process->[1];
+  push @table, 'PID'        , $process->[2];
+  push @table, 'Start Time' , Mx::Util->convert_time( $process->[3] );
+  push @table, 'End Time'   , Mx::Util->convert_time( $process->[4] ) if $process->[4];
+  push @table, 'CPU seconds', Mx::Util->separate_thousands( $process->[5] ) if $process->[5];
+  push @table, 'Memory'     , Mx::Util->separate_thousands( $process->[6] ) . ' K' if $process->[6];
+}
+</%init>
+
+<%args>
+$service_id
+</%args>

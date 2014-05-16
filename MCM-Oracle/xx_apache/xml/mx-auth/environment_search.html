@@ -1,0 +1,55 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    <% $title %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="form" class="grid_12">
+    <form action="environments.html" method="POST">
+    <table cellspacing=1 width="100%">
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+    <tr>
+      <td class="description">Name</td>
+      <td class="entryfield"><input type="text" name="name" size="8"></td>
+    </tr>
+    <tr>
+      <td class="description">Pillar</td>
+      <td>
+        <select name="pillar">
+          <option></option>
+%  foreach my $pillar ( @pillars ) {
+          <option><% $pillar %></option>
+%  }
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="description">Disabled</td>
+      <td class="entryfield"><input type="checkbox" name="disabled"></td>
+    </tr>
+    </table>
+
+    <input type="submit" class="button" name="action" value=" Search ">
+    <input type="button" class="button" value=" Cancel " onClick="history.back()">
+    </form>
+  </div>
+
+</div>
+</body>
+
+<%init>
+  my $title = 'Search Environments';
+  my @pillars = Mx::Auth::Environment->pillars;
+</%init>

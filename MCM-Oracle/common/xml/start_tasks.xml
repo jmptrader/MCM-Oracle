@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<project name="Start_task" basedir="." default="sample">
+  <MxInclude MxAnchor="murex.mxres.mxmlexchange.script.exchangeScripts.mxres#LAUNCHTASKS" MxAnchorType="Include"/>
+  <target name="starttasks" description="start tasks">
+    <launchtasks platformName="MX" siteName="site1" nickName="MXMLEXCHANGE" userName="" password="" configFile="__$XMLDIR__/taskfilter.xml#TASKS"/>
+  </target>
+</project>

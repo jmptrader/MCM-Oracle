@@ -1,0 +1,10 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @users = Mx::MxUser->retrieve_all( oracle => $oracle, library => $library, logger => $logger, config => $config );
+
+my @list = map { $_->TO_JSON } @users;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list } } );
+</%init>

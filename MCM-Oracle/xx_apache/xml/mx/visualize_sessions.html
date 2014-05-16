@@ -1,0 +1,78 @@
+<TABLE class="center_nb" WIDTH="70%">
+  <TR ALIGN=CENTER>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_sessions.html', { range:'day' })"><FONT COLOR="#3333FF"><H3>DAY</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_sessions.html', { range:'week' })"><FONT COLOR="#3333FF"><H3>WEEK</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_sessions.html', { range:'month' })"><FONT COLOR="#3333FF"><H3>MONTH</H3></FONT></A></TD>
+    <TD><A HREF="#" class="select" onclick="mnavigate('visualize_sessions.html', { range:'year' })"><FONT COLOR="#3333FF"><H3>YEAR</H3></FONT></A></TD>
+  </TR>
+</TABLE>
+% for ( my $i = 1; $i <= $#app_servers_2; $i++ ) {
+%   my $hostname = $app_servers_2[$i];
+%   my $file = shift @files;
+<H2><% $hostname eq 'total' ? 'Global View' : "Sessions on $hostname" %></H2>
+<P>
+<IMG SRC="<% $file %>?<% time() %>">
+<P>
+% }
+
+<%init>
+my @mx_scripttypes = (
+  'user session',
+  'batch',
+  'dm_batch',
+  'scanner'
+);
+
+my @colors = qw( 00FF00 FF0000 000000 0000FF FFFF00 00FFFF FF66FF 006633 9999FF 660066 666666 FF3399 666600 );
+
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+
+my $nr_seconds;
+SWITCH: {
+  $range eq 'year'  && do { $nr_seconds = 365 * 24 * 3600; last SWITCH; };
+  $range eq 'month' && do { $nr_seconds =  31 * 24 * 3600; last SWITCH; };
+  $range eq 'week'  && do { $nr_seconds =   7 * 24 * 3600; last SWITCH; };
+  $nr_seconds = 24 * 3600;
+};
+
+my @graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => time() - $nr_seconds,
+  end       => time()
+);
+
+my $collector = Mx::Collector->new( name => 'session2', config => $config, logger => $logger );
+my $rrdfile   = $collector->rrdfile;
+my $rrd       = RRDTool::OO->new( file => $rrdfile );
+
+my @files = ();
+
+my @app_servers_2 = ( @app_servers, 'total' );
+for ( my $i = 1; $i <= $#app_servers_2; $i++ ) {
+    my $app_server = $app_servers_2[$i];
+    my $file = "/tmp/${app_server}_sessions_${range}" . $image_extension; 
+
+    my @options = @graph_options;
+    push @options, ( image  => $file );
+
+    for ( my $j = 0; $j <= $#mx_scripttypes; $j++ ) {
+        my $mx_scripttype = $mx_scripttypes[$j];
+        my $color = $colors[$j];
+        my $label = ( $app_server eq 'total' ) ? $mx_scripttype : $app_server . $mx_scripttype;
+        $label =~ s/ //g;
+
+        push @options, ( draw  => { type => 'area', stack => 1, color => $color, dsname => $label, legend => $mx_scripttype } );
+    }
+
+    $rrd->graph( @options );
+
+    push @files, $file;
+}
+</%init>
+
+<%args>
+$range => 'day'
+</%args>

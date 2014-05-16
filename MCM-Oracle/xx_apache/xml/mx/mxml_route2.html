@@ -1,0 +1,21 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @list = ();
+if ( $key_id ) {
+  @list = Mx::MxML::Message->retrieve_route( workflow => $workflow, key => $key, key_id => $key_id, nodes => \%mxml_nodes, logger => $logger, config => $config, oracle => $oracle, library => $library );
+
+  if ( $include_archive && ( my $archive = $config->retrieve( 'MXML_ARCHIVE', 1 ) ) ) {
+    push @list, Mx::MxML::Message->retrieve_route( workflow => $workflow, key => $key, key_id => $key_id, nodes => \%mxml_nodes, archived => 1, logger => $logger, config => $config, oracle => $oracle, library => $library );
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list } } );
+</%init>
+<%args>
+$workflow
+$key_id
+$key => ''
+$include_archive => 0
+</%args>

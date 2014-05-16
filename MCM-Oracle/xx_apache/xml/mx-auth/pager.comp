@@ -1,0 +1,92 @@
+% if ( $pages[0] > 1 ) {
+      <form action="<% $url %>" method="POST">
+        <input type="hidden" name="sort" value="<% $sort %>">
+        <input type="hidden" name="detailed_timing" value="<% $detailed_timing %>">
+        <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+        <input type="hidden" name="page_nr" value="1">
+%   while ( my ( $column, $value ) = each %where_hash ) {
+%     $value =~ s/^"(.*)"$/$1/;
+        <input type="hidden" name="<% $column %>" value="<% $value %>">
+%   }
+        <input type="submit" class="button" value=" << ">
+      </form>
+      <form action="<% $url %>" method="POST">
+        <input type="hidden" name="sort" value="<% $sort %>">
+        <input type="hidden" name="detailed_timing" value="<% $detailed_timing %>">
+        <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+        <input type="hidden" name="page_nr" value="<% $pages[0] - 1 %>">
+%   while ( my ( $column, $value ) = each %where_hash ) {
+%     $value =~ s/^"(.*)"$/$1/;
+        <input type="hidden" name="<% $column %>" value="<% $value %>">
+%   }
+        <input type="submit" class="button" value=" < ">
+      </form>
+% }
+% foreach my $page ( @pages ) {
+      <form action="<% $url %>" method="POST">
+        <input type="hidden" name="sort" value="<% $sort %>">
+        <input type="hidden" name="detailed_timing" value="<% $detailed_timing %>">
+        <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+        <input type="hidden" name="page_nr" value="<% $page %>">
+%   while ( my ( $column, $value ) = each %where_hash ) {
+%     $value =~ s/^"(.*)"$/$1/;
+        <input type="hidden" name="<% $column %>" value="<% $value %>">
+%   }
+        <input type="submit" class="<% ( $page == $page_nr ) ? 'button_a' : 'button' %>" value=" <% $page %> ">
+      </form>
+% }
+% if ( @pages && $pages[$#pages] < $nr_pages && $nr_pages ) {
+      <form action="<% $url %>" method="POST">
+        <input type="hidden" name="sort" value="<% $sort %>">
+        <input type="hidden" name="detailed_timing" value="<% $detailed_timing %>">
+        <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+        <input type="hidden" name="page_nr" value="<% $pages[$#pages] + 1 %>">
+%   while ( my ( $column, $value ) = each %where_hash ) {
+%     $value =~ s/^"(.*)"$/$1/;
+        <input type="hidden" name="<% $column %>" value="<% $value %>">
+%   }
+        <input type="submit" class="button" value=" > ">
+      </form>
+      <form action="<% $url %>" method=POST>
+        <input type="hidden" name="sort" value="<% $sort %>">
+        <input type="hidden" name="detailed_timing" value="<% $detailed_timing %>">
+        <input type="hidden" name="recs_per_page" value="<% $recs_per_page %>">
+        <input type="hidden" name="page_nr" value="<% $nr_pages %>">
+%   while ( my ( $column, $value ) = each %where_hash ) {
+%     $value =~ s/^"(.*)"$/$1/;
+        <input type="hidden" name="<% $column %>" value="<% $value %>">
+%   }
+        <input type="submit" class="button" value=" >> ">
+      </form>
+% }
+
+<%init>
+my @pages;
+my $nr_pages = int( $nr_results / $recs_per_page );
+if ( $recs_per_page * $nr_pages < $nr_results ) {
+    $nr_pages++;
+}
+if ( $nr_pages <= 2 ) {
+    @pages = ();
+}
+elsif ( $nr_pages <= 10 ) {
+    @pages = 1 .. $nr_pages;
+}
+else {
+    my $startpage = int ( ( $page_nr - 1 ) / 10 ) * 10 + 1;
+    my $endpage   = $startpage + 9;
+    $endpage = $nr_pages if $endpage > $nr_pages;
+    @pages = $startpage .. $endpage;
+}
+my %where_hash = %{$where_hash};
+</%init>
+
+<%args>
+$url
+$sort
+$detailed_timing => 0
+$nr_results
+$recs_per_page
+$page_nr
+$where_hash => {}
+</%args>

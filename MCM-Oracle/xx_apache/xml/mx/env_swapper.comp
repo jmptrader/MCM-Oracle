@@ -1,0 +1,43 @@
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>
+  <TR>
+    <TD>
+      <SELECT MULTIPLE SIZE=10 NAME="_env" STYLE="width:200">  
+% foreach my $env ( sort @left ) {
+	     <OPTION VALUE="<% $env %>"><% $env %></OPTION>
+% }
+      </SELECT>
+    </TD>
+    <TD ALIGN="CENTER" VALIGN="middle">
+      &nbsp;
+      <INPUT TYPE="button" onClick="move(this.form.env,this.form._env)" VALUE="<<">
+      &nbsp;
+      <BR>
+      <BR>
+      &nbsp;
+      <INPUT TYPE="button" onClick="move(this.form._env,this.form.env)" VALUE=">>">
+      &nbsp;
+    </TD>
+    <TD>
+      <SELECT MULTIPLE SIZE="10" NAME="env" STYLE="width:200">
+% foreach my $env ( sort @right ) {
+	     <OPTION VALUE="<% $env %>"><% $env %></OPTION>
+% }
+      </SELECT>
+    </TD>
+  </TR>
+</TABLE>
+
+<%init>
+my @all   = $config->environments();
+my @right = @{$envs};
+my %seen;
+foreach ( @right ) { $seen{$_} = 1 }
+my @left;
+foreach my $env ( @all ) {
+  push @left, $env unless $seen{$env};
+}
+</%init>
+
+<%args>
+$envs => []
+</%args>

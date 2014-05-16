@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="startMarginRun">
+
+    <!-- Margin run id is required for certain operations, e.g. forceCancellation -->
+    <property name="marginRunId" value="0"/>
+
+    <!-- Id of group to be forced regardless if complete or not -->
+    <property name="internalGroupId" value="0"/>
+
+    <!-- Id of group to be forced regardless if complete or not -->
+    <property name="marginRunResponseFile" value="__ANSWERFILE__"/>
+
+    <!-- The MX platform name -->
+    <property name="platformName" value="MX"/>
+
+    <!-- The clearing orchestrator nickname -->
+    <property name="nickname" value="MXCLEARING.ORCHESTRATOR"/>
+
+    <!-- Include MarketData Ant Task tasks definition -->
+    <MxInclude MxAnchor="murex.mxres.mxclearing-orchestrator.script.tasks.mxres#CLEARING_ORCHESTRATOR_ANT_TASK" MxAnchorType="Include"/>
+
+
+    <target name="startItdMarginRun">
+      <startMarginRun platformName="${platformName}" nickname="${nickname}" marginRunType="itd" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="startItdVarEngines">
+        <startVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="itd"/>
+    </target>
+
+    <target name="stopItdVarEngines">
+        <stopVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="itd"/>
+    </target>
+
+    <target name="startEodMarginRun">
+      <startMarginRun platformName="${platformName}" nickname="${nickname}" marginRunType="eod" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="startEodVarEngines">
+        <startVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="eod"/>
+    </target>
+
+    <target name="stopEodVarEngines">
+        <stopVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="eod"/>
+    </target>
+
+    <target name="startIonMarginRun">
+      <startMarginRun platformName="${platformName}" nickname="${nickname}" marginRunType="ion" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="startIonVarEngines">
+        <startVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="ion"/>
+    </target>
+
+    <target name="stopIonVarEngines">
+        <stopVarEngines platformName="${platformName}" nickname="${nickname}" marginRunType="ion"/>
+    </target>
+
+    <target name="resumeMarginRun">
+      <resumeMarginRun platformName="${platformName}" nickname="${nickname}" marginRunId="${marginRunId}" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="abortMarginRun">
+      <abortMarginRun platformName="${platformName}" nickname="${nickname}" marginRunId="${marginRunId}" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="getInfoForOneMarginRun">
+      <getMarginRunInfo platformName="${platformName}" nickname="${nickname}" marginRunId="${marginRunId}" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="getInfoForAllMarginRuns">
+      <getMarginRunInfo platformName="${platformName}" nickname="${nickname}" responseFile="${marginRunResponseFile}"/>
+    </target>
+
+    <target name="forceIncompleteGroup">
+      <echo message="Forcing incomplete group ${internalGroupId}" /> 
+      <forceIncompleteGroup platformName="${platformName}" nickname="${nickname}" groupId="${internalGroupId}" /> 
+    </target>
+
+    <target name="executeBatchOfStoredProcedures">
+      <echo message="Execute batch of stored procedures for ${marginRunId} with arguments psNickname=${psNickname} psBatchOfStoredProcedures=${psBatchOfStoredProcedures} psEntity=${psEntity}"/>
+      <executeBatchOfStoredProcedures platformName="${platformName}" nickname="${nickname}" marginRunId="${marginRunId}" psNickname="${psNickname}" psBatchOfStoredProcedures="${psBatchOfStoredProcedures}" psEntity="${psEntity}"/>
+    </target>
+</project>

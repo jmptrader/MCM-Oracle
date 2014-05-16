@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE Script>
+<Script>
+ <LoginContext>
+  <Group>HOUSEKEEP</Group>
+  <User>MUREXBO</User>
+  <Desk></Desk>
+ </LoginContext>
+ <Name>TRADES_LOGICAL_PURGE</Name>
+ <Predefined>Yes</Predefined>
+</Script>

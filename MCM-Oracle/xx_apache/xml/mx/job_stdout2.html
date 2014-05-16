@@ -1,0 +1,22 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $data = '';
+my $file = $config->JOBLOGDIR . '/' . $id . '.stdout';
+if ( open FH, $file ) {
+  while ( <FH> ) {
+    chomp;
+    $data .= $_ . '<br>';
+  }
+  close(FH);
+}
+else {
+  $data = 'No data';
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $data } );
+</%init>
+<%args>
+$id
+</%args>

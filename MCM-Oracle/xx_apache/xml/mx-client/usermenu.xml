@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="usermenu.xslt" version='1.0'?>
+
+<usermenu>
+  <title>Murex start Menu</title>
+  <name>usermenu.xml</name>
+  <environment><% $ENV{MXENV} %></environment>
+  <username><% $m->session->{username} %></username>
+  <queryuser><% $queryuser %></queryuser>
+  <launchpath>C:/Temp/MX/</launchpath>
+% foreach my $db_environment ( @db_environments ) {
+%   if ( $ENV{MXENV} eq $db_environment->[2] ) {
+  <channel environment="<% $ENV{MXENV} %>">
+    <link><% ${locationfull} %></link>
+%   if ( $db_environment->[8] eq 'Y' ) {
+    <status>Disabled</status>
+%   } else {
+    <status>Enabled</status>
+%   }
+    <description><![CDATA[<% $db_environment->[3] %>]]></description>
+%   if ( $db_environment->[8] eq 'Y' ) {
+    <item category="Disabled">
+      <title>Client</title>
+    </item>
+%   } else {
+    <item category="Launch" id="<% $ENV{MXENV} %>_Launch<% $id++ %>">
+      <title>Client</title>
+      <action>launchcli_mx3.cmd
+         <parameter><% $ENV{MXENV} %></parameter>
+      </action>
+      <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">mxg2000_settings</file>
+        <file version="1.0">client.xml</file>
+        <file hash="ABBFDDE">mxjboot.jar</file>
+        <file version="-1" suffix=".cmd" fwsuffix=".txt">launchcli_mx3</file>
+      </files>
+    </item>
+%   }
+    <item category="Console" id="<% $ENV{MXENV} %>_Cmd<% $id++ %>">
+      <title>SmbR</title>
+      <action>sambamount_mx3.cmd
+        <parameter><% $ENV{MXENV} %></parameter>
+        <parameter><% $ip %></parameter>
+        <parameter>mxusr1r</parameter>
+        <parameter>mxusr1r</parameter>
+      </action>
+      <files disksize="1Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">sambamount_mx3</file>
+      </files>
+    </item>
+    <item category="Console" id="<% $ENV{MXENV} %>_Cmd<% $id++ %>">
+      <title>SmbW</title>
+      <action>sambamount_mx3.cmd
+        <parameter><% $ENV{MXENV} %></parameter>
+        <parameter><% $ip %></parameter>
+        <parameter>mxusr1r</parameter>
+        <parameter>mxusr1r</parameter>
+      </action>
+      <files disksize="1Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">sambamount_mx3</file>
+      </files>
+    </item>
+%   if ( $mlcservice->status ne 'disabled' ) {
+%   if (( $db_environment->[8] eq 'Y' ) || ( $mlcservice->status ne 'started' )) {
+    <item category="Disabled">
+      <title>MLC</title>
+    </item>
+%   } else {
+    <item category="Launch" id="<% $ENV{MXENV} %>_Launch<% $id++ %>">
+      <title>MLC</title>
+      <action>launchmlc16_mx3.cmd
+         <parameter><% $ENV{MXENV} %></parameter>
+      </action>
+      <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">mxg2000_settings</file>
+        <file hash="ABBFDDE" suffix=".cmd" fwsuffix=".txt">launchmlc16_mx3</file>
+        <file hash="ABBFDDE">mxjboot.jar</file>
+      </files>
+    </item>
+%   }
+%   }
+    <item category="URL" id="<% $ENV{MXENV} %>_URL<% $id++ %>">
+      <title>Dashboard</title>
+      <link><% ${mgtbase} %>mx/login.html?username=
+        <parameter><% $m->session->{username} %></parameter>
+      </link>
+    </item>
+%   if (( $db_environment->[8] eq 'Y' ) || ( $monservice->status ne 'started' )) {
+    <item category="Disabled">
+      <title>GuiMonitor</title>
+    </item>
+    <item category="Disabled">
+      <title>Monitor</title>
+    </item>
+%   } else {
+    <item category="Launch" id="<% $ENV{MXENV} %>_Launch<% $id++ %>">
+      <title>GuiMonitor</title>
+      <action>launchgui_mx3.cmd
+        <parameter><% $ENV{MXENV} %></parameter>
+      </action>
+      <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">mxg2000_settings</file>
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">launchgui_mx3</file>
+        <file hash="ABBFDDE">mxjboot.jar</file>
+      </files>
+    </item>
+    <item category="Launch" id="<% $ENV{MXENV} %>_Launch<% $id++ %>">
+      <title>Monitor</title>
+      <action>launchmon_mx3.cmd
+        <parameter><% $ENV{MXENV} %></parameter>
+      </action>
+      <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">mxg2000_settings</file>
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">launchmon_mx3</file>
+        <file hash="ABBFDDE">mxjboot.jar</file>
+      </files>
+    </item>
+%   }
+<!--
+    <item category="Application">
+      <title>NotePad</title>
+      <action>notepad.exe</action>
+    </item>
+-->
+%   if ( $ENV{MXENV} ne "MX3P1" ) {
+<!--
+    <item category="URL" id="<% $ENV{MXENV} %>_URL<% $id++ %>">
+      <title>Wiki</title>
+      <link>http://mx3ont.be.srv.dev.sys:8318/wiki/</link>
+    </item>
+    <item category="URL" id="<% $ENV{MXENV} %>_URL<% $id++ %>">
+      <title>Links</title>
+      <link>http://mx3ont.be.srv.dev.sys:8318/wiki/bin/view/TSMurex/UsefulLinks</link>
+    </item>
+-->
+%   }
+%   if ( $docservice->status ne 'disabled' ) {
+%   if (( $db_environment->[8] eq 'Y' ) || ( $docservice->status ne 'started' )) {
+    <item category="Disabled">
+      <title>Documentation</title>
+    </item>
+%   } else {
+    <item category="Launch" id="<% $ENV{MXENV} %>_Launch<% $id++ %>">
+      <title>Documentation</title>
+      <action>launchdoc_mx3.cmd
+        <parameter><% $ENV{MXENV} %></parameter>
+      </action>
+      <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">mxg2000_settings</file>
+        <file version="1.0" suffix=".cmd" fwsuffix=".txt">launchdoc_mx3</file>
+        <file hash="ABBFDDE">mxjboot.jar</file>
+      </files>
+    </item>
+%   }
+%   }
+  </channel>
+%   }
+% }
+
+% foreach my $db_environment ( @db_environments ) {
+%   my $appl_srv = $environments->{$db_environment->[2]}->{APPL_SRV};
+%   my $web_port = $environments->{$db_environment->[2]}->{WEB_PORT};
+%   if ( $ENV{MXENV} ne $db_environment->[2] ) {
+      <channel environment="<% $db_environment->[2] %>">
+        <description><![CDATA[<% $db_environment->[3] %>]]></description>
+        <link>http://<% $appl_srv %>:<% $web_port %>/mx-client/</link>
+%     if ( $db_environment->[8] eq 'Y' ) {
+        <status>Disabled</status>
+%     } else {
+        <status>Enabled</status>
+%     }
+      </channel>
+%   }
+% }
+  <!--  <action>localstarter.cmd <% $ENV{MXENV} %> -nocheck</action> -->
+  <action>localstarter.cmd</action>
+  <files disksize="100Kb" remoteprefix="<% ${locationfull} %>">
+    <file version="1.0" suffix=".cmd" fwsuffix=".txt">localstarter</file>
+    <file hash="ABBFDDE">localstarter.jar</file>
+  </files>
+</usermenu>
+
+<%args>
+$queryuser => ""
+</%args>
+
+<%init>
+my $id = 1;
+my $locationbase="http://" . $config->APPL_DNS . ":" . $config->WEB_PORT . "/";
+my $locationfull="${locationbase}mx-client/";
+if ($queryuser eq "") {
+  $queryuser = $m->session->{username};
+}
+my $mgtbase="http://" . $config->APPL_SRV . ":" . $config->WEB_PORT . "/";
+
+my @db_environments = $auth_db->retrieve_environments( );
+
+my @local_services   = grep { $_->location eq 'primary'   } @services;
+Mx::Service->update( list => [ @local_services ] );
+my ( $docservice ) = grep { $_->name eq 'docserver' } @local_services;
+my ( $mlcservice ) = grep { $_->name eq 'mlc server' } @local_services;
+my ( $monservice ) = grep { $_->name eq 'xmlserver' } @local_services;
+
+my ( $hostname , $ip ) = $system->hostname_and_ip();
+
+#my $sessionuser = Mx::Auth::User->new( name => $login, db => $auth_db, logger => $logger, config => $config );
+#if ( $sessionuser->retrieve() ) {
+#  $sessionuser->check_right ( name => 'mon_login' );
+#}
+</%init>

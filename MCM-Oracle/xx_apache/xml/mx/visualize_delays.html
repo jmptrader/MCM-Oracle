@@ -1,0 +1,67 @@
+<H2>Delays - <% $date %></H2>
+% if ( $start_delay_file ) {
+<IMG SRC="<% $start_delay_file %>?<% time() %>">
+<P>
+% }
+% if ( $remote_delay_file ) {
+<IMG SRC="<% $remote_delay_file %>?<% time() %>">
+<P>
+% }
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('delay_search.html')">
+
+<%init>
+my ( $year, $month, $day ) = $date =~ /^(\d\d\d\d)(\d\d)(\d\d)$/;
+my $epoch = timelocal( 0, 0, 0, $day, $month - 1, $year );
+
+my $start_delay_file; my $remote_delay_file;
+
+if ( my @start_delays = $db_audit->retrieve_start_delays( date => $date, types => \@mx_scripttypes ) ) {
+  my @timestamps = map { $_->[0] - $epoch } @start_delays;
+  my @delays     = map { $_->[1] } @start_delays;
+
+  my @data = ( \@timestamps, \@delays );
+
+  my $graph = GD::Graph::lines->new(800, 600);
+
+  $graph->set( x_labels_vertical => 1, x_number_format => \&x_label, long_ticks => 1, x_tick_number => 24, x_min_value => 0, x_max_value => 86400 );
+  $graph->set_text_clr('black');
+  $graph->set_legend('START DELAY');
+
+  $start_delay_file = "/tmp/start_delay.png";
+
+  my $fh = IO::File->new( $start_delay_file, '>' );
+  print $fh $graph->plot(\@data)->png;
+  $fh->close;
+}
+
+if ( my @remote_delays = $db_audit->retrieve_remote_delays( date => $date ) ) {
+  my @timestamps = map { $_->[0] - $epoch } @remote_delays;
+  my @delays     = map { $_->[1] } @remote_delays;
+
+  my @data = ( \@timestamps, \@delays );
+
+  my $graph = GD::Graph::lines->new(800, 600);
+
+  $graph->set( x_labels_vertical => 1, x_number_format => \&x_label, long_ticks => 1, x_tick_number => 24, x_min_value => 0, x_max_value => 86400 );
+  $graph->set_text_clr('black');
+  $graph->set_legend('REMOTE DELAY');
+
+  $remote_delay_file = "/tmp/remote_delay.png";
+
+  my $fh = IO::File->new( $remote_delay_file, '>' );
+  print $fh $graph->plot(\@data)->png;
+  $fh->close;
+}
+
+sub x_label {
+  my ( $time ) = @_;
+
+  return  Mx::Util->convert_time_short( $time - 3600 );
+}
+
+</%init>
+
+<%args>
+$date => ''
+@mx_scripttypes
+</%args>

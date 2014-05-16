@@ -1,0 +1,11 @@
+<counterpartyData>
+<partyIdType><% $row{'RP_EMIR_ID_TYPE'} |h %></partyIdType>
+<partyId><% $row{'RP_EMIR_ID'} |h %></partyId>
+%if ( $row{'ACC_TYPE'} eq 'TP' ) {
+<reportingEntityIdType><% $row{'TP_EMIR_ID_TYPE'} %></reportingEntityIdType>
+<reportingEntityId><% $row{'TP_EMIR_ID'} %></reportingEntityId>
+%}
+</counterpartyData>
+<%args>
+%row
+</%args>

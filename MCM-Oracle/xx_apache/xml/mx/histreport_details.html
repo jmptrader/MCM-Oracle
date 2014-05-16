@@ -1,0 +1,61 @@
+<H2>Report #<% $report->[0] %></H2>
+
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( defined $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+</table>
+
+<br>
+
+<input type="button" class="table_button" value=" Go Back " onclick="mgoback('histlist.html', { <% $nav_args %> })">
+
+<%init>
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+push @nav_args, "hist_url:'histreport_details.html'";
+my $nav_args = join ',', @nav_args;
+
+my $report = $db_audit->retrieve_report( id => $report_id );
+my @table;
+push @table, 'Label'              , $report->[1];
+push @table, 'Batch Name'         , $report->[4];
+push @table, 'Report Name'        , $report->[5];
+push @table, 'Entity'             , $report->[6];
+push @table, 'Run Type'           , $report->[7];
+push @table, 'Market Data Set'    , $report->[8];
+push @table, 'Filter Label'       , $report->[24];
+push @table, 'Type'               , $report->[2];
+push @table, 'Start Time'         , Mx::Util->convert_time( $report->[9] );
+push @table, 'End Time'           , Mx::Util->convert_time( $report->[10] );
+push @table, 'Duration'           , scalar( Mx::Util->convert_seconds( $report->[16] ) );
+push @table, 'Size'               , Mx::Util->separate_thousands( $report->[11] );
+push @table, '# Records',         , Mx::Util->separate_thousands( $report->[12] );
+if ( $report->[13] ) {
+  my $tablename = $report->[13];
+  $tablename =~ s/#/\//g;
+  push @table, 'Table Name'       , $report->[13];
+}
+if ( $report->[14] ) {
+  push @table, ' Path'            , $report->[14];
+}
+if ( $report->[3] ) {
+  push @table, 'Corresponding Session', '<a class="select" href="#" onclick="mnavigate(\'histsession_details.html\', { session_id:' . $report->[3] . ' }, { ' . $nav_args . ' })">' . $report->[3] . '</a>';
+}
+else {
+  push @table, 'Corresponding Session', '-';
+}
+push @table, 'Business Date'      , $report->[15];
+push @table, 'After Command'      , $report->[18]; 
+push @table, 'Command Exit Code'  , $report->[19]; 
+push @table, 'Command Duration'   , scalar( Mx::Util->convert_seconds( $report->[20] ) );
+</%init>
+
+<%args>
+$report_id
+</%args>

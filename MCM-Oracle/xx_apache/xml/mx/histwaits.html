@@ -1,0 +1,36 @@
+<BODY>
+<& navigation.comp &>
+<CENTER>
+<BR>
+<P>
+<H2>Wait events for statement #<% $statement_id %></H2>
+<TABLE BORDER=0 CELLSPACING=1 CELLPADDING=2 WIDTH="80%" BGCOLOR="#000066">
+  <TR>
+    <TH><A STYLE="color: #FFFFFF;">EVENT ID</A></TH>
+    <TH><A STYLE="color: #FFFFFF;">DESCRIPTION</A></TH>
+    <TH><A STYLE="color: #FFFFFF;"># WAITS</A></TH>
+    <TH><A STYLE="color: #FFFFFF;">WAIT TIME</A></TH>
+  </TR>
+% foreach my $wait( @waits ) {
+  <TR>
+    <TD ALIGN="center"><% $wait->[0] %></TD>
+    <TD><% $wait->[1] %></TD>
+    <TD ALIGN="right"><% Mx::Util->separate_thousands( $wait->[2] ) %></TD>
+    <TD ALIGN="right"><% Mx::Util->separate_thousands( $wait->[3] ) %></TD>
+  </TR>
+% }
+</TABLE>
+<P>
+<INPUT TYPE="button" CLASS="button" VALUE=" Go Back " onClick="history.back()">
+</CENTER>
+</BODY>
+
+<%init>
+my @waits = ();
+my $result = $db_audit->retrieve_statement_waits( statement_id => $statement_id );
+@waits = @{$result} if $result;
+</%init>
+
+<%args>
+$statement_id
+</%args>

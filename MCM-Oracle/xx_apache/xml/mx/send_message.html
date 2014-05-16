@@ -1,0 +1,52 @@
+<H3><% $feedback %></H3>
+<BR>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('insert_message.html', { <% join ',', @nav_args %> })">
+
+<%init>
+my $feedback;
+if ( $type eq $Mx::Message::TYPE_SINGLE and ! $userid ) {
+  $feedback = "Message of type 'single', but no user specified";
+}
+elsif ( $type eq $Mx::Message::TYPE_MULTIPLE and ! $groupid ) {
+  $feedback = "Message of type 'multiple', but no group specified";
+}
+elsif ( ! $title ) {
+  $feedback = "Title is empty";
+}
+elsif ( ! $message ) {
+  $feedback = "Message is empty";
+}
+else {
+  $userid = $groupid if $type eq $Mx::Message::TYPE_MULTIPLE;
+  my $message = Mx::Message->new(
+    type     => $type,
+    userid   => $userid,
+    title    => $title,
+    message  => $message,
+    priority => $priority,
+    logger   => $logger,
+    config   => $config
+  );
+
+  if ( $message->send ) {
+    $feedback = "Message successfully sent";
+  }
+  else {
+    $feedback = "Failed to send message";
+  }
+}
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+</%init>
+
+<%args>
+$type
+$userid => ''
+$groupid => ''
+$priority
+$title
+$message
+</%args>

@@ -1,0 +1,45 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my %rights = (); my $user;
+
+my $username = $m->session->{username};
+
+unless ( $user = $users{$username} ) {
+  $user = Mx::Auth::User->new( name => $username, db => $auth_db, config => $config, logger => $logger );
+
+  if ( $user->retrieve ) {
+    $users{$username} = $user;
+  }
+  else {
+    $user = undef;
+  }
+}
+
+foreach my $name ( split ',', $names ) {
+  my $success = 0;
+
+  if ( $name eq 'auth_master' ) {
+    $success = ( $config->AUTH_REPLICATOR_TYPE eq 'master' ) ? 1 : 0;
+  }
+  elsif ( $user && $environment ) {
+    $success = ( $user->check_right( name => $name, environment => $environment ) ) ? 1 : 0;
+    $logger->debug("checking right $name for user $username ($success)");
+  }
+
+  $rights{$name} = $success;
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \%rights );
+</%init>
+<%once>
+$auth_db ||= Mx::Auth::DB->new( config => $config, logger => $logger );
+my $environment = Mx::Auth::Environment->new( name => $ENV{MXENV}, db => $auth_db, config => $config, logger => $logger );
+unless ( $environment->retrieve ) {
+  $environment = undef;
+}
+</%once>
+<%args>
+$names
+</%args>

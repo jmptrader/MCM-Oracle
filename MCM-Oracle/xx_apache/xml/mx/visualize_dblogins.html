@@ -1,0 +1,56 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  Date.format = 'yyyy-mm-dd';
+  $('.date-pick').datePicker({startDate:'2000-01-01'});
+} );
+</script>
+<H2>Sybase Login Time</H2>
+
+% my( $start, $end ) = $m->comp( 'timepicker.comp', url => 'visualize_dblogins.html', range => $range, date => $date, time => $time, action => $action );
+
+<%perl>
+my %graph_options = (
+  imgformat => $image_format,
+  width     => $config->GRAPH_WIDTH,
+  height    => $config->GRAPH_HEIGHT,
+  start     => $start,
+  end       => $end
+);
+
+$rrd->graph(
+    image => $file,
+    %graph_options,
+    draw => {
+      type   => 'line',
+      color  => 'FF0000',
+      dsname => 'DB_FIN_login',
+      legend => 'FIN Login Time',
+    },
+    draw => {
+      type   => 'line',
+      color  => '00FF00',
+      dsname => 'DB_REP_login',
+      legend => 'REP Login Time',
+    },
+);
+</%perl>
+
+<P>
+<IMG SRC="<% $file %>?<% time() %>">
+
+<%init>
+my $image_format = 'SVG';
+my $image_extension = '.svg';
+
+my $collector = Mx::Collector->new( name => 'db_statement', config => $config, logger => $logger );
+my $rrd = RRDTool::OO->new( file => $collector->rrdfile );
+
+my $file = "/tmp/dblogins_$range" . $image_extension;
+</%init>
+
+<%args>
+$range  => 'hour';
+$time   => '';
+$date   => '';
+$action => '';
+</%args>

@@ -1,0 +1,106 @@
+<body>
+<div class="container_12">
+
+  <div id="navigation" class="grid_12">
+    <& navigation.comp &>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="title" class="grid_12">
+    <% $title %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="count" class="grid_12">
+    Total number of rights: <% $nr_results %>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="table" class="grid_12">
+    <table cellspacing=1 width="100%">
+    <tr>
+% foreach my $column ( @displayed_columns ) {
+%   my $label = $columns{$column};
+      <th><a href="<% $url %>?sort=<% $column %>&reverse=1&<% $sort_args %>"><% $label %></a></th>
+% }
+    </tr>
+% foreach my $right ( @rights ) {
+%   my $id = $right->[1];
+    <tr>
+      <td><a class="select" href="right_details.html?id=<% $id %>"><% $right->[2] %></a></td>
+      <td><% $right->[3] %></td>
+      <td><% $right->[4] %></td>
+    </tr>
+% }
+    </table>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="actions" class="grid_8">
+% if ( $page_nr > 1 ) {
+%   $m->comp( '/mx/previous.comp', url => $url, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+% }
+% if ( $page_nr * $recs_per_page < $nr_results ) {
+%   $m->comp( '/mx/next.comp', url => $url, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+% }
+    <form action="right_search.html" method="POST">
+      <input type="submit" class="button" value=" Search ">
+    </form>
+    <form action="right_insert.html" method="POST">
+      <input type="submit" class="button" right="auth_master" value=" Insert ">
+    </form>
+  </div>
+
+  <div class="clear"></div>
+
+  <div id="pager" class="grid_8">
+% $m->comp( '/mx-auth/pager.comp', url => $url, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+  </div>
+
+</div>
+</body>
+
+<%init>
+my $title = 'Rights';
+my $url   = $m->current_comp->name;
+
+my %columns = (
+  name        => 'Name',
+  type        => 'Type',
+  description => 'Description'
+);
+
+my @displayed_columns = qw( name type description );
+my @numeric_columns   = qw( id );
+
+if ( $reverse ) {
+  $m->session->{rights_reverse} = ! $m->session->{rights_reverse};
+}
+
+my %where_hash = (); my @sort_args = ();
+foreach my $column ( keys %columns ) {
+  if ( my $value = $ARGS{$column} ) {
+    if ( $column eq 'disabled' ) {
+        $value = ( $value ) ? 'Y' : 'N';
+    } 
+    $where_hash{$column} = ( grep /^$column$/, @numeric_columns ) ? $value : "\"$value\"";
+    push @sort_args, "$column=$value";
+  }
+}
+my $sort_args = join '&', @sort_args;
+
+my @rights = $auth_db->retrieve_rights( sort => { $sort => $m->session->{rights_reverse} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+
+my $nr_results = @rights ? $rights[0][0] : 0;
+</%init>
+
+<%args>
+$recs_per_page   => 50
+$page_nr         => 1
+$sort            => 'name'
+$reverse         => 0
+</%args>

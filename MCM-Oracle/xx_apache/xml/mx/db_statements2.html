@@ -1,0 +1,46 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $sql = SQL::Beautify->new( spaces => 2, space => '&nbsp;', break => '<br>', wrap => { keywords => [ '<b>', '</b>' ], constants => [ '<font color="green">', '</font>' ] } );
+
+my $db = $schemas{$schema};
+
+my @output = $db->sql_text( sid => $sid, serial => $serial, previous => 1 );
+
+my @nice_sql;
+while ( @output ) {
+  my $sql_text    = shift @output;
+  my $bind_values = shift @output;
+
+  next unless $sql_text;
+
+  $sql_text =~ s/^\s+//;
+  $sql_text =~ s/#/__SHARP__/g;
+
+  $sql->query($sql_text);
+
+  my $nice_sql = $sql->beautify;
+
+  $nice_sql =~ s/__SHARP__/#/g;
+
+  push @nice_sql, $nice_sql;
+
+  my @values = ();
+  foreach my $row ( @{$bind_values} ) {
+    my ( $ph, $value ) = %{$row};
+	$ph =~ s/^://;
+    push @values, ( $ph . '=' . $value );
+  }
+  push @nice_sql, ( join '   ', @values ) if @values;
+}
+
+my $data = join '<hr>', @nice_sql;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { status => 'OK', data => $data } );
+</%init>
+<%args>
+$schema
+$sid
+$serial
+</%args>

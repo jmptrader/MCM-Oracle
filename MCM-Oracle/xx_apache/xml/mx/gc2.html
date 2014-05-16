@@ -1,0 +1,35 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my @gcs = ();
+my $total_normal_gcs = 0;
+my $total_full_gcs   = 0;
+my $total_duration   = 0;
+
+my $gcfile = $config->retrieve('GCLOGDIR') . '/' . $descriptor . '.gc';
+
+foreach my $gc ( Mx::Process->analyze_gcfile( file => $gcfile, logger => $logger, config => $config ) ) {
+  my $timestamp = $gc->{timestamp};
+  my ( $seconds, $fraction ) = $timestamp =~ /^(\d+)\.(\d+)$/;
+  ( $gc->{full} ) ? $total_full_gcs++ : $total_normal_gcs++;
+  $total_duration += $gc->{duration};
+
+  push @gcs, [
+    ( $gc->{full} ) ? 1 : 0,
+    Mx::Util->convert_time_short( $starttime + $seconds ) . '.' . $fraction, 
+    scalar( Mx::Util->convert_seconds( $seconds ) ) . '.' . $fraction,
+    Mx::Util->separate_thousands( $gc->{start_size} ), 
+    Mx::Util->separate_thousands( $gc->{end_size} ),
+    Mx::Util->separate_thousands( $gc->{total_size} ),
+    sprintf "%.3f", $gc->{duration} * 1000
+  ];
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => \@gcs, total_normal_gcs => $total_normal_gcs, total_full_gcs => $total_full_gcs, total_duration => $total_duration } );
+</%init>
+
+<%args>
+$descriptor
+$starttime
+</%args>

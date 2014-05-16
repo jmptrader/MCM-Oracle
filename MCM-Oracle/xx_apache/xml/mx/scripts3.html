@@ -1,0 +1,437 @@
+<script type="text/javascript">
+var oTable; var tid1; var doRefresh = false; var killing = false;
+var oTable;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+        fnCallback(json.datatables)
+        displayRefreshTime();
+        $('.tiptip').tipTip();
+        checkRights();
+        installContextMenu();
+        installModal();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/scripts2.html',
+    "bPaginate":    false,
+    "bStateSave":   false,
+    "sScrollY":     "600px",
+    "sScrollX":     "100%",
+
+    "aoColumnDefs": [
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_percent_cpu %>" );
+        }, "aTargets": [6] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_percent_mem %>" );
+        }, "aTargets": [7] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_vsize %>" );
+        }, "aTargets": [8] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+          heatMapColor( nTd, sData, "<% $max_cpusec %>" );
+        }, "aTargets": [10] },
+
+      { "sClass": "center",       "aTargets": [ 0,1,2,3,4,5 ] },
+      { "sClass": "ralign",       "aTargets": [ 6,7,8,9,10 ] },
+
+      { "sWidth": "60px",         "aTargets": [ 0,6,7 ] },
+      { "sWidth": "70px",         "aTargets": [ 10 ] },
+      { "sWidth": "90px",         "aTargets": [ 1,8,9 ] },
+      { "sWidth": "150px",        "aTargets": [ 3,5 ] },
+      { "sWidth": "200px",        "aTargets": [ 2,4 ] },
+
+      { "sType": "numeric",       "aTargets": [ 0,6,7 ] },
+      { "sType": "formatted-num", "aTargets": [ 8,9,10 ] },
+
+      { "asSorting": [ "desc", "asc" ], "aTargets": [ 6,7,8,9,10 ] }
+    ]
+  } );
+
+  installHover();
+
+  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+
+  $('#refresh').live( "click", function() {
+    refresh();
+  } );
+
+  $('#select').live( "click", function() {
+    $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
+  } );
+
+  $('#unselect').live( "click", function() {
+    $('#result tbody tr').removeClass('row_selected');
+  } );
+
+  $('#kill').live( "click", function() {
+    var scripts = selectedScripts();
+
+    if ( scripts.length == 0 ) {
+      jAlert('No scripts selected.', 'Kill Scripts');
+      return;
+    }
+
+    jConfirm('Number of scripts selected: ' + scripts.length + '. Are you sure?', 'Kill Scripts', function(r) {
+      if ( r == true ) {
+        $('#jqmTitleText').text( 'kill scripts' );
+        $('#modalWindow').jqmShow();
+        $('#jqmContent').css( 'width', '600px' );
+        $('#jqmContent').css( 'height', '200px' );
+        $('.jqmWindow').css( 'display', 'block' );
+        killing = true;
+        killScripts( scripts );
+      }
+    } );
+  } );
+
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+
+function installContextMenu() {
+  $('#result tr').contextMenu( {
+    menu: 'contextmenu'
+  },
+    function(action, el, pos) {
+      var result = $(el).attr('id').split('|');
+      var hostname = result[0];
+      var pid      = result[1];
+      var path     = result[2];
+      var logfile  = result[3];
+      $('#dummytrigger').attr( 'hostname', hostname );
+      $('#dummytrigger').attr( 'pid', pid );
+      $('#dummytrigger').attr( 'path', path );
+      $('#dummytrigger').attr( 'logfile', logfile );
+      $('#dummytrigger').attr( 'action', action );
+      $('#modalWindow').jqmShow();
+  } );
+}
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+  var hostname   = $('#dummytrigger').attr('hostname');
+  var pid        = $('#dummytrigger').attr('pid');
+  var path       = $('#dummytrigger').attr('path');
+  var logfile    = $('#dummytrigger').attr('logfile');
+  var action     = $('#dummytrigger').attr('action');
+
+  var name = 'pid ' + pid + ' on ' + hostname;
+
+  if ( action == 'show_log' ) {
+    $modal.jqmHide();
+    showLogging( logfile );
+  }
+  else if ( action == 'show_command' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showCommand( pid, hostname );
+  }
+  else if ( action == 'show_source' ) {
+    $('#jqmTitleText').text( path );
+    $modal.jqmShow();
+    showSource( path );
+  }
+  else if ( action == 'show_env' ) {
+    $('#jqmTitleText').text( name );
+    $modal.jqmShow();
+    showEnv( pid, hostname );
+  }
+  else if ( action == 'kill_script' ) {
+    jConfirm('Kill ' + name + '. Are you sure?', 'Kill Script', function(r) {
+      if ( r == true ) {
+          $('#jqmTitleText').text( 'kill script' );
+          $modal.jqmShow();
+          $('#jqmContent').css( 'width', '600px' );
+          $('#jqmContent').css( 'height', '200px' );
+          $('.jqmWindow').css( 'display', 'block' );
+          killing = true;
+          killScripts( [ { 'pid': pid, 'hostname': hostname } ] );
+      }
+      else {
+        $modal.jqmHide();
+      }
+    } );
+  }
+}
+
+function unloadModal( hash ) {
+  if ( killing == true ) {
+    jConfirm('Do you want to interrupt the kill sequence?', 'Kill Script', function(r) {
+      if ( r == true ) {
+        killing = false;
+      }
+    } );
+  }
+  hash.o.remove();
+  $('#dummytrigger').attr( 'action', '' );
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+  if ( doRefresh ) {
+    doRefresh = false;
+    refresh();
+  }
+}
+
+function showLogging( path ) {
+  $("#logging_path").val( path );
+  $('#logging_form').submit();
+}
+
+function showSource( path ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/script_source2.html',
+    data:     { 'path': path },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    if ( data.status == 'OK' ) {
+      $('#jqmContent')[0].innerHTML = '<br>' + data.data;
+    }
+  } );
+}
+
+function showEnv( pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/session_env2.html',
+    data:     { 'pid': pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '1200px' );
+  $('#jqmContent').css( 'height', '800px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<div align=center>';
+    html[++h] = '<table class="center" width="90%">';
+    html[++h] = '<tr><th>NAME</th><th>VALUE</th></tr>';
+    for ( var i = 0; i < data.length; i++ ) {
+      html[++h] = '<tr><td class="description" width="20%" nowrap>' + data[i].name +  '</td><td>' + data[i].value + '</td></tr>';
+    }
+    html[++h] = '</table>';
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function showCommand( pid, hostname ) {
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'json',
+    url:      '/mx/script_cmdline2.html',
+    data:     { 'pid': pid, 'hostname': hostname },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  $('#jqmContent').css( 'width', '800px' );
+  $('#jqmContent').css( 'height', '400px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  request.done( function( data ) {
+    var html = [], h = -1;
+
+    html[++h] = '<br><div style="white-space: nowrap; font-family: monospace; font-size: 12px;">';
+    for ( var i = 0; i < data.length; i++ ) {
+      var item = data[i];
+      if ( item.substring(0, 1) == '-' ) {
+        html[++h] = '<b>' + item + '</b>';
+        var next_item = data[i + 1];
+        if ( next_item.substring(0, 1) == '-' ) {
+          continue;
+        }
+        else {
+          i++;
+          html[++h] = ' ' + '<span style="color: green;">' + next_item + '</span>';
+        }
+      }
+      else {
+        html[++h] = item;
+      }
+      html[++h] = '<br>'; 
+    }
+    html[++h] = '</div>';
+    html[++h] = '<br>';
+
+    $('#jqmContent')[0].innerHTML = html.join('');
+  } );
+}
+
+function killScripts( scripts ) {
+  var script;
+  if ( ( killing == true ) && ( script = scripts.shift() ) ) {
+    var hostname = script.hostname;
+    var pid      = script.pid;
+
+    $('#jqmContent').append( 'pid ' + pid + ' on ' + hostname + '...' );
+    $('#modalWindow').scrollTop(
+      $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+    );
+
+    tid1 = setInterval( displayWaitString, 300 );
+
+    var request = $.ajax({
+      type:     'POST',
+      dataType: 'json',
+      url:      '/mx/kill_script.html',
+      data:     { 'hostname': hostname, 'pid': pid },
+      error:    function( jqXHR, textStatus, errorThrown ) {
+        alert( textStatus + ': ' + errorThrown );
+      }
+    } );
+
+    request.done( function( data ) {
+      clearInterval(tid1);
+      $('#jqmContent').append( data.message + '<br>' );
+      $('#modalWindow').scrollTop(
+            $('#modalWindow')[0].scrollHeight - $('#jqmContent').height()
+      );
+      killScripts( scripts );
+    } );
+  }
+  else {
+    killing = false;
+  }
+
+  doRefresh = true;
+}
+
+function displayWaitString() {
+  $('#jqmContent').append( '. ' );
+}
+
+function selectedScripts() {
+  var scripts = [];
+  $('table#result tbody tr.row_selected').each( function( i, row ) {
+    var data = oTable.fnGetData( this );
+
+    var el = { hostname: data[1], pid: data[0] };
+    scripts.push( el );
+  } );
+
+  return scripts;
+}
+</script>
+
+<div id="title">Scripts on <% $ENV{MXENV} %></div>
+
+<div id="scriptcount"></div>
+
+<div style="float: left; margin-bottom: 10px;" id="refreshtime"></div>
+
+<ul id="contextmenu" style="text-align: left;" class="contextMenu">
+  <li>
+    <a href="#show_log">Show Log</a>
+  </li>
+  <li>
+    <a href="#show_command">Show Command</a>
+  </li>
+  <li>
+    <a href="#show_source">Show Source</a>
+  </li>
+  <li>
+    <a href="#show_env">Show Environment Variables</a>
+  </li>
+  <li>
+    <a href="#kill_script" right="kill_script">Kill Script</a>
+  </li>
+</ul>
+
+<div id="dummytrigger" hostname="" pid="" path="" logfile="" action=""></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="path" id="logging_path" value="">
+</form>
+
+<p>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>PID</th>
+  <th>HOST</th>
+  <th>NAME</th>
+  <th>PROJECT</th>
+  <th>JOBSTREAM</th>
+  <th>START TIME</th>
+  <th class="tiptip" title="MAX: <% $max_percent_cpu %>">% CPU</th>
+  <th class="tiptip" title="MAX: <% $max_percent_mem %>">% MEM</th>
+  <th class="tiptip" title="MAX: <% $max_vsize %>">% VSIZE</th>
+  <th>RSS</th>
+  <th class="tiptip" title="MAX: <% $max_cpusec %>">CPU SEC</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="table_button" id="refresh"> Refresh </button>
+<button class="table_button" id="select"> Select All </button>
+<button class="table_button" id="unselect"> Unselect All </button>
+<button class="table_button" id="kill" right="kill_script"> Kill Selected </button>
+
+<%init>
+my $max_percent_cpu = "1.0";
+my $max_percent_mem = "2.0";
+my $max_vsize       = "3,000,000";
+my $max_cpusec      = "1,000";
+</%init>

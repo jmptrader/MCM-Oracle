@@ -1,0 +1,78 @@
+REM Murex Integrated starter
+REM ---------------
+
+REM comment all lines except the one you want to keep
+rem goto :Test
+goto :MurexBruPC
+goto :MurexBruNet
+goto :MurexLocalPC1
+goto :MurexLocalPC2
+
+REM ---------------
+goto :End
+
+REM ---------------
+REM Launch Murex from Local PC drive in Brussels, java pointing to network drive
+:Test
+SET JAVAHOME=W:\SPI\000465\Murex\jre_1.6.0_14
+cd localstarter
+"%JAVAHOME%\bin\java.exe" -cp ./localstarter.jar -DMXSTARTERURL=http://s2001900.servers.kbct.be:8318/mx-client/usermenu.xml -DMXSTARTERHOME="C:/Working/wmx/murexstarter/trunk/" uiPresentation.MenuStarter
+rem add -verbose flag
+cd ..
+pause
+goto :End
+
+REM ---------------
+REM Launch Murex from Local PC via network drive in Brussels
+:MurexBruPC
+W:
+cd \SPI\000465
+SET JAVAHOME=%CD%\Murex\jre_1.6.0_14
+cd localstarter
+goto :LaunchMurex
+
+REM ---------------
+REM Launch Murex from MurexMenu on network drive in KBC Brussels
+:MurexBruNet
+ %~d0%
+cd %~dp0%
+SET JAVAHOME=%CD%\Murex\jre_1.6.0_14
+goto :LaunchMurex
+
+REM ---------------
+REM Launch Murex from local PC with JAVAHOME variable already set
+:MurexLocalPC1
+set workdir=%~dp0%
+goto :LaunchMurex
+
+REM ---------------
+REM Launch Murex from local PC with JAVAHOME not set
+:MurexLocalPC2
+set workdir=%~dp0%
+set JAVAHOME=C:\Program Files\Java\jre6
+goto :LaunchMurex
+
+REM ---------------
+REM Launch Murex, assuming JAVAHOME set, local folder to C:/Temp/MX
+:LaunchMurex
+IF "%1"=="MX3P1" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s0007990.servers.kbc.be:8118/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3P2" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s0009000.servers.kbc.be:8218/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3P3" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s0009000.servers.kbc.be:8318/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3A1" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s1009040.servers.kbca.be:8218/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3S1" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001790.servers.kbct.be:8318/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3S2" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001790.servers.kbct.be:8812/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O1" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8318/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O2" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8328/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O3" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8338/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O4" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8348/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O5" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8358/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O6" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8368/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O7" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8378/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O8" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8388/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="MX3O9" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8398/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+IF "%1"=="" start "MurexStarter - self installing" "%JAVAHOME%\bin\javaw.exe" -cp ./localstarter.jar -DMXSTARTERURL="http://s2001900.servers.kbct.be:8318/mx-client/usermenu.xml" uiPresentation.MenuStarter uiPresentation.MenuStarter
+
+goto :End
+
+REM ---------------
+:End

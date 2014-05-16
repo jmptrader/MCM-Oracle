@@ -1,0 +1,91 @@
+<script type="text/javascript">
+var oTable; var stddev_factor; var max_cpu_time; var max_wait_time; var max_lreads; var max_preads;
+$(document).ready( function() {
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      $.getJSON( sSource, aoData, function (json) { 
+      	setValues( json.values );
+        fnCallback(json.datatables)
+        installHover();
+      } );
+    },
+    "sDom":         'r<"clear">Cft',
+    "bProcessing":  true,
+    "sAjaxSource":  '/mx/statements_tables2.html',
+    "bPaginate":    false,
+    "bStateSave":   true,
+    "sScrollY":     "750px",
+    "sScrollX":     "100%",
+    
+    "aoColumnDefs": [
+      { "fnRender": function ( o, val ) {
+        return '<a href="#" onclick="mnavigate( \'histstatement_details.html\', { statement_id: ' + o.aData[0] + ' } )">' + o.aData[0] + '</a>';
+      }, "aTargets": [ 0 ] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+         heatMapColor( nTd, String(sData), max_wait_time );
+      }, "aTargets": [3] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+         heatMapColor( nTd, String(sData), max_cpu_time );
+      }, "aTargets": [6] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+        heatMapColor( nTd, String(sData), max_lreads );
+      }, "aTargets": [9] },
+
+      { "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+        heatMapColor( nTd, String(sData), max_preads );
+      }, "aTargets": [12] },
+
+      { "sClass": "ralign",       "aTargets": [ 0, 1, 2, 3, 4,5,6,7,8,9,10,11,12,13,14 ] },
+
+      { "sWidth": "80px",         "aTargets": [ 0, 1, 2] },
+      { "sWidth": "100px",        "aTargets": [ 3,4,5,6,7,8,9,10,11,12,13,14 ] }
+    ],
+
+    "aaSorting":    [[ 1, "desc" ]]
+  } );
+
+  $('#refresh').live( "click", function() {
+    oTable.fnReloadAjax();
+  } );
+} );
+
+function refresh() {
+  oTable.fnReloadAjax();
+}
+
+function setValues( values ){
+  stddev_factor = parseFloat(values[0].value);
+  max_cpu_time  = values[1].value;
+  max_wait_time = values[2].value;
+  max_preads    = values[3].value;
+  max_lreads    = values[4].value;
+}
+</script>
+
+<table id="result">
+<thead>
+  <tr>
+    <th>Statement ID</th>
+    <th>Business Date</th>
+    <th>SQLTAG</th>
+    <th>WAIT TIME</th>
+    <th>AVG WAIT TIME</th>
+    <th>STDDEV WAIT TIME</th>
+    <th>CPU TIME</th>
+    <th>AVG CPU TIME</th>
+    <th>STDDEV CPU TIME</th>
+    <th>LREADS</th>
+    <th>AVG LREADS</th>
+    <th>STDDEV LDREADS</th>
+    <th>PREADS</th>
+    <th>AVG PREADS</th>
+    <th>STDDEV PREADS</th>
+  </tr>
+</thead>
+<tbody>
+</tbody>
+</table>

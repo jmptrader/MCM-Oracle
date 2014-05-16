@@ -1,0 +1,25 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $job = Mx::Job->new( name => $name, config => $config, logger => $logger );
+
+my @job = (
+  { name => 'Project',    value => $job->project },
+  { name => 'Type',       value => $job->type },
+  { name => 'Command',    value => $job->command },
+  { name => 'Location',   value => $job->location },
+  { name => 'Days',       value => ( join ',', $job->days ) },
+  { name => 'Start Time', value => $job->starttime },
+  { name => 'End Time',   value => $job->endtime },
+  { name => 'Interval',   value => $job->interval },
+  { name => 'Run Times',  value => ( join ',', $job->runtimes ) },
+  { name => 'Alert',      value => $job->alert },
+  { name => 'On Error',   value => $job->on_error }
+);
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( \@job );
+</%init>
+<%args>
+$name
+</%args>

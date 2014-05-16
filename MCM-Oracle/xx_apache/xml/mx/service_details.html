@@ -1,0 +1,101 @@
+<script type="text/javascript">
+$(document).ready( function() {
+  $('#logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+  $('#raw_logging_form').submit( function() {
+    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    this.target = 'LOGGING';
+  } );
+} );
+
+function showLogging( project, dir, name ) {
+  $("#logging_project").val( project );
+  $("#logging_dir").val( dir );
+  $("#logging_name").val( name );
+  $('#logging_form').submit();
+}
+
+function showRawLogging( path ) {
+  $("#raw_logging_path").val( path );
+  $('#raw_logging_form').submit();
+}
+</script>
+
+<H2>Service: <% $name %></H2>
+<table class="center" width="70%">
+  <tr><th>Name</th><th>Value</th></tr>
+% while ( @table ) {
+%   my $key   = shift @table;
+%   my $value = shift @table; 
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $key %>&nbsp;</FONT></TD><TD><% ( $value ) ? $value : '&nbsp;' %></TD></TR>
+% }
+% while ( @descriptors ) {
+%   my $descriptor = shift @descriptors;
+%   my $process = shift @processes;
+    <TR></TR>
+    <TR></TR>
+    <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Descriptor</FONT></TD><TD><% $descriptor %></TD></TR>
+%   if ( $process ) {
+      <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">PID</FONT></TD><TD><% $process->pid %></TD></TR>
+      <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Start Time</FONT></TD><TD><% Mx::Util->convert_time( $process->starttime ) %></TD></TR>
+%   }
+%   if ( $project ) {
+      <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Logfile</FONT></TD><TD><A HREF="#" onclick="showLogging('<% $project %>', '<% $business_date %>', '<% $descriptor . '.log' %>')"><% "${descriptor}.log" %></A></TD></TR>
+%   }
+%   elsif ( $name eq 'docserver' ) {
+      <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Logfile</FONT></TD><TD><A HREF="#" onClick="showRawLogging('<% $mxdir . '/mxdoc_fs/logs/' . $descriptor . '.log' %>')"><% "${descriptor}.log" %></A></TD></TR>
+%   }
+%   else {
+      <TR><TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF">Logfile</FONT></TD><TD><A HREF="#" onClick="showRawLogging('<% $mxdir . '/logs/' . $descriptor . '.log' %>')"><% "${descriptor}.log" %></A></TD></TR>
+%   }
+% }
+</table>
+<br>
+<INPUT TYPE="button" CLASS="table_button" VALUE=" Go Back " onClick="mgoback('<% $hist_url %>', { <% join ',', @nav_args %> })"> 
+
+<form id="logging_form" action="/mx/logging3.html" method="post">
+  <input type="hidden" name="project" id="logging_project" value="">
+  <input type="hidden" name="dir" id="logging_dir" value="">
+  <input type="hidden" name="name" id="logging_name" value="">
+</form>
+
+<form id="raw_logging_form" action="/mx/raw_logging3.html" method="post">
+  <input type="hidden" name="path" id="raw_logging_path" value="">
+</form>
+
+<%init>
+my ( $service ) = grep { $_->name eq $name } @services;
+
+if ( my $handle = $handles[ $service->location ] ) {
+  ( $service ) = $handle->soaphandle->mservice( names => [ $name ] )->result;
+}
+
+my @table;
+push @table, 'Name'               , $name;
+push @table, 'Status'             , $service->status;
+push @table, 'Host'               , $service->hostname;
+push @table, 'Start Order'        , $service->order;
+push @table, 'Launcher Options'   , $service->options;
+push @table, 'Extra Parameters'   , $service->params;
+push @table, 'Post Start Action'  , $service->post_start_action;
+push @table, 'Pre Stop Action'    , $service->pre_stop_action;
+my $project       = $service->project;
+my $business_date = Mx::Murex->calendardate();
+my @descriptors   = $service->descriptors;
+my @processes     = $service->processes;
+
+my $mxdir = $config->MXENV_ROOT;
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  next if $k eq 'name';
+  push @nav_args, "$k:'$v'";
+}
+</%init>
+
+<%args>
+$name
+$hist_url
+</%args>

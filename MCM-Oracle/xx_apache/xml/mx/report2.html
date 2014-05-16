@@ -1,0 +1,94 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+$iDisplayLength = 0 if $iDisplayLength == -1;
+
+if ( $reset eq 'true' ) {
+  delete $report_cache{$id};
+}
+
+my @excluded_columns = ();
+foreach ( @excluded ) {
+  push @excluded_columns, $_;
+}
+
+my @filter_columns = ();
+foreach ( @filter ) {
+  my ( $index, $filter ) = split ':', $_, 2;
+  push @filter_columns, { index => $index, filter => $filter };
+}
+
+my @sort_columns = ();
+foreach ( @sort ) {
+  my ( $index, $direction ) = split ':', $_, 2;
+  push @sort_columns, { index => $index, direction => $direction };
+}
+
+my $report = $report_cache{$id};
+
+unless ( $report ) {
+ $report = Mx::BCT::Report->retrieve( id => $id, db_audit => $db_audit, config => $config, logger => $logger );
+ $report->open();
+ @columns = $report->columns();
+ $report_cache{$id} = $report;
+}
+
+my $nr_records = $report->nr_records;
+
+my $json_string; my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+if ( $values_index ) {
+  my ( $values_ref ) = $report->get_records( values_index => $values_index );
+
+  my $nr_values = 0; my @values = ();
+  foreach my $key ( sort keys %{$values_ref} ) {
+    push @values, { value => $key, count => $values_ref->{$key} };
+    $nr_values++;
+    last if $nr_values == $max_nr_values;
+  }
+
+  $json_string = $coder->encode( { data => \@values } );
+}
+elsif ( $name ) {
+  if ( $report->store( name => $name, win_user => $win_user, comment => $comment, max_nr_records => $max_nr_records, process_id => $process_id, process_name => $process_name ) ) {
+    $json_string = $coder->encode( { data => { id => $report->bct_id, nr_records => $report->bct_nr_records, size => $report->bct_size, error => '' } } );
+  }
+  else {
+    $json_string = $coder->encode( { data => { error => $report->error_message } } );
+  }
+}
+else {
+  my ( $records, $filtered_nr_records ) = $report->get_records(
+    start            => $iDisplayStart,
+    length           => $iDisplayLength,
+    excluded_columns => \@excluded_columns,
+    filter_columns   => \@filter_columns,
+    sort_columns     => \@sort_columns
+  );
+
+  $json_string = $coder->encode( { datatables => { iTotalRecords => $nr_records, iTotalDisplayRecords => $filtered_nr_records, sEcho => $sEcho, aaData => $records } } );
+}
+</%init>
+
+<%once>
+my %report_cache = ();
+</%once>
+
+<%args>
+$id
+$reset          => 'false'
+$values_index   => 0
+$max_nr_values  => 20
+@excluded       => ()
+@filter         => ()
+@sort           => ()
+$process_id     => ''
+$process_name   => ''
+$max_nr_records => 0
+$iDisplayStart  => 0
+$iDisplayLength => 50
+$sEcho          => ''
+$win_user       => ''
+$name           => ''
+$comment        => ''
+</%args>

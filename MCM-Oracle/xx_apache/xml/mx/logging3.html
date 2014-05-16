@@ -1,0 +1,142 @@
+<script type="text/javascript">
+var oTable; var scrollPos = -1;
+$(document).ready( function() {
+  $.fn.dataTableExt.oPagination.iFullNumbersShowPages = 9;
+
+  oTable = $('#result').dataTable( {
+    "sServerMethod": "POST",
+    "fnServerData": function ( sSource, aoData, fnCallback ) {
+      aoData.push(
+        { "name": "path", "value": "<% $path %>" }
+      );
+      $.ajax( {
+        dataType: "json",
+        url: sSource,
+        data: aoData,
+        type: "POST",
+        success: function(json) {
+          fnCallback(json.datatables)
+          displayRefreshTime();
+          installHover();
+          if ( scrollPos == - 1 ) {
+            scrollPos = $("table#result").height();
+          }
+          $(".dataTables_scrollBody").scrollTop( scrollPos );
+          scrollPos = 0;
+        }
+      } );
+    },
+    "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+      if ( aData[3] == "WARN" ) {
+        $(nRow).css('background-color', '#FFCC66');
+      }
+      else if ( aData[3] == "ERROR" ) {
+        $(nRow).css('background-color', '#FF9933');
+      }
+      else if ( aData[3] == "FATAL" ) {
+        $(nRow).css('background-color', '#FF3300');
+      }
+    },
+    "sDom":            'Clrtpi<"clear">',
+    "bAutoWidth":      false,
+    "bProcessing":     true,
+    "bServerSide":     true,
+    "sAjaxSource":     '/mx/logging2.html',
+    "bPaginate":       true,
+    "sPaginationType": "full_numbers",
+    "bSort":           false,
+    "bStateSave":      false,
+    "sScrollY":        "900px",
+    "sScrollX":        "100%",
+    "sScrollXInner":   "1650px",
+    "iDisplayStart":   <% $display_start %>,
+    "iDisplayLength":  <% $display_length %>,
+    "aLengthMenu":     [[500, 1000, 2000, -1], [500, 1000, 2000, "All"]],
+
+    "oLanguage": {
+      "oPaginate": {
+        "sFirst":    "<<",
+        "sPrevious": "<",
+        "sNext":     ">",
+        "sLast":     ">>"
+      }
+    },
+
+    "aoColumnDefs": [
+      { "sClass": "center",       "aTargets": [ 0, 1, 3, 4 ] },
+
+      { "sWidth": "60px",         "aTargets": [ 3, 4 ] },
+      { "sWidth": "80px",         "aTargets": [ 1 ] },
+      { "sWidth": "100px",        "aTargets": [ 0 ] },
+      { "sWidth": "150px",        "aTargets": [ 2 ] },
+      { "sWidth": "1200px",       "aTargets": [ 5 ] },
+    ],
+  } );
+
+  $('button#refresh').live( "click", function() {
+    scrollPos = $(".dataTables_scrollBody").scrollTop();
+    oTable.fnStandingRedraw();
+  } );
+} );
+
+function displayRefreshTime() {
+  var d = new Date();
+  var timestamp = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ':' + ( '0' + d.getSeconds() ).slice(-2);
+  $('#refreshtime').html( 'Last Refresh: ' + timestamp );
+}
+</script>
+
+<body>
+% if ( $navigation ) { 
+<& navigation.comp &>
+% }
+% else {
+<span style="float: right; padding: 2px;"><input type="button" class="button" value=" Close " onClick="window.close()"></span>
+% }
+
+<div style="float: left;" id="refreshtime"></div>
+
+<div id="title"><% $path %></div>
+
+<table id="result">
+<thead>
+ <tr>
+  <th>DATE</th>
+  <th>TIME</th>
+  <th>MODULE</th>
+  <th>LEVEL</th>
+  <th>PID</th>
+  <th>MESSAGE</th>
+ </tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="button" id="refresh"> Refresh </button>
+% if ( $navigation ) {
+<button class="button" onClick="history.back()"> Go Back </button>
+% }
+
+</body>
+
+<%init>
+unless ( $path ) {
+  my $logdir = ( $project) ? $config->retrieve_lch_logdir( $project ) : $config->retrieve('LOGDIR');
+  $path = "$logdir/$dir/$name";
+}
+
+my @all_lines;
+tie @all_lines, 'Tie::File', $path;
+my $nr_lines = @all_lines;
+
+my $display_length = 500;
+my $display_start  = int( $nr_lines / $display_length ) * $display_length;
+</%init>
+<%args>
+$dir            => ''
+$name           => ''
+$project        => ''
+$path           => ''
+$navigation     => 0
+</%args>

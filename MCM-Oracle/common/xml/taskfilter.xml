@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE MxAnchors>
+<MxAnchors>
+  <MxAnchor Code="TASKS">
+    <workflowFilter>
+      <include processing-template="PCGLOBAL_P1">
+        <!-- <filter workflow="Exchange" sheet="IGT - Import Generic Trade"/> -->
+      </include>
+    </workflowFilter> 
+  </MxAnchor>	
+</MxAnchors>

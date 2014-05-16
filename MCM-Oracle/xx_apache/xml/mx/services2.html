@@ -1,0 +1,13 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my $services_ref = $m->comp( 'services.comp' );
+
+my @list = map { $_->TO_JSON( gc => $gc ) } @{$services_ref};
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@list } } );
+</%init>
+<%args>
+$gc => 0
+</%args>

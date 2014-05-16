@@ -1,0 +1,20 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+$logger->info("killing session (hostname: $hostname pid: $pid mx_sessionid: $mx_sessionid)");
+
+my $message = 'failed';
+if ( my $handle = $handles{$hostname} ) {
+  if ( $handle->soaphandle->kill_session( $pid, mx_sessionid => $mx_sessionid )->result ) {
+    $message = 'done';
+  }
+}
+
+my $coder = JSON::XS->new;
+my $json_string = $coder->encode( { message => $message } );
+</%init>
+<%args>
+$hostname
+$pid
+$mx_sessionid => ''
+</%args>

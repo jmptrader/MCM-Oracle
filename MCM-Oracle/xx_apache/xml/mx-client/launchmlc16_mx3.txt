@@ -1,0 +1,31 @@
+@ECHO OFF
+
+C:
+cd /Temp/MX/<% $ENV{MXENV} %>
+
+SET HOMEDIR=%CD%
+SET JAVAHOME=W:/SPI/000465/Murex/jre_1.6.0_14
+
+call mxg2000_settings.cmd
+
+set JAVAARGS_DESTSITE=
+if not [%MXJ_DESTINATION_SITE_NAME%]==[] set JAVAARGS_DESTSITE=/MXJ_DESTINATION_SITE_NAME:%MXJ_DESTINATION_SITE_NAME%
+if [%MXJ_DESTINATION_SITE_NAME%]==[%MXJ_SITE_NAME%] set JAVAARGS_DESTSITE=
+
+set JAVAARGS_HOSTSITE1=
+if not [%MXJ_HOST%]==[] set JAVAARGS_HOSTSITE1=-Djava.rmi.server.hostname=%MXJ_HOST% -Djava.rmi.activation.port=%MXJ_PORT%
+
+SET PATH=%JAVAHOME%/bin/client;%JAVAHOME%/bin;%PATH%;bin/
+SET MXJ_JAR_FILELIST=murex.download.dockclient.download
+SET MXJ_BOOT=mxjboot.jar
+SET MXJ_CONFIG_FILE=client.xml
+SET GLOW_PARAM=-Dsun.java2d.d3d=false
+SET J2D_D3D=false
+
+ %JAVAHOME%/bin/java -version
+title %ENVIR% : %~n0 FS:%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST% /PLATF:%MXJ_PLATFORM_NAME% /NNAME:%MXJ_PROCESS_NICK_NAME% 
+
+ %JAVAHOME%/bin/java.exe %GLOW_PARAM% %JAVAARGS_MEMCLIENT% -cp %MXJ_BOOT% -Djava.security.policy=%MXJ_POLICY% -Dmurex.gui.container.family=murex.gui.client.docking.ui.common.DockingViewContainer -Djava.rmi.server.codebase=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST% murex.rmi.loader.RmiLoader /MXJ_SITE_NAME:%MXJ_SITE_NAME% /MXJ_CLASS_NAME:murex.gui.client.docking.DockingClientMain /MXJ_PLATFORM_NAME:%MXJ_PLATFORM_NAME% /MXJ_PROCESS_NICK_NAME:%MXJ_PROCESS_NICK_NAME% /MXJ_CONFIG_FILE:%MXJ_CONFIG_FILE% /MXJ_SHOW_FOCUS:Y %JAVAARGS_REDSTATUSBAR% /MXJ_PING_POP_GUI_DOCUMENT:%MXJ_PING_POP_GUI_DOCUMENT% /MXJ_POP_CONNECTION_TIME_OUT:%MXJ_POP_CONNECTION_TIME_OUT% %1 %2 %3 %4 %5 %6 
+
+:end
+title %ENVIR% : %~n0 - ended

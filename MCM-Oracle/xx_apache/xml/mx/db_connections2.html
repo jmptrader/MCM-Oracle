@@ -1,0 +1,57 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my @connections = (); my %schemas = ();
+
+my $active_sessions = $m->comp( 'active_sessions.comp' );
+
+foreach my $db ( $oracle_fin, $oracle_rep, $oracle_mon ) {
+  foreach my $connection ( $db->connections() ) {
+    my $hostname = $connection->[5];
+    my $pid      = $connection->[6];
+
+    $hostname =~ s/^(\w+)\..*$/$1/;
+
+    my $win_user     = ( $hostname && substr( $hostname, 0, 1 ) ne 's' && exists $client_map{$hostname} ) ? $client_map{$hostname} : '';
+    my $mx_sessionid = '';
+    if ( my $result = $active_sessions->{ $hostname . ':' . $pid } ) {
+      $mx_sessionid = $result->[0];
+    }
+
+	my $wait_time = 0;
+	if ( $connection->[17] == 0 ) {
+	  $wait_time = $connection->[18];
+    }
+
+    push @connections, {
+      0  => $connection->[0], # schema
+      1  => $connection->[1], # sid
+      2  => $connection->[3], # username
+      3  => $connection->[4], # OS user
+      4  => $connection->[5], # hostname
+      5  => $connection->[6], # pid
+      6  => $connection->[7], # program_name
+      7  => $connection->[8], # login timestamp
+      8  => $connection->[9], # status
+      9  => Mx::Util->separate_thousands( $connection->[10] ), # seconds active/inactive
+      10  => $connection->[11], # command
+      11 => Mx::Util->separate_thousands( $connection->[12] ),  # cpu
+      12 => Mx::Util->separate_thousands( $connection->[13] ),  # lreads
+      13 => Mx::Util->separate_thousands( $connection->[14] ),  # preads
+      14 => Mx::Util->separate_thousands( $connection->[15] ),  # $writes
+	  15 => Mx::Util->separate_thousands( $wait_time ),
+      16 => $connection->[16], # blocked by
+      17 => $win_user,
+      18 => $mx_sessionid,
+	  19 => $connection->[2], # serial#
+      DT_RowId => $connection->[0] . '|' . $connection->[1] . '|' . $connection->[2] . '|' . $hostname . '|' . $pid
+    };
+
+    $schemas{ $connection->[0] }++;
+  }
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@connections }, schemas => \%schemas } );
+</%init>

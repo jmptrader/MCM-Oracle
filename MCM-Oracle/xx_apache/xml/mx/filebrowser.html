@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title><% $ENV{MXENV} %> - Dashboard</title>
+
+<script type="text/javascript" src="/mx/common/navigation.js"></script>
+<script type="text/javascript" src="/mx/common/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="/mx/common/jquery-ui-1.8.18.min.js"></script>
+<script type="text/javascript" src="/mx/common/elfinder.min.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/codemirror.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/clike.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/css.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/htmlembedded.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/htmlmixed.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/javascript.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/perl.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/properties.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/shell.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/xml.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/vim.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/search.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/searchcursor.js"></script>
+<script type="text/javascript" src="/mx/common/codemirror/dialog.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/css/navigation.css">
+<link rel="stylesheet" type="text/css" href="/css/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href="/css/elfinder.min.css">
+<link rel="stylesheet" type="text/css" href="/css/elfinder_theme.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/codemirror.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/codemirror.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/dialog.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/ambiance.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/blackboard.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/cobalt.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/eclipse.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/elegant.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/erlang-dark.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/lesser-dark.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/monokai.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/neat.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/night.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/rubyblue.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/twilight.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/vibrant-ink.css">
+<link rel="stylesheet" type="text/css" href="/css/codemirror/xq-dark.css">
+
+<script type="text/javascript" charset="utf-8">
+var editors = new Array(); var index = 0;
+var file_name = '/php/connector.php';
+$().ready(function() {
+  CodeMirror.connect( window, "resize", function() {
+    var showing = document.body.getElementsByClassName("CodeMirror-fullscreen")[0];
+    if (!showing) return;
+    showing.CodeMirror.getScrollerElement().style.height = winHeight() + "px";
+  } );
+  var elf = $('#elfinder').elfinder({
+    url : file_name,  // connector URL (REQUIRED)
+    defaultView: 'list',
+    height: '800px',
+    commandsOptions: {
+      edit: {
+        editors: [ {
+          mimes : ['text/plain', 'text/x-perl', 'text/javascript', 'text/html'],
+          load: function(textarea) {
+            textarea.editor = { instance: null };
+            var editor = CodeMirror.fromTextArea( textarea, {
+              mode: '',
+              lineNumbers: true,
+              autofocus: true,
+              keyMap: "default",
+              fixedGutter: true,
+              matchBrackets: true,
+              indentUnit: 4,
+              extraKeys: {
+                "F9": function(cm) {
+                  setFullScreen(cm, !isFullScreen(cm));
+                }
+              },
+              onGutterClick: function(cm, n) {
+                var info = cm.lineInfo(n);
+                if (info.markerText)
+                  cm.clearMarker(n);
+                else
+                  cm.setMarker(n, "<span style=\"color: #900\">+</span> %N%");
+              }
+            } );
+
+            editors[index] = editor;
+            textarea.editor.instance = editor;
+
+            var node = editor.getWrapperElement();
+            $(node).bind( "keyup keydown", function(e) {
+              e.stopPropagation();
+            } );
+
+            var dialog         = $(node).parents('.ui-dialog');
+            var dialog_content = $(dialog).children('.ui-dialog-content');
+            var dialog_buttons = $(dialog).children('.ui-dialog-buttonpane');
+
+            $(dialog).css( {
+              "height":  "<% $default_editor_height %>",
+              "width":   "<% $default_editor_width %>",
+              "z-index": "1201"
+            } );
+
+            $(dialog_content).css( {
+              "overflow": "hidden",
+              "height": "92%",
+              "width": "100%",
+              "padding": "0px 0px",
+              "background-color": "#FFFFFF"
+            } );
+
+            $(dialog_buttons).append( "<span style='float: left; padding: .5em .7em; font-family: Verdana, Arial; font-size: 10px;'>Syntax: </span>" );
+            $(dialog_buttons).append( "<div style='float: left;'><select style='font-family: Verdana, Arial; border-color: #CCCCCC; background-color: #EDEDED; font-size: 10px; padding: .5em .7em;' onchange='selectMode(" + index + ")' id='mode-select-" + index + "' >\
+                 <option value='none' selected>none</option>\
+                 <option value='clike'>C/C++</option>\
+                 <option value='css'>CSS</option>\
+                 <option value='htmlembedded'>HTML embedded</option>\
+                 <option value='htmlmixed'>HTML mixed</option>\
+                 <option value='javascript'>JavaScript</option>\
+                 <option value='perl'>Perl</option>\
+                 <option value='properties'>properties</option>\
+                 <option value='shell'>shell script</option>\
+                 <option value='xml'>XML</option>\
+               </select></div>" 
+            );
+
+            $(dialog_buttons).append( "<span style='float: left; padding: .5em .7em; font-family: Verdana, Arial; font-size: 10px;'>Theme: </span>" );
+            $(dialog_buttons).append( "<div style='float: left;'><select style='font-family: Verdana, Arial; border-color: #CCCCCC; background-color: #EDEDED; font-size: 10px; padding: .5em .7em;' onchange='selectTheme(" + index + ")' id='theme-select-" + index + "'>\
+                 <option selected>default</option>\
+                 <option>ambiance</option>\
+                 <option>blackboard</option>\
+                 <option>cobalt</option>\
+                 <option>eclipse</option>\
+                 <option>elegant</option>\
+                 <option>erlang-dark</option>\
+                 <option>lesser-dark</option>\
+                 <option>monokai</option>\
+                 <option>neat</option>\
+                 <option>night</option>\
+                 <option>rubyblue</option>\
+                 <option>twilight</option>\
+                 <option>vibrant-ink</option>\
+                 <option>xq-dark</option>\
+               </select></div>" 
+            );
+
+            $(dialog_buttons).append( "<span style='float: left; padding: .5em .7em; font-family: Verdana, Arial; font-size: 10px;'>Keymap: </span>" );
+            $(dialog_buttons).append( "<div style='float: left;'><select style='font-family: Verdana, Arial; border-color: #CCCCCC; background-color: #EDEDED; font-size: 10px; padding: .5em .7em;' onchange='selectKeyMap(" + index + ")' id='keymap-select-" + index + "'>\
+                 <option selected>default</option>\
+                 <option>vim</option>\
+               </select></div>" 
+            );
+
+            index++;
+          },
+          close: function(textarea) {},
+          save : function(textarea, editor) {
+            textarea.editor.instance.save();
+            textarea.editor.instance.toTextArea();
+          }
+        } ] 
+      }
+    }
+  }).elfinder('instance');
+
+  $(document.body).css( 'background-color', '#FFFFCC' );
+});
+
+function selectMode( index ) {
+  var mode = $("#mode-select-" + index).val();
+  editors[index].setOption("mode", mode);
+}
+
+function selectTheme( index ) {
+  var theme = $("#theme-select-" + index + " option:selected").text();
+  editors[index].setOption("theme", theme);
+}
+
+function selectKeyMap( index ) {
+  var keyMap = $("#keymap-select-" + index + " option:selected").text();
+  editors[index].setOption("keyMap", keyMap);
+}
+
+function isFullScreen(cm) {
+  return /\bCodeMirror-fullscreen\b/.test(cm.getWrapperElement().className);
+}
+
+function winHeight() {
+  return window.innerHeight || (document.documentElement || document.body).clientHeight;
+}
+
+function winWidth() {
+  return window.innerWidth || (document.documentElement || document.body).clientWidth;
+}
+
+function setFullScreen(cm, full) {
+  var node   = cm.getWrapperElement();
+  var dialog = $(node).parents('.ui-dialog');
+  var dialog_content = $(dialog).children('.ui-dialog-content');
+
+  if (full) {
+    node.className += " CodeMirror-fullscreen";
+    $(dialog).css( {
+      "height":   winHeight() + "px",
+      "width":    winWidth() + "px",
+      "position": "fixed",
+      "top":      "0px",
+      "left":     "0px"
+    } );
+    $(dialog_content).css( {
+      "height":   "94%",
+      "width":    "100%"
+    } );
+  } else {
+    node.className = node.className.replace(" CodeMirror-fullscreen", "");
+    $(dialog).css( {
+      "height":   "<% $default_editor_height %>",
+      "width":    "<% $default_editor_width %>",
+      "position": "",
+      "top":      "181px",
+      "left":     "725px"
+    } );
+    $(dialog_content).css( {
+      "height":   "92%",
+      "width":    "100%"
+    } );
+  }
+  cm.refresh();
+}
+</script>
+</head>
+<body>
+<& navigation.comp &>
+<div id="elfinder"></div>
+</body>
+</html>
+
+<%init>
+my $default_editor_width  = '800px';
+my $default_editor_height = '800px';
+</%init>

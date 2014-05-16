@@ -1,0 +1,32 @@
+% $r->content_type('application/json');
+<% $json_string %>
+
+<%init>
+my $service_map = $config->SERVICE_MAP;
+
+my @services = (); my $timestamp = '';
+if ( my $fh = IO::File->new( $service_map, '<' ) ) {
+  $timestamp = Mx::Util->convert_time_short( (stat($fh))[9] );
+
+  while ( <$fh> ) {
+    my @fields = split /\|/;
+
+    $fields[4] =~ s/\..+$//;
+ 
+    push @services, {
+      0  => $fields[0],
+      1  => $fields[1],
+      2  => $fields[2],
+      3  => $fields[3],
+      4  => $fields[4],
+      5  => $fields[5] || '',
+      6  => $fields[6]
+    };
+  }
+
+  close($fh);
+}
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { datatables => { aaData => \@services }, timestamp => $timestamp } );
+</%init>

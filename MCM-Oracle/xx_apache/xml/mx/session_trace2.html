@@ -1,0 +1,64 @@
+% $r->content_type('application/json');
+<% $json_string %>
+<%init>
+my %type_translation = (
+  IDNTTY => { desc => 'IDENTITY',                table => 0 },
+  INSERT => { desc => 'INSERT',                  table => 1 },
+  UPDATE => { desc => 'UPDATE',                  table => 1 },
+  DELETE => { desc => 'DELETE',                  table => 1 },
+  SELECT => { desc => 'SELECT',                  table => 1 },
+  S_PROC => { desc => 'STORED PROC',             table => 0 },
+  U_INDX => { desc => 'UPDATE INDEX STATISTICS', table => 0 },
+  CTABLE => { desc => 'CREATE TABLE',            table => 1 },
+  DTABLE => { desc => 'DROP TABLE',              table => 1 },
+  CINDEX => { desc => 'CREATE INDEX',            table => 0 },
+  ATABLE => { desc => 'ALTER TABLE',             table => 1 },
+  U_STAT => { desc => 'UPDATE STATISTICS',       table => 0 },
+  TTABLE => { desc => 'TRUNCATE TABLE',          table => 1 },
+  CR_SEQ => { desc => 'CREATE SEQUENCE',         table => 0 },
+  DR_SEQ => { desc => 'DROP SEQUENCE',           table => 0 },
+  XA     => { desc => 'XA',                      table => 0 },
+  USE    => { desc => 'USE',                     table => 0 },
+  BLK_CP => { desc => 'BULK COPY',               table => 1 },
+  SET    => { desc => 'SET',                     table => 0 },
+  BEGIN  => { desc => 'BEGIN TRANSACTION',       table => 0 },
+  COMMIT => { desc => 'COMMIT TRANSACTION',      table => 0 }
+);
+
+my $db_fin = $config->DB_FIN;
+
+my @statements = (); my $total_duration = 0; my $total_count = 0; my $total_percentage = 0;
+foreach my $statement ( $db_audit->retrieve_sqltrace( session_id => $id ) ) {
+  my $table = $statement->[1];
+  my $db    = $db_fin;
+  if ( $table =~ /^([^.]+)\.\.([^.]+)$/ ) {
+    $db    = $1;
+    $table = $2;
+  }
+
+  push @statements, [
+    $table,
+    $db,
+    $type_translation{ $statement->[4] }->{table},
+    $type_translation{ $statement->[4] }->{desc},
+    Mx::Util->separate_thousands( $statement->[2] ),
+    Mx::Util->separate_thousands( $statement->[3] ),
+    Mx::Util->separate_thousands( $statement->[5] ),
+    $statement->[6]
+  ];
+
+  $total_duration   += $statement->[2];
+  $total_count      += $statement->[5];
+  $total_percentage += $statement->[6];
+}
+
+$total_duration   = Mx::Util->separate_thousands( $total_duration );
+$total_count      = Mx::Util->separate_thousands( $total_count );
+$total_percentage = sprintf "%0.2f", $total_percentage;
+
+my $coder = JSON::XS->new->allow_blessed->convert_blessed;
+my $json_string = $coder->encode( { data => \@statements, total_duration => $total_duration, total_count => $total_count, total_percentage => $total_percentage } );
+</%init>
+<%args>
+$id
+</%args>

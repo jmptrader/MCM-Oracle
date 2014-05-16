@@ -1,0 +1,39 @@
+<BODY>
+<& navigation.comp &>
+<CENTER>
+<BR>
+<H2>Table: <% $name %></H2>
+<TABLE BORDER=0 CELLSPACING=1 CELLPADDING=3 WIDTH=20% BGCOLOR="#000066">
+  <TR>
+    <TH>DATE</TH>
+    <TH># ROWS</TH>
+    <TH>SIZE</TH>
+  </TR>
+% foreach my $result ( reverse @results ) {
+  <TR>
+%   my $date = $result->[0];
+%   $date = substr( $date, 6, 2 ) . '/' . substr( $date, 4, 2 ) . '/' . substr( $date, 0, 4 );
+    <TD ALIGN=CENTER><% $date %></TD>
+    <TD ALIGN=RIGHT><% Mx::Util->separate_thousands( $result->[1] ) %>&nbsp;</TD>
+    <TD ALIGN=RIGHT><% Mx::Util->convert_bytes( $result->[2] * 1024 ) %>&nbsp;</TD>
+  </TR>
+% }
+</TABLE>
+<BR>
+<TABLE>
+  <TR>
+    <TD>
+      <INPUT TYPE="button" CLASS="button" VALUE=" Go Back " onClick="history.back()">
+    </TD>
+  </TR>
+</TABLE>
+</CENTER>
+</BODY>
+
+<%init>
+my @results = $db_audit->mxtable_sizes( name => $name, criterium => 'nr_rows,reserved' );
+</%init>
+
+<%args>
+$name
+</%args>

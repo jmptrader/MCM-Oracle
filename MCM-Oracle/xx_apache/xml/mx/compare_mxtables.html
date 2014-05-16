@@ -1,0 +1,120 @@
+<BODY>
+<& navigation.comp &>
+<CENTER>
+<BR>
+<H2>Compare tables between  <% $env1 %> and <% $env2 %></H2>
+<TABLE BORDER=0 CELLSPACING=1 CELLPADDING=3 WIDTH="90%" BGCOLOR="#000066">
+  <TR>
+    <TH>NAME</TH>
+    <TH>NR ROWS A</TH>
+    <TH>NR ROWS B</TH>
+    <TH>DATA A</TH>
+    <TH>DATA B</TH>
+    <TH>INDEXES A</TH>
+    <TH>INDEXES B</TH>
+    <TH>UNUSED A</TH>
+    <TH>UNUSED B</TH>
+    <TH>RESERVED A</TH>
+    <TH>RESERVED B</TH>
+  </TR>
+% my $total_data = 0; my $total_indexes = 0; my $total_unused = 0; my $total_reserved = 0;
+% foreach my $name ( sort { $tables1{$b}->{reserved} <=> $tables1{$a}->{reserved} } keys %tables1 ) {
+%   my $table1 = $tables1{$name};
+%   my $table2 = $tables2{$name};
+%   next unless $table1->{reserved} > 100 or $table2->{reserved} > 100;
+%   if ( ! $table2 ) {
+      <TR ALIGN=RIGHT>
+        <TD ALIGN=LEFT><% $name %></TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{nr_rows} ) %></TD>
+        <TD>&nbsp;</TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{data} ) %></TD>
+        <TD>&nbsp;</TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{indexes} ) %></TD>
+        <TD>&nbsp;</TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{unused} ) %></TD>
+        <TD>&nbsp;</TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{reserved} ) %></TD>
+        <TD>&nbsp;</TD>
+      </TR>
+%   }
+%   else {
+%     if ( 
+%       abs( $table1->{nr_rows} - $table2->{nr_rows} )   / ( $table1->{nr_rows} + 1 )  > $percentage or
+%       abs( $table1->{data} - $table2->{data} )         / ( $table1->{data} + 1 )     > $percentage or
+%       abs( $table1->{indexes} - $table2->{indexes} )   / ( $table1->{indexes} + 1 )  > $percentage or
+%       abs( $table1->{unused} - $table2->{unused} )     / ( $table1->{unused} + 1 )   > $percentage or
+%       abs( $table1->{reserved} - $table2->{reserved} ) / ( $table1->{reserved} + 1 ) > $percentage
+%     ) {
+      <TR ALIGN=RIGHT>
+        <TD ALIGN=LEFT><% $name %></TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{nr_rows} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table2->{nr_rows} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table1->{data} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table2->{data} ) %></TD>
+%       $total_data += $table1->{data} - $table2->{data};
+        <TD><% Mx::Util->separate_thousands( $table1->{indexes} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table2->{indexes} ) %></TD>
+%       $total_indexes += $table1->{indexes} - $table2->{indexes};
+        <TD><% Mx::Util->separate_thousands( $table1->{unused} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table2->{unused} ) %></TD>
+%       $total_unused += $table1->{unused} - $table2->{unused};
+        <TD><% Mx::Util->separate_thousands( $table1->{reserved} ) %></TD>
+        <TD><% Mx::Util->separate_thousands( $table2->{reserved} )  %></TD>
+%       $total_reserved += $table1->{reserved} - $table2->{reserved};
+      </TR>
+%     }
+%   }
+% }
+      <TR ALIGN=RIGHT>
+        <TD>&nbsp;</TD>
+        <TD>&nbsp;</TD>
+        <TD>&nbsp;</TD>
+        <TD><B><% Mx::Util->separate_thousands( $total_data ) %></B></TD>
+        <TD>&nbsp;</TD>
+        <TD><B><% Mx::Util->separate_thousands( $total_indexes ) %></B></TD>
+        <TD>&nbsp;</TD>
+        <TD><B><% Mx::Util->separate_thousands( $total_unused ) %></B></TD>
+        <TD>&nbsp;</TD>
+        <TD><B><% Mx::Util->separate_thousands( $total_reserved ) %></B></TD>
+        <TD>&nbsp;</TD>
+      </TR>
+</TABLE>
+<BR>
+<TABLE>
+  <TR>
+    <TD>
+      <INPUT TYPE="button" CLASS="button" VALUE=" Go Back " onClick="history.back()">
+    </TD>
+  </TR>
+</TABLE>
+</CENTER>
+</BODY>
+
+
+<%init>
+my $percentage = 0.2;
+
+my %tables1 = (); my %tables2 = ();
+
+my $env1 = $ENV{MXENV};
+
+$ENV{MXENV} = $env2;
+my $config2 = Mx::Config->new();
+$ENV{MXENV} = $env1;
+
+my $db_audit2 = Mx::DBaudit->new( config => $config2, logger => $logger );
+
+foreach my $row ( $db_audit->retrieve_mxtables ) {
+    my ( $name, $nr_rows, $data, $indexes, $unused, $reserved ) = @{$row};
+    $tables1{$name} = { nr_rows => $nr_rows, data => $data, indexes => $indexes, unused => $unused, reserved => $reserved };
+}
+
+foreach my $row ( $db_audit2->retrieve_mxtables ) {
+    my ( $name, $nr_rows, $data, $indexes, $unused, $reserved ) = @{$row};
+    $tables2{$name} = { nr_rows => $nr_rows, data => $data, indexes => $indexes, unused => $unused, reserved => $reserved };
+}
+</%init>
+
+<%args>
+$env2
+</%args>

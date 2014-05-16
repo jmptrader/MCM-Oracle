@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE XmlMonitorScript>
+<XmlMonitorScript>
+        <MonitorUser>
+                <Name>ADMIN</Name>
+                <Password>__ADMIN:PASSWORD__</Password>
+        </MonitorUser>
+        <MonitorCommands>
+                <MonitorCommand Type="KILLALL">
+                        <PlatformName>MX</PlatformName>
+                        <NickName>MXREPORTSRV</NickName>
+                </MonitorCommand>
+        </MonitorCommands>
+</XmlMonitorScript>
+

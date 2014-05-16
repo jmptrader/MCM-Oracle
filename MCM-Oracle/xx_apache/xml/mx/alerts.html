@@ -1,0 +1,106 @@
+<SCRIPT TYPE="text/javascript">
+function ack_alert( id ) {
+  var xhr;
+  if ( window.ActiveXObject ) {
+    xhr = new ActiveXObject( "Microsoft.XMLHTTP" );
+  }
+  else if ( window.XMLHttpRequest ) {
+    xhr = new XMLHttpRequest();
+  }
+  else {
+    throw new Error('Ajax is not supported by this browser');
+  }
+
+  var url = '/mx/ack_alert.html?id=' + id + '&user=<% $m->session->{username} %>';
+
+  xhr.open('GET', url);
+  xhr.send();
+
+  var full_id = 'ack_' + id;
+  var container = document.getElementById( full_id );
+
+  container.innerHTML = '<IMG SRC="pics/green_check.gif" WIDTH=15 HEIGHT=15>';
+};
+</SCRIPT>
+
+% $m->comp( 'results.comp', description => 'alert', nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr );
+
+<TABLE class="center" WIDTH="90%">
+  <TR>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'id',                reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">ID</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'trigger_timestamp', reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">TIMESTAMP</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'name',              reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">NAME</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'item',              reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">ITEM</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'category',          reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">CATEGORY</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'wlevel',            reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">LEVEL</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'message',           reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">MESSAGE</A></TH>
+    <TH><A HREF="#" onclick="mnavigate( 'alerts.html', { sort: 'trigger_count',     reverse: 1, <% $sort_args %> } );" STYLE="color: #FFFFFF;">#</A></TH>
+    <TH>&nbsp;</TH>
+  </TR>
+
+% foreach my $alert ( @alerts ) {
+  <TR ALIGN=CENTER>
+    <TD><A CLASS="select" HREF="#" onclick="mnavigate( 'alert_details.html', { alert_id: '<% $alert->[1] %>' }, { <% join ',', @nav_args %> } );"><% $alert->[1] %></A</TD>
+    <TD><% Mx::Util->convert_time( $alert->[13] ) %></TD>
+    <TD><% $alert->[3] %></TD>
+    <TD><% $alert->[4] %></TD>
+    <TD><% $alert->[5] %></TD>
+    <TD><% $alert->[6] %></TD>
+    <TD ALIGN="left"><% $alert->[7] %></TD>
+    <TD><% $alert->[12] %></TD>
+%   if ( $alert->[9] ) {
+    <TD><IMG SRC="pics/green_check.gif" WIDTH=15 HEIGHT=15></TD>
+%   }
+%   else {
+    <TD><DIV id="ack_<% $alert->[1] %>"><IMG SRC="pics/red_cross.gif" WIDTH=15 HEIGHT=15 onclick="ack_alert(<% $alert->[1] %>);"></DIV></TD>
+%   }
+  </TR>
+% }
+
+</TABLE>
+<BR>
+% $m->comp( 'pager.comp', url => 'alerts.html', search_url => 'alert_search.html', refresh => 1, sort => $sort, nr_results => $nr_results, recs_per_page => $recs_per_page, page_nr => $page_nr, where_hash => \%where_hash );
+
+<%init>
+my @columns         = qw( id trigger_timestamp name item category wlevel message trigger_count ack_received business_date );
+my @numeric_columns = qw( id trigger_timestamp trigger_count );
+if ( $reverse ) {
+  $m->session->{alerts_reverse} = ! $m->session->{alerts_reverse};
+}
+my %where_hash = (); my @sort_args = (); my $sort_args = '';
+foreach my $column ( @columns ) {
+  if ( my $entry = $ARGS{$column} ) {
+    my @values;
+    if ( ref $entry eq 'ARRAY' ) {
+      @values = @{$entry};
+    }
+    elsif ( $entry =~ /,/ ) {
+      @values = split /,/, $entry;
+    }
+    else {
+      @values = ( $entry );
+    }
+    foreach my $value ( @values ) {
+      push @{$where_hash{$column}}, (( grep /^$column$/, @numeric_columns ) ? $value : "\"$value\"");
+      push @sort_args, "$column: '$value'";
+    }
+  }
+}
+$sort_args = join ',', @sort_args;
+
+my @nav_args = ();
+while ( my ( $k, $v ) = each %ARGS ) {
+  push @nav_args, "$k:'$v'";
+}
+
+my $result = $db_audit->retrieve_alerts( sort => { $sort => $m->session->{alerts_reverse} }, where => \%where_hash, page_nr => $page_nr, recs_per_page => $recs_per_page );
+my @alerts = @{$result};
+my $nr_results = @alerts ? $alerts[0][0] : 0;
+</%init>
+
+<%args>
+$recs_per_page => 50
+$page_nr       => 1
+$sort          => 'id'
+$reverse       => 0
+</%args>

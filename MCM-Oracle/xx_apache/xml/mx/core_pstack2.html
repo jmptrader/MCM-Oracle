@@ -1,0 +1,27 @@
+% $r->content_type('text/html');
+<% $data %>
+<%init>
+my $pstack_file = $config->COREDIR . '/' . $session_id . '.pstack';
+
+my $data = '';
+if ( open FH, $pstack_file ) {
+  while ( my $line = <FH> ) {
+    if ( $line =~ /^\s*---.+---\s*$/ ) {
+        $data .= "<b>$line</b><br>";
+    }
+    elsif ( $line =~ /^ (\w{8}) (int|bool|void )?([^(]+)(.+)$/ ) {
+        $data .= "<tt><font color='green'>$1</font> <font color='red'>$2</font><font color='blue'>$3</font><font color='black'>$4</font></tt><br>";
+    } 
+    else {
+        $data .= "<tt>$line</tt><br>";
+    }
+  }
+  close(FH);
+}
+else {
+  $data = "<h2>$pstack_file cannot be opened.</h2>";
+}
+</%init>
+<%args>
+$session_id
+</%args>
