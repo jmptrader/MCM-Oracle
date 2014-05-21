@@ -115,7 +115,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH --with-internal-glib CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR --with-internal-glib CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -137,7 +137,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -157,7 +157,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -177,13 +177,13 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH"
+  do_configure $SOFT "--prefix=$INSTALL_DIR"
 
   do_build $SOFT
 
   do_install $SOFT
 
-  mv $INSTALL_PATH/bin/make $INSTALL_PATH/bin/gmake
+  mv $INSTALL_DIR/bin/make $INSTALL_DIR/bin/gmake
 fi
 
 ##########################################################
@@ -202,7 +202,7 @@ then
   #do_patch $SOFT libffi_1.diff src/x86/ffi64.c
   #do_patch $SOFT libffi_2.diff src/x86/unix64.S
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -248,7 +248,7 @@ then
   do_patch $SOFT libelf.diff configure
 
   export CC="$COMPILER_PATH/bin/cc -m64"
-  do_configure $SOFT "--prefix=$INSTALL_PATH"
+  do_configure $SOFT "--prefix=$INSTALL_DIR"
 
   do_build $SOFT
 
@@ -270,7 +270,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64' CXXFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64' CXXFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -294,7 +294,7 @@ then
 
   do_patch $SOFT libglib_2.diff gio/gsocket.c
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64 -D_XPG6 -xc99=all -features=extensions' LDFLAGS='-lintl' --disable-dtrace"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64 -D_XPG6 -xc99=all -features=extensions' LDFLAGS='-lintl' --disable-dtrace"
 
   do_build $SOFT gnu
 
@@ -314,7 +314,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_patch $SOFT libpng.diff contrib/tools/pngfix.c
 
@@ -336,7 +336,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -357,7 +357,7 @@ then
   do_extract $SOFT ggz
 
   export GNUMAKE=gmake
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT gnu
 
@@ -377,7 +377,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_build $SOFT
 
@@ -399,7 +399,7 @@ then
 
   do_patch $SOFT libfontconfig_1.diff configure
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64'"
 
   do_patch $SOFT libfontconfig_2.diff test/test-migration.c
 
@@ -421,7 +421,7 @@ then
 
   do_extract $SOFT xz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH --enable-xlib=no --enable-xlib-render=no --enable-win32=no CFLAGS='-m64 -xO1 -xc99=all'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR --enable-xlib=no --enable-xlib-render=no --enable-win32=no CFLAGS='-m64 -xO1 -xc99=all'"
 
   do_build $SOFT
 
@@ -442,7 +442,7 @@ then
 
   do_extract $SOFT xz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64' CXXFLAGS='-m64' CPPFLAGS='-m64'"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64' CXXFLAGS='-m64' CPPFLAGS='-m64'"
 
   do_patch $SOFT libpango.diff pango/opentype/Makefile
 
@@ -464,7 +464,7 @@ then
 
   do_extract $SOFT gz
 
-  do_configure $SOFT "--prefix=$INSTALL_PATH CFLAGS='-m64' CXXFLAGS='-m64' --with-png=$INSTALL_PATH --without-jpeg"
+  do_configure $SOFT "--prefix=$INSTALL_DIR CFLAGS='-m64' CXXFLAGS='-m64' --with-png=$INSTALL_DIR --without-jpeg"
 
   do_build $SOFT gnu
 
