@@ -61,7 +61,7 @@ sub new {
     my $runtype = $args{runtype} || 'N';
 
     my $batch_ref;
-    unless ( $batch_ref = $batch_config->retrieve("%DM_BATCHES%$batch_label", 1) ) {
+    unless ( $batch_ref = $batch_config->retrieve("DM_BATCHES.$batch_label", 1) ) {
         $logger->info("batch '$batch_label' is not defined in the configuration file");
         return;
     }
@@ -96,7 +96,7 @@ sub new {
         $logger->logdie("wrong runtype ($runtype) specified");
     }
 
-    $mds_label = $batch_ref->{$mds_label} || $config->retrieve("%ENTITIES%$entity%$mds_label");
+    $mds_label = $batch_ref->{$mds_label} || $config->retrieve("ENTITIES.$entity.$mds_label");
 
     unless ( $query = $library->query('mds_ref') ) {
         $logger->logdie("cannot retrieve query 'mds_ref' from the SQL library");

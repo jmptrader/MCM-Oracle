@@ -59,16 +59,16 @@ sub new {
         $logger->logdie("wrong index used for filter '$label': $index");
     }
  
-    unless ( $batch_config->retrieve("%BATCHES%$label", 1) ) {
+    unless ( $batch_config->retrieve("BATCHES.$label", 1) ) {
         $logger->info("batch '$label' is not defined in the configuration file");
         return;
     }
 
     my $filter_ref;
-    if ( $filter_ref = $batch_config->retrieve("%BATCHES%$label%FILTER$index", 1) ) {
+    if ( $filter_ref = $batch_config->retrieve("BATCHES.$label.FILTER$index", 1) ) {
         $logger->info("filter '${label}/FILTER${index}' found in the configuration file");
     }
-    elsif ( $filter_ref = $batch_config->retrieve("%BATCHES%$label%FILTER", 1) ) {
+    elsif ( $filter_ref = $batch_config->retrieve("BATCHES.$label.FILTER", 1) ) {
         $logger->info("filter '${label}/FILTER' found in the configuration file");
     }
     else {

@@ -605,6 +605,10 @@ sub get_full_cmdline {
             $cmdline{$option} = $item;
             $option = '';
         }
+        elsif ( $item =~ /^\-D(\w+)=(.+)$/ ) {
+            $cmdline{$1} = $2;
+            $option = '';
+        }
         elsif ( $item =~ /^\/(\w+):(.+)$/ ) {
             $cmdline{$1} = $2 if $1 ne 'MXJ_JVM';
             $option = '';
@@ -1279,6 +1283,19 @@ sub mxres {
     if ( $self->{cmdline_hash} ) {
         return $self->{cmdline_hash}->{MXJ_CONFIG_FILE};
     }
+}
+
+#---------------#
+sub mcm_started {
+#---------------#
+    my ($self) = @_;
+
+
+    if ( $self->{cmdline_hash} && exists $self->{cmdline_hash}->{mcm} ) {
+        return $self->{cmdline_hash}->{mcm};
+    }
+
+    return 0;
 }
 
 #-----------------#

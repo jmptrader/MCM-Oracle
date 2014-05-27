@@ -1,12 +1,9 @@
 #!/usr/bin/env perl
 
+use Mx::Config;
 
-use Text::ParseWords;
+my $file = $ARGV[0];
 
-my $line = "./mx /STDOUT:logs/sessions/__MXID__.stdout /STDERR:logs/sessions/__MXID__.stdout /STDOUT:logs/mx_output.log /STDERR:logs/mx_output.log /MX_SERVER:SMCCONTAINER /IPRETRY:-1 /IPHOST:fxcatz2:7002 /MX_DBMAPPING:public.mxres.common.dbconfig.dbsourcemapping.mxres /MXJ_PING_POP_GUI_DOCUMENT:100 /MXJ_POP_CONNECTION_TIME_OUT:240000 /FUT_CL_HIS:10000 /MXJ_AUTO_ADAPT_DATES /STBOPTIONS:STB_PREF_LISTS;STB_REGISTRY_BROWSE /IRD_BOND_TYPE_ALL /MAX_TRN_LOCK:500000 /BO_SECPAY /DB_FIRST_FIXING /DEVELOP_UNDERLYING /DYN_TABLE_CHUNK:1000 /EQD_PRICE_LINKS_DEFAULT_NONE /GENERATE_BOND_CPN_PAYMENTS /NEW_PROPAGATION /OMARG /VAR_FLAG:NO_CURVES_PROPAGATION /VAR_CHANGE_RESULTS_LENGTH /USER:MUREXTEC /PASSWORD:0010002000410047001600d600c700f0 /GROUP:T_ORCHSITD /DESK:'LCH ITD MR' /MXJ_SITE_NAME:site1 /MXJ_LOGGER_FILE:public.mxres.loggers.default_logger.mxres /MXJ_PID:305043 /MXJ_PLATFORM_NAME:MX /MXJ_INSTALLATION_CODE:LAUNCHERMARGINRUN_ION_fxcmdb2 /MXJ_PROCESS_NICK_NAME:SMCRISK.ENGINE.ION /MXJ_SERVICE_CODE:MXSMCRISK /MXJ_URL:http://fxcatz2:7000/murex.download.service.download /MXJ_HOSTNAME:fxcmdb2 /dbname:UAT /MXJ_JVM:-Djava.class.path=mxjboot.jar /TIMER /SI_TIMER";
+my $config = Mx::Config->new();
 
-my @parts = parse_line( ' ' , 0, $line );
-
-foreach ( @parts ) {
-  print $_ . "\n";
-}
+$config->dump( $file );

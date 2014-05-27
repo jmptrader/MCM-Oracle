@@ -123,7 +123,7 @@ sub new {
                     push @list2, $address;
                 }
                 else {
-                    my $address_ref = $mail_config->retrieve( "%MAIL%GROUPS%$address%address", 1 );
+                    my $address_ref = $mail_config->retrieve( "MAIL.GROUPS.$address.address", 1 );
                     if ( $address_ref ) {
                         if ( ref($address_ref) eq 'ARRAY' ) {
                             push @list2, @{$address_ref};
@@ -142,7 +142,7 @@ sub new {
         }
     }
    
-    $args{from} ||= $mail_config->retrieve( '%MAIL%DEFAULT_SENDER' );
+    $args{from} ||= $mail_config->retrieve( 'MAIL.DEFAULT_SENDER' );
 
     unless ( $args{to} ) {
         $args{to}      = $args{from};

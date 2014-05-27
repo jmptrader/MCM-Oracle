@@ -58,7 +58,7 @@ sub _read_config {
     my $batch_config         = Mx::Config->new( $batch_configfile );
     $self->{batchconfig}     = $batch_config;
 
-    my $batch_ref = $batch_config->retrieve( "%DM_BATCHES%$name", 1 ) || $batch_config->retrieve( '%DM_BATCHES%DEFAULT' );
+    my $batch_ref = $batch_config->retrieve( "DM_BATCHES.$name", 1 ) || $batch_config->retrieve( 'DM_BATCHES.DEFAULT' );
     my $batchname = $batch_ref->{name};
     my $label     = $batch_ref->{label};
     my $exc_tmpl  = $batch_ref->{exc_tmpl};

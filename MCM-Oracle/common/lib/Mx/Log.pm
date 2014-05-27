@@ -77,6 +77,7 @@ sub AUTOLOAD {
     my $self = shift;
     $AUTOLOAD =~ s/.*:://;
     return if $AUTOLOAD eq 'DESTROY';
+    $AUTOLOAD = 'logconfess' if $AUTOLOAD eq 'logdie';
     $self->{real_logger}->$AUTOLOAD(@_);
 }
 

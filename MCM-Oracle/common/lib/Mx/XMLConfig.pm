@@ -10,9 +10,19 @@ use Hash::Merge;
 use IO::File;
 use File::Basename;
 use Carp;
-use Data::Dumper;
 
 use vars qw($AUTOLOAD);
+
+my $CONFIGDIR = '/lch/fxclear/' . $ENV{MXUSER} . '/projects/common/conf';
+
+my %SERVICE_KEYS = (
+  MXJ_FILESERVER_HOST => 'fileserver',
+  MXJ_XMLSERVER_HOST  => 'xmlserver',
+  MXJ_MXNET_HOST      => 'murexnet',
+  MXJ_DOC_SERVER      => 'docserver',
+  RTBS_HOST           => 'rtbs',
+  RTBS_FIXING_HOST    => 'rtbs fixing'
+);
 
 my $XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>';
 
@@ -24,21 +34,21 @@ sub new {
 
     $configfile ||= Mx::XMLConfig->configfile();
 
-	my $hashref = _parse_configfile( $configfile );
+    my $hashref = _parse_configfile( $configfile );
 
-	my $includes = [];
-	if ( $hashref->{Include} ) {
-	    $includes = ( ref ( $hashref->{Include} ) eq 'ARRAY' ) ? $hashref->{Include} : [ $hashref->{Include} ];
+    my $includes = [];
+    if ( $hashref->{Include} ) {
+        $includes = ( ref ( $hashref->{Include} ) eq 'ARRAY' ) ? $hashref->{Include} : [ $hashref->{Include} ];
     }
 
-	delete $hashref->{Include};
+    delete $hashref->{Include};
 
-	my $configdir = dirname( $configfile );
+    my $configdir = dirname( $configfile );
 
-	foreach my $include ( @{$includes} ) {
-		unless ( substr( $include, 0, 1 ) eq '/' ) {
-			$include = $configdir . '/' . $include;
-		}
+    foreach my $include ( @{$includes} ) {
+        unless ( substr( $include, 0, 1 ) eq '/' ) {
+            $include = $configdir . '/' . $include;
+        }
     }
 
     bless { config => $hashref, includes => $includes, configfile => $configfile }, $class;
@@ -51,24 +61,24 @@ sub _parse_configfile {
 
 
     my $xs      = XML::Simple->new( ForceArray => [ 'Include' ] );
-	my $flatter = Hash::Flatten->new();
+    my $flatter = Hash::Flatten->new();
     my $merger  = Hash::Merge->new( 'LEFT_PRECEDENT' );
 
-	my $configdir = dirname( $configfile );
+    my $configdir = dirname( $configfile );
 
-	my $hashref = eval { $xs->XMLin( $configfile ) };
+    my $hashref = eval { $xs->XMLin( $configfile ) };
 
     croak "parsing of $configfile failed: $@" if $@;
 
-	my $flat_hashref = $flatter->flatten( $hashref );
+    my $flat_hashref = $flatter->flatten( $hashref );
 
     _transform_arrays( $flat_hashref );
 
     if ( $flat_hashref->{Include} ) {
         foreach my $configfile ( @{$flat_hashref->{Include}} ) {
-			unless ( substr( $configfile, 0, 1 ) eq '/' ) {
-				$configfile = $configdir . '/' . $configfile;
-			}
+            unless ( substr( $configfile, 0, 1 ) eq '/' ) {
+                $configfile = $configdir . '/' . $configfile;
+            }
 
             $flat_hashref = $merger->merge( $flat_hashref, _parse_configfile( $configfile ) ); 
         }
@@ -148,7 +158,7 @@ sub retrieve_as_array {
         if ( ref( $value ) eq 'ARRAY' ) {
             return @{ $value };
         }
-		return ( ( $value ) );
+        return ( ( $value ) );
     }
     return ();
 }
@@ -173,7 +183,7 @@ sub configfile {
     my ($class) = @_;
 
 
-    my $configfile = '/lch/fxclear/' . $ENV{MXUSER} . '/code/config/MurexEnv_' . $ENV{MXENV} . '.xml';
+    my $configfile = $CONFIGDIR . '/' . $ENV{MXENV} . '.xml';
 
     my $fh;
     unless ( $fh = IO::File->new( $configfile, '<' ) ) {
@@ -198,7 +208,7 @@ sub check_key {
     my ( $self, $key ) = @_;
 
 
-	exists $self->{config}->{$key};
+    exists $self->{config}->{$key};
 }
 
 #-----------#
@@ -207,7 +217,7 @@ sub set_key {
     my ( $self, $key, $value ) = @_;
 
 
-	$self->{config}->{$key} = $value;
+    $self->{config}->{$key} = $value;
 }
 
 #--------#
@@ -216,13 +226,13 @@ sub hash {
     my ( $self ) = @_;
 
 
-	unless ( $self->{hash} ) {
-	    my $flatter = Hash::Flatten->new();
+    unless ( $self->{hash} ) {
+        my $flatter = Hash::Flatten->new();
 
-	    $self->{hash} = $flatter->unflatten( $self->{config} );
+        $self->{hash} = $flatter->unflatten( $self->{config} );
     }
 
-	return $self->{hash};
+    return $self->{hash};
 }
 
 #------------#
@@ -231,7 +241,7 @@ sub includes {
     my ( $self ) = @_;
 
 
-	return @{$self->{includes}};
+    return @{$self->{includes}};
 }
 
 #--------#
@@ -243,17 +253,17 @@ sub dump {
     $file ||= $self->{configfile};
 
     my $fh;
-	unless ( $fh = IO::File->new( $file, '>' ) ) {
-		croak "unable to open $file: $!";
+    unless ( $fh = IO::File->new( $file, '>' ) ) {
+        croak "unable to open $file: $!";
     }
 
     my $xs = XML::Simple->new( NoAttr => 1, KeyAttr => [], RootName => 'Configuration', XMLDecl => $XML_DECLARATION );
 
-	my $xml = $xs->XMLout( $self->hash );
+    my $xml = $xs->XMLout( $self->hash );
 
-	print $fh $xml;
+    print $fh $xml;
 
-	$fh->close;
+    $fh->close;
 }
 
 1;

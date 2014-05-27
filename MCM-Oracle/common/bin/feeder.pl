@@ -80,7 +80,7 @@ $logger->info("feeder.pl $args");
 
 my $scheduler = Mx::Scheduler->new( jobstream => $sched_js, logger => $logger, config => $config );
 my $entity    = $scheduler->entity();
-my $context   = $config->retrieve("%ENTITIES%$entity%context");
+my $context   = $config->retrieve("ENTITIES.$entity.context");
 
 my $hostname = Mx::Util->hostname;
 $logger->info("Hostname = $hostname") ;

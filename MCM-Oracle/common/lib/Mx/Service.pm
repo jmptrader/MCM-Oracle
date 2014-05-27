@@ -83,7 +83,7 @@ sub new {
     }
 
     my $service_ref;
-    unless ( $service_ref = $config->retrieve("%SERVICES%$name") ) {
+    unless ( $service_ref = $config->retrieve("SERVICES.$name") ) {
         $logger->logdie("service '$name' is not defined in the configuration file");
     }
 
@@ -105,17 +105,17 @@ sub new {
     my $location = $args{location};
 
     if ( defined $location ) {
-		if ( $location_range ) {
-			return unless $location >= $location_nr;
+        if ( $location_range ) {
+            return unless $location >= $location_nr;
             $self->{location} = $location;
         }
-		else {
-			return unless $self->{location} == $location_nr;
+        else {
+            return unless $location == $location_nr;
         }
     }
-	else {
-		if ( $location_range ) {
-			$logger->logdie("a service with a location range cannot be initialized without location argument");
+    else {
+        if ( $location_range ) {
+            $logger->logdie("a service with a location range cannot be initialized without location argument");
         }
     }
 
@@ -227,26 +227,26 @@ sub list {
             next;
         }
 
-		my $service_location = $services_ref->{$name}->{location};
+        my $service_location = $services_ref->{$name}->{location};
 
         my $location_nr; my $location_range = '';
         unless ( ( $location_nr, $location_range ) = $service_location =~ /^(\d+)(\+?)$/ ) {
             $logger->logdie('wrong location specified: ', $service_location);
         }
 
-		my @locations = ();
-        if ( $args{location} ) {
-		    @locations = ( $args{location} );
+        my @locations = ();
+        if ( defined $args{location} ) {
+            @locations = ( $args{location} );
         }
-		elsif ( ! $location_range ) {
-			@locations = ( $location_nr );
+        elsif ( ! $location_range ) {
+            @locations = ( $location_nr );
         }
-		else {
-			@locations = ( $location_nr .. $#app_servers );
+        else {
+            @locations = ( $location_nr .. $#app_servers );
         }
 
-		foreach my $location ( @locations ) {
-			next unless $app_servers[$location];
+        foreach my $location ( @locations ) {
+            next unless $app_servers[$location];
 
             if ( my $service = Mx::Service->new( name => $name, location => $location, config => $config, logger => $logger ) ) {
                 push @services, $service;
@@ -296,6 +296,8 @@ sub update {
         unless ( ref($service) eq 'Mx::Service' ) {
             $logger->logdie('only Mx::Service objects are allowed as arguments');
         }
+
+        $service->{hostname} = $hostname;
 
         if ( $service->{status} == DISABLED ) {
 #            $logger->debug("service '$name' is disabled");
@@ -354,7 +356,6 @@ sub update {
                     $process->descriptor( $descriptor );
                     $process->label( $label );
                     $nr_processes++;
-                    $service->{hostname} = $process->hostname;
                     $process_ref->[$i] = $process;
                     $process_by_desc_ref->{$descriptor} = $process;
                 }
@@ -424,7 +425,7 @@ sub start {
 
     my $command;
     if ( $self->{launcher} =~ /$LAUNCHER/ ) {
-        $command = $self->{launcher} . ' ' . $self->{options} . ' ' . $self->{params} . ' ' . $gc_args;
+        $command = $self->{launcher} . ' ' . $self->{options} . ' ' . $self->{params} . ' -jopt:-Dmcm=true ' . $gc_args;
     }
     else {
         $command = $self->{launcher} . ' -start ' . $self->{options} . ' ' . $self->{params};
@@ -954,6 +955,7 @@ sub TO_JSON {
       21 => '',
       22 => '',
       23 => '',
+      24 => '',
       DT_RowId => $self->{name}
     );
 
@@ -984,6 +986,8 @@ sub TO_JSON {
                 $info{22} = Mx::Util->separate_thousands( $gc{total_gcs} );
                 $info{23} = Mx::Util->separate_thousands( $gc{total_full_gcs} );
             }
+
+            $info{24} = ( $process->mcm_started || ( $self->{launcher} !~ /$LAUNCHER/ ) ) ? 'YES' : 'NO';
 
             $starttime = $process->starttime;
             if ( $mxres = $process->mxres ) {

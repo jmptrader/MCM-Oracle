@@ -63,7 +63,7 @@ sub new {
     }
     $self->{name} = $name;
 
-    my $alert_ref = $alert_config->retrieve("%ALERTS%$name");
+    my $alert_ref = $alert_config->retrieve("ALERTS.$name");
 
     $self->{category}          = $alert_ref->{category};
     $self->{message_template}  = $alert_ref->{message};

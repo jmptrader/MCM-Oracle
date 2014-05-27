@@ -39,7 +39,7 @@ sub new {
     }
  
     my $project_ref;
-    unless ( $project_ref = $config->retrieve("%PROJECTS%$name") ) {
+    unless ( $project_ref = $config->retrieve("PROJECTS.$name") ) {
         $logger->logdie("project '$name' is not defined in the configuration file");
     }
  

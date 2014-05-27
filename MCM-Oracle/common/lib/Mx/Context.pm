@@ -52,13 +52,13 @@ sub new {
     }
     $self->{config} = $config;
     my $context_ref;
-    unless ( $context_ref = $config->retrieve("%CONTEXTS%$name")  ) {
+    unless ( $context_ref = $config->retrieve("CONTEXTS.$name")  ) {
         $logger->warn("context '$name' is not defined in the configuration file");
         return;
     }
-    $self->{user}  = $config->retrieve("%CONTEXTS%$name%user");
-    $self->{group} = $config->retrieve("%CONTEXTS%$name%group");
-    $self->{desk}  = $config->retrieve("%CONTEXTS%$name%desk");
+    $self->{user}  = $config->retrieve("CONTEXTS.$name.user");
+    $self->{group} = $config->retrieve("CONTEXTS.$name.group");
+    $self->{desk}  = $config->retrieve("CONTEXTS.$name.desk");
     $logger->debug("context $name retrieved from configuration file");
     bless $self, $class;
 }

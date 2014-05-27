@@ -48,7 +48,7 @@ sub new {
     my $sla_config     = Mx::Config->new( $sla_configfile );
 
     my $sla_ref;
-    unless ( $sla_ref = $sla_config->retrieve("%SLAS%$name") ) {
+    unless ( $sla_ref = $sla_config->retrieve("SLAS.$name") ) {
         $logger->logdie("SLA '$name' is not defined in the configuration file");
     }
  

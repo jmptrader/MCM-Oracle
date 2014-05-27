@@ -83,24 +83,24 @@ sub new {
 
     _update_stats( $self );
 
-    if ( my $fail_patterns = $config->retrieve("%LOGFILES%$label%fail_pattern") ) {
+    if ( my $fail_patterns = $config->retrieve("LOGFILES.$label.fail_pattern") ) {
         $self->{fail_patterns}     = ( ref( $fail_patterns ) eq 'ARRAY' ) ? $fail_patterns : [ $fail_patterns ];
-        $self->{fail_addresses}    = $config->retrieve("%LOGFILES%$label%fail_addresses");
-        $self->{fail_action}       = $config->retrieve("%LOGFILES%$label%fail_action");
+        $self->{fail_addresses}    = $config->retrieve("LOGFILES.$label.fail_addresses");
+        $self->{fail_action}       = $config->retrieve("LOGFILES.$label.fail_action");
     }
 
-    if ( my $warn_patterns = $config->retrieve("%LOGFILES%$label%warn_pattern") ) {
+    if ( my $warn_patterns = $config->retrieve("LOGFILES.$label.warn_pattern") ) {
         $self->{warn_patterns}     = ( ref( $warn_patterns ) eq 'ARRAY' ) ? $warn_patterns : [ $warn_patterns ];
-        $self->{warn_addresses}    = $config->retrieve("%LOGFILES%$label%warn_addresses");
-        $self->{warn_action}       = $config->retrieve("%LOGFILES%$label%warn_action");
+        $self->{warn_addresses}    = $config->retrieve("LOGFILES.$label.warn_addresses");
+        $self->{warn_action}       = $config->retrieve("LOGFILES.$label.warn_action");
     }
 
-    if ( my $timeout_patterns = $config->retrieve("%LOGFILES%$label%timeout_pattern") ) {
-        $self->{timeout}           = $config->retrieve("%LOGFILES%$label%timeout");
-        $self->{timeout_flag}      = $config->retrieve("%LOGFILES%$label%timeout_flag");
+    if ( my $timeout_patterns = $config->retrieve("LOGFILES.$label.timeout_pattern") ) {
+        $self->{timeout}           = $config->retrieve("LOGFILES.$label.timeout");
+        $self->{timeout_flag}      = $config->retrieve("LOGFILES.$label.timeout_flag");
         $self->{timeout_patterns}  = ( ref( $timeout_patterns ) eq 'ARRAY' ) ? $timeout_patterns : [ $timeout_patterns ];
-        $self->{timeout_addresses} = $config->retrieve("%LOGFILES%$label%timeout_addresses");
-        $self->{timeout_action}    = $config->retrieve("%LOGFILES%$label%timeout_action");
+        $self->{timeout_addresses} = $config->retrieve("LOGFILES.$label.timeout_addresses");
+        $self->{timeout_action}    = $config->retrieve("LOGFILES.$label.timeout_action");
     }
 
     $self->{timeout_trigger}   = 0;
@@ -208,7 +208,7 @@ sub get_filenames {
         $logger->logdie("missing argument in class function call get_filenames (label)");
     }
 
-    my $filename = $config->retrieve("%LOGFILES%$label%filename");
+    my $filename = $config->retrieve("LOGFILES.$label.filename");
     my @filenames = ( ref( $filename ) eq 'ARRAY' ) ? @{$filename} : ( $filename );
     my $root_dir = $config->MXENV_ROOT;
 

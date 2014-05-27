@@ -21,23 +21,24 @@ sub usage {
 #---------#
     print <<EOT
 
-Usage: services.pl [ -start ] [ -stop ] [ -restart ] [ -full ] [ -newlogs ] [ -list ] [ -name <name> ] [ -help ] 
+Usage: services.pl [ -start ] [ -stop ] [ -restart ] [ -full ] [ -newlogs ] [ -list ] [ -name <name> ] [ -location <number> ] [ -help ]
 
- -start       Start all services in the correct order.
- -stop        Stop all services in the correct order.
- -restart     Stop and restart all services in the correct order.
- -full        When stopping or restarting, also kill the remaining mx and java processes.
- -newlogs     Cleanup the logs after stop or before start.
- -list        Show the status of all services.
- -name <name> Do the action only for this service.     
- -help        Display this text.
+ -start             Start all services in the correct order.
+ -stop              Stop all services in the correct order.
+ -restart           Stop and restart all services in the correct order.
+ -full              When stopping or restarting, also kill the remaining mx and java processes.
+ -newlogs           Cleanup the logs after stop or before start.
+ -list              Show the status of all services.
+ -name <name>       Do the action only for the service(s) with this name.
+ -location <number> Do the action only for the service(s) on this location.
+ -help              Display this text.
 
 EOT
 ;
     exit 1;
 }
 
-my ($do_start, $do_stop, $do_restart, $do_full, $do_newlogs, $do_list, $name);
+my ($do_start, $do_stop, $do_restart, $do_full, $do_newlogs, $do_list, $name, $location);
 
 GetOptions(
     'start'      => \$do_start,
@@ -47,6 +48,7 @@ GetOptions(
     'newlogs'    => \$do_newlogs,
     'list'       => \$do_list,
     'name=s'     => \$name,
+    'location=s' => \$location,
     'help'       => \&usage,
 );
 
@@ -76,14 +78,15 @@ my @handles = Mx::Secondary->handles( config => $config, logger => $logger );
 #
 # get a list of all the configured services
 #
-my @all_services = Mx::Service->list( name => $name, config => $config, logger => $logger);
+my @all_services = Mx::Service->list( name => $name, location => $location, config => $config, logger => $logger);
 
 #
 # get the current status of all services
 #
 my @names = ();
 foreach my $service ( @all_services ) {
-    push @{$names[ $service->location] }, $service->name;
+    my @processes = $service->processes;
+    push @{$names[ $service->location ]}, $service->name;
 }
 
 my @services = ();
@@ -98,9 +101,31 @@ foreach my $handle ( @handles ) {
 @services = sort { $a->{order} <=> $b->{order} } @services;
 
 if ( $do_list ) {
-    foreach my $service (@services) {
-        printf "%-30s: %s\n", $service->name, $service->status;
+    print "\n";
+    printf "%2s %-25s %-25s %-10s %-10s\n", '', 'NAME', 'LABEL', 'HOSTNAME', 'STATUS';
+    printf "%2s %-25s %-25s %-10s %-10s\n", '', '-' x 25, '-' x 25 , '-' x 10, '-' x 10;
+
+    my $previous_location = 0;
+    foreach my $service ( sort { $a->location <=> $b->location } @services ) {
+        if ( ! $name && ! $location && $service->location != $previous_location ) {
+            print "\n";
+            $previous_location = $service->location;
+        }
+
+        my $color = '0;37';
+        if ( $service->status eq 'started' ) {
+            $color = '0;32';
+        }
+        elsif ( $service->status eq 'stopped' or $service->status eq 'failed' ) {
+            $color = '0;31';
+        }
+
+        foreach my $label ( $service->labels ) {
+            printf "%-2s %-25s %-25s %-10s \e[${color}m%-10s\e[m\n", $service->location, $service->name, $label, $service->hostname, $service->status;
+        }
     }
+
+    print "\n";
 }
 
 if ( $do_stop or $do_restart ) {
@@ -116,27 +141,27 @@ if ( $do_stop or $do_restart ) {
         close(FH);
     }
 
-	my $queue = Mx::Secondary::Queue->new( timeout => 600, logger => $logger );
+    my $queue = Mx::Secondary::Queue->new( timeout => 600, logger => $logger );
 
     map { $queue->add_handle( handle => $_, threshold => 10 ) } @handles;
 
     foreach my $service ( reverse @services ) {
-		my $item_name = ( $service->location ) ? $service->name . '_' . $service->location : $service->name;
+        my $item_name = ( $service->location ) ? $service->name . '_' . $service->location : $service->name;
 
-		$queue->add_item(
-		  name          => $item_name,
-		  instance      => $service->location,
-		  method        => 'service_action',
-		  method_args   => { name => $service->name, action => 'stop' },
-		  poll_interval => 3,
-		  pre_handler   => sub { printf "stopping service %s on instance %d\n", $service->name, $service->location; },
-		  post_handler  => sub { printf "service %s on instance %d is stopped\n", $service->name, $service->location; },
-		  fail_handler  => sub { printf "! service %s on instance %d failed\n", $service->name, $service->location; },
-		  timeout       => 300
-		);
+        $queue->add_item(
+          name          => $item_name,
+          instance      => $service->location,
+          method        => 'service_action',
+          method_args   => { name => $service->name, action => 'stop' },
+          poll_interval => 3,
+          pre_handler   => sub { printf "stopping service %s on instance %d\n", $service->name, $service->location; },
+          post_handler  => sub { printf "service %s on instance %d is stopped\n", $service->name, $service->location; },
+          fail_handler  => sub { printf "! service %s on instance %d failed\n", $service->name, $service->location; },
+          timeout       => 300
+        );
     }
 
-	$queue->run;
+    $queue->run;
 
     if ( $do_full ) {
         if ( unlink( $kill_flag ) ) {
@@ -207,29 +232,29 @@ if ( $do_start or $do_restart ) {
 
     my $exitcode = 0;
 
-	my $queue = Mx::Secondary::Queue->new( logger => $logger );
+    my $queue = Mx::Secondary::Queue->new( logger => $logger );
 
     map { $queue->add_handle( handle => $_, threshold => 5 ) } @handles;
 
     foreach my $service (@services) {
         next if ( $service->manual && ! $manual );
 
-		my $item_name = ( $service->location ) ? $service->name . '_' . $service->location : $service->name;
+        my $item_name = ( $service->location ) ? $service->name . '_' . $service->location : $service->name;
 
-		$queue->add_item(
-		  name         => $item_name,
-		  instance     => $service->location,
-		  method       => 'service_action',
-		  method_args  => { name => $service->name, action => 'start' },
-		  pre_handler  => sub { printf "starting service %s on instance %d\n", $service->name, $service->location; },
-		  post_handler => sub { printf "service %s on instance %d is started\n", $service->name, $service->location; },
-		  fail_handler => sub { printf "! service %s on instance %d failed\n", $service->name, $service->location; },
-		  dependencies => $service->dependency,
-		  timeout      => 300
-		);
+        $queue->add_item(
+          name         => $item_name,
+          instance     => $service->location,
+          method       => 'service_action',
+          method_args  => { name => $service->name, action => 'start' },
+          pre_handler  => sub { printf "starting service %s on instance %d\n", $service->name, $service->location; },
+          post_handler => sub { printf "service %s on instance %d is started\n", $service->name, $service->location; },
+          fail_handler => sub { printf "! service %s on instance %d failed\n", $service->name, $service->location; },
+          dependencies => $service->dependency,
+          timeout      => 300
+        );
     }
 
-	$exitcode = $queue->run;
+    $exitcode = $queue->run;
 
     my $alert = Mx::Alert->new( name => 'service_down', config => $config, logger => $logger );
     $alert->enable();

@@ -131,7 +131,7 @@ unless ( $mx_noaudit ) {
 # lookup the nick in the configuration file
 #
 my $session_info;
-unless ( $session_info = $config->retrieve("%SESSIONS%$mx_nick", 1) ) {
+unless ( $session_info = $config->retrieve("SESSIONS.$mx_nick", 1) ) {
     $audit->end("nick $mx_nick cannot be found in the configuration file", 1);
 }
 
@@ -652,7 +652,7 @@ if ( $command =~ /\s+\/TIMER\s+/ ) {
     }
 }
 
-my $sqltrace_file = $config->retrieve("%SESSIONS%$mx_nick%stats_path") . "/${session_id}.${pid}.trc";
+my $sqltrace_file = $config->retrieve("SESSIONS.$mx_nick.stats_path") . "/${session_id}.${pid}.trc";
 if ( $command =~ /\s+\/RDBMS_STATISTICS:/ ) {
     $logger->debug('collecting sqltrace information');
     if ( $db_audit->collect_sqltrace( file => $sqltrace_file, session_id => $session_id ) ) {

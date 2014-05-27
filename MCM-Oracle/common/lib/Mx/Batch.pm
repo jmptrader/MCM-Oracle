@@ -52,10 +52,10 @@ sub _read_config {
     my $batch_configfile = $config->retrieve('BATCH_CONFIGFILE');
     my $batch_config     = Mx::Config->new( $batch_configfile );
 
-    my $batch_ref        = $batch_config->retrieve( "%BATCHES%$name" );
-    my $files_ref        = $batch_config->retrieve( "%BATCHES%$name%FILES" );
-    my $tables_ref       = $batch_config->retrieve( "%BATCHES%$name%TABLES" );
-    my $commands_ref     = $batch_config->retrieve( "%BATCHES%$name%COMMANDS" );
+    my $batch_ref        = $batch_config->retrieve( "BATCHES.$name" );
+    my $files_ref        = $batch_config->retrieve( "BATCHES.$name.FILES" );
+    my $tables_ref       = $batch_config->retrieve( "BATCHES.$name.TABLES" );
+    my $commands_ref     = $batch_config->retrieve( "BATCHES.$name.COMMANDS" );
 
     my $batchname      = $batch_ref->{name};
     my $batchtemplate  = $batch_ref->{template};

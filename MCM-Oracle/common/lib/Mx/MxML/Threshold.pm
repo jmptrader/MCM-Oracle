@@ -41,7 +41,7 @@ sub new {
     my $mxml_threshold_config     = Mx::Config->new( $mxml_threshold_configfile );
 
     my $mxml_threshold_ref;
-    unless ( $mxml_threshold_ref = $mxml_threshold_config->retrieve("%MXML_THRESHOLDS%$name") ) {
+    unless ( $mxml_threshold_ref = $mxml_threshold_config->retrieve("MXML_THRESHOLDS.$name") ) {
         $logger->logdie("MxML threshold '$name' is not defined in the configuration file");
     }
  
@@ -157,7 +157,7 @@ sub queue_tasktypes {
     my $mxml_threshold_config     = Mx::Config->new( $mxml_threshold_configfile );
 
     my @queue_tasktypes = ();
-    my $ref = $mxml_threshold_config->retrieve( '%MXML_THRESHOLDS%queue_tasktype', 1 );
+    my $ref = $mxml_threshold_config->retrieve( 'MXML_THRESHOLDS.queue_tasktype', 1 );
     if ( $ref ) {
       if ( ref($ref) eq 'ARRAY' ) {
           @queue_tasktypes = @{$ref};
@@ -192,7 +192,7 @@ sub message_throughput {
     my $mxml_threshold_configfile = $config->retrieve('MXML_THRESHOLDSFILE');
     my $mxml_threshold_config     = Mx::Config->new( $mxml_threshold_configfile );
 
-    $MESSAGE_THROUGHPUT = $mxml_threshold_config->retrieve( '%MXML_THRESHOLDS%message_throughput', 1 );
+    $MESSAGE_THROUGHPUT = $mxml_threshold_config->retrieve( 'MXML_THRESHOLDS.message_throughput', 1 );
 
     return $MESSAGE_THROUGHPUT;
 }

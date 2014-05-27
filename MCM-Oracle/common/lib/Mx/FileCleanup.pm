@@ -48,7 +48,7 @@ sub new {
     my $cleanup_config     = Mx::Config->new( $cleanup_configfile );
 
     my $cleanup_ref;
-    unless ( $cleanup_ref = $cleanup_config->retrieve("%CLEANFS%$name") ) {
+    unless ( $cleanup_ref = $cleanup_config->retrieve("CLEANFS.$name") ) {
         $logger->logdie("cleanup '$name' is not defined in the configuration file");
     }
 

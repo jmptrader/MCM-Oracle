@@ -95,7 +95,7 @@ sub is_disabled {
     my $sched_configfile = $config->retrieve('SCHED_CONFIGFILE');
     my $sched_config     = Mx::Config->new( $sched_configfile );
 
-    my $enabled_jobstream = $sched_config->retrieve('%SCHEDULER%ENABLE_JOBSTREAM', 1);
+    my $enabled_jobstream = $sched_config->retrieve('SCHEDULER.ENABLE_JOBSTREAM', 1);
 
     my @enabled_jobstreams = ();
     if ( $enabled_jobstream ) {
@@ -114,7 +114,7 @@ sub is_disabled {
         }
     }
 
-    my $disabled_jobstream = $sched_config->retrieve('%SCHEDULER%DISABLE_JOBSTREAM', 1);
+    my $disabled_jobstream = $sched_config->retrieve('SCHEDULER.DISABLE_JOBSTREAM', 1);
 
     my @disabled_jobstreams = ();
     if ( $disabled_jobstream ) {

@@ -64,7 +64,7 @@ sub new {
     $self->{runtype}         = $result->[22];
     $self->{project}         = $result->[26];
     
-    my $stats_path = $config->retrieve("%SESSIONS%$mx_nick%stats_path");
+    my $stats_path = $config->retrieve("SESSIONS.$mx_nick.stats_path");
 
     my $path = $stats_path . '/scanner_client.' . $pid . '.log';
 

@@ -9,6 +9,7 @@ use IO::File;
 use Carp;
 use File::Spec;
 use File::Basename;
+use XML::Simple;
 
 use vars qw($AUTOLOAD);
 
@@ -22,6 +23,8 @@ my %SERVICE_KEYS = (
   RTBS_HOST           => 'rtbs',
   RTBS_FIXING_HOST    => 'rtbs fixing'
 );
+
+my $XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>';
 
 #-------#
 sub new {
@@ -63,7 +66,7 @@ sub AUTOLOAD {
 
 #
 # More advanced retrieval method than the AUTOLOADER.
-# This allows for the syntax retrieve(%ACCOUNTS%murexconfig%encrypted_password)
+# This allows for the syntax retrieve( ACCOUNTS.murexconfig.encrypted_password )
 # The corresponding value can also be a similar expression
 #
 #------------#
@@ -74,11 +77,12 @@ sub retrieve {
 
     my $value; 
 
-    #
-    # it's a special key...
-    #
-    if ( $key =~ /^%(.+)$/ ) {
-        my @parts = split '%', $1;
+    if ( exists $self->{config}->{$key} ) {
+        $value = $self->{config}->{$key};
+    }
+    elsif ( $key =~ /\./ ) {
+        my @parts = split /\./, $key;
+
         $value = $self->{config};
         foreach my $part ( @parts ) {
             if ( exists $value->{$part} ) {
@@ -97,23 +101,17 @@ sub retrieve {
 
         return $app_servers[$location];
     }
-    #
-    # it's a normal key
-    #
     else {
-        unless ( exists $self->{config}->{$key} ) {
-            return if $no_strict;
-            croak("using non-existing configuration parameter: $key");
-        }
-        $value = $self->{config}->{$key};
+        return if $no_strict;
+        croak("using non-existing configuration parameter: $key");
     }
 
     #
     # it's a special value
     #
-    if ( $value =~ /^%(.+)$/ ) {
+    if ( $value =~ /%/ ) {
         my $orig_value = $value;
-        my @parts = split '%', $1; 
+        my @parts = split /%/, $value;
         $value = $self->{config};
         foreach my $part ( @parts ) {
             if ( exists $value->{$part} ) {
@@ -344,6 +342,28 @@ sub get_keys {
 
     return keys %{$self->{config}};
 } 
+
+#--------#
+sub dump {
+#--------#
+    my ( $self, $file ) = @_;
+
+
+    $file ||= $self->{configfile};
+
+    my $fh;
+    unless ( $fh = IO::File->new( $file, '>' ) ) {
+        croak "unable to open $file: $!";
+    }
+
+    my $xs = XML::Simple->new( NoAttr => 1, KeyAttr => [], RootName => 'Configuration', XMLDecl => $XML_DECLARATION );
+
+    my $xml = $xs->XMLout( $self->{config} );
+
+    print $fh $xml;
+
+    $fh->close;
+}
 
 1;
 

@@ -35,7 +35,7 @@ GetOptions(
     'check'      => \$do_check,
     'apply'      => \$do_apply,
     'confirm'    => \$do_confirm,
-	'nobackup'   => \$no_backup
+    'nobackup'   => \$no_backup
 );
 
 unless ( $do_check or $do_apply or $do_confirm ) {
@@ -56,45 +56,45 @@ find( \&wanted, $template_dir );
 sub wanted {
     my $path = $File::Find::name;
 
-	return unless -f $path; 
+    return unless -f $path; 
 
     my $template = Mx::Template->new( path => $path, logger => $logger );
 
     $template->process( params => $xmlconfig );
 
-	my $target = $path;
-	$target =~ s/^$template_dir/$target_dir/;
+    my $target = $path;
+    $target =~ s/^$template_dir/$target_dir/;
 
-	my $output;
-	return if $template->compare( target => $target, output => \$output );
+    my $output;
+    return if $template->compare( target => $target, output => \$output );
 
-	print "$output\n";
+    print "$output\n";
 
-	if ( $do_apply ) {
-		$template->install( no_backup => $no_backup ) || ( $rc = 1 );
+    if ( $do_apply ) {
+        $template->install( no_backup => $no_backup ) || ( $rc = 1 );
     }
-	elsif ( $do_confirm ) {
+    elsif ( $do_confirm ) {
         my $answer;
-		while ( ! $answer ) {
-		    print "\nReplace $target? [y/N] ";
-		    $answer = <STDIN>;
-			chomp($answer);
+        while ( ! $answer ) {
+            print "\nReplace $target? [y/N] ";
+            $answer = <STDIN>;
+            chomp($answer);
 
-			if ( $answer =~ /^y[es]?$/i ) {
+            if ( $answer =~ /^y[es]?$/i ) {
                 $answer = 'yes';
-				print "\n\n";
+                print "\n\n";
             }
-			elsif ( ! $answer or $answer =~ /^n[o]?$/i ) {
+            elsif ( ! $answer or $answer =~ /^n[o]?$/i ) {
                 $answer = 'no';
-				print "\n\n";
+                print "\n\n";
             }
-			else {
+            else {
                 $answer = '';
             }
         }
 
-		if ( $answer eq 'yes' ) {
-		    $template->install( no_backup => $no_backup ) || ( $rc = 1 );
+        if ( $answer eq 'yes' ) {
+            $template->install( no_backup => $no_backup ) || ( $rc = 1 );
         }
     }
 }

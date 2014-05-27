@@ -58,9 +58,9 @@ sub new {
     my $account_ref;
     my $no_strict = 1;
     unless ( 
-        ( $account_ref = $config->retrieve("%ACCOUNTS%$name", $no_strict) ) ||
-        ( $account_ref = $config->retrieve("%DB_ACCOUNTS%$name", $no_strict) ) ||
-        ( $account_ref = $config->retrieve("%GL_DB_ACCOUNTS%$name", $no_strict) )
+        ( $account_ref = $config->retrieve("ACCOUNTS.$name", $no_strict) ) ||
+        ( $account_ref = $config->retrieve("DB_ACCOUNTS.$name", $no_strict) ) ||
+        ( $account_ref = $config->retrieve("GL_DB_ACCOUNTS.$name", $no_strict) )
         ) {
         $logger->warn("account '$name' is not defined in the configuration file");
         return;

@@ -970,13 +970,13 @@ sub install_templates {
     }
     foreach my $name ( keys %{$templates_ref} ) {
         $logger->debug("template '$name' found");
-        my $template          = $config->retrieve("%TEMPLATES%$name%template");
-        my $target            = $config->retrieve("%TEMPLATES%$name%target");
-        my $executable        = $config->retrieve("%TEMPLATES%$name%executable");
-        my $substitutions_ref = $config->retrieve("%TEMPLATES%$name%substitutions");
+        my $template          = $config->retrieve("TEMPLATES.$name.template");
+        my $target            = $config->retrieve("TEMPLATES.$name.target");
+        my $executable        = $config->retrieve("TEMPLATES.$name.executable");
+        my $substitutions_ref = $config->retrieve("TEMPLATES.$name.substitutions");
         my %substitutions;
         foreach my $placeholder ( keys %{$substitutions_ref} ) {
-            my $value = $config->retrieve("%TEMPLATES%$name%substitutions%$placeholder");
+            my $value = $config->retrieve("TEMPLATES.$name.substitutions.$placeholder");
             $substitutions{$placeholder} = $value;
         }
         _install_template($logger, $template, $target, $executable, %substitutions);

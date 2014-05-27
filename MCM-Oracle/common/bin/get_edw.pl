@@ -19,17 +19,17 @@ unless ( $edw = Mx::EDW->new( config => $config, logger => $logger ) ) {
 unless ( @ARGV ) {
     my $hash = $edw->hash;
 
-	foreach my $key ( sort keys %{$hash} ) {
-		printf "%-30s: %s\n", $key, $hash->{$key};
+    foreach my $key ( sort keys %{$hash} ) {
+        printf "%-30s: %s\n", $key, $hash->{$key};
     }
 
-	exit 0;
+    exit 0;
 }
 
 while ( my $variable = shift @ARGV ) {
     unless ( $edw->check_key( $variable ) ) {
-		print "$variable does not exist\n";
-		next;
+        print "$variable does not exist\n";
+        next;
     }
 
     print $edw->retrieve( $variable ) . "\n";

@@ -273,7 +273,7 @@ sub _read_config {
     my $report_config     = Mx::Config->new( $report_configfile );
 
     my $report_ref;
-    unless ( $report_ref = $report_config->retrieve("%DM_REPORTS%$label", 1) ) {
+    unless ( $report_ref = $report_config->retrieve("DM_REPORTS.$label", 1) ) {
         $logger->logdie("report $label is not defined in the configuration file");
     }
 

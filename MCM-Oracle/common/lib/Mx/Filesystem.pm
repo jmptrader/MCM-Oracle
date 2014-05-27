@@ -60,7 +60,7 @@ sub new {
     my $fs_config     = Mx::Config->new( $fs_configfile );
  
     my $filesystem_ref;
-    unless ( $filesystem_ref = $fs_config->retrieve("%FILESYSTEMS%$name") ) {
+    unless ( $filesystem_ref = $fs_config->retrieve("FILESYSTEMS.$name") ) {
         $logger->logdie("filesystem '$name' is not defined in the configuration file");
     }
  

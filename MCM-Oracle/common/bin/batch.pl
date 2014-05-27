@@ -124,8 +124,8 @@ if ( $sched_js ) {
     $scheduler = Mx::Scheduler->new( jobstream => $sched_js, logger => $logger, config => $config );
     $entity  = $entity  || $scheduler->entity();
     $runtype = $runtype || $scheduler->runtype();
-    $context = $context || $config->retrieve("%ENTITIES%$entity%context");
-    $mds     = $mds     || $config->retrieve("%ENTITIES%$entity%mds-$runtype") if $runtype ne 'N';
+    $context = $context || $config->retrieve("ENTITIES.$entity.context");
+    $mds     = $mds     || $config->retrieve("ENTITIES.$entity.mds-$runtype") if $runtype ne 'N';
 }
 
 my @pipes = ();

@@ -83,7 +83,7 @@ sub new {
     my $job_config     = Mx::Config->new( $job_configfile );
 
     my $job_ref;
-    unless ( $job_ref = $job_config->retrieve("%JOBS%$name") ) {
+    unless ( $job_ref = $job_config->retrieve("JOBS.$name") ) {
         $logger->logdie("job '$name' is not defined in the configuration file");
     }
 

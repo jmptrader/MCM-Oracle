@@ -62,7 +62,7 @@ sub new {
     }
 
     my $collector_ref;
-    unless ( $collector_ref = $config->retrieve("%COLLECTORS%$name") ) {
+    unless ( $collector_ref = $config->retrieve("COLLECTORS.$name") ) {
         $logger->logdie("collector '$name' is not defined in the configuration file");
     }
 
