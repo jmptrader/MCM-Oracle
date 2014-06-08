@@ -433,7 +433,8 @@ sub th {
     my $name  = $column->{name};
     my $label = $column->{label};
 
-    $output  = "\n" . '<form id="form_th_' . $name . '" onsubmit="return msubmit(this,\'' . $url . '\')">' . "\n";
+    $output  = "\n<th>";
+    $output .= '<form id="form_th_' . $name . '" onsubmit="return msubmit(this,\'' . $url . '\')">' . "\n";
     $output .= '<input type=hidden name="object" value="' . $object . '">' . "\n";
     $output .= '<input type=hidden name="sort" value="' . $name . '">' . "\n";
     $output .= '<input type=hidden name="reverse" value="1">' . "\n";
@@ -443,14 +444,15 @@ sub th {
         $output .= '<input type=hidden name="' . $key . '" value="' . $value . '">' . "\n";
     }
 
+    $output .= '<input type=submit value="submit" style="display:none;" />' . "\n";
+    $output .= '</form>' . "\n";
+
     if ( $sort eq $name ) {
-        $output .= '<th><a href="#" onclick="$(\'#form_th_' . $name . '\').trigger(\'onsubmit\')" style="color: #FFCC33;">' .  $label . '</a></th>';
+        $output .= '<a href="#" onclick="$(\'#form_th_' . $name . '\').trigger(\'onsubmit\')" style="color: #FFCC33;">' .  $label . '</a></th>';
     }
     else {
-        $output .= '<th><a href="#" onclick="$(\'#form_th_' . $name . '\').trigger(\'onsubmit\')" style="color: #FFFFFF;">' .  $label . '</a></th>';
+        $output .= '<a href="#" onclick="$(\'#form_th_' . $name . '\').trigger(\'onsubmit\')" style="color: #FFFFFF;">' .  $label . '</a></th>';
     }
-
-    $output .= '</form>' . "\n";
 
     return $output;
 }

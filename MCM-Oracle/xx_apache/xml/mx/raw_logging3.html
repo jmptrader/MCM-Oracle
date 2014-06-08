@@ -99,7 +99,7 @@ function displayRefreshTime() {
 
 <%init>
 unless ( $path ) {
-  my $logdir = ( $project) ? $config->retrieve_kbc_logdir( $project ) : $config->retrieve('LOGDIR');
+  my $logdir = ( $project) ? $config->retrieve_project_logdir( $project ) : $config->retrieve('LOGDIR');
   $path = "$logdir/$dir/$name";
 }
 

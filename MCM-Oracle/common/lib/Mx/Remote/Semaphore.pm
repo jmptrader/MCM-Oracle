@@ -32,7 +32,7 @@ sub new {
     }
 
     my $semaphore_ref;
-    unless ( $semaphore_ref = $config->retrieve("%SEMAPHORES%$name") ) {
+    unless ( $semaphore_ref = $config->retrieve("SEMAPHORES.$name") ) {
         $logger->logdie("semaphore '$name' is not defined in the configuration file");
     }
 

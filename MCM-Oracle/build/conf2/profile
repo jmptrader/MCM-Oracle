@@ -24,3 +24,6 @@ alias cdl="cd $LOGDIR/today"
 
 GIT_PAGER=more
 export GIT_PAGER
+
+PS1="\e[0;36m$MXENV\e[m@\e[0;32m\h\e[m \w> "
+export PS1

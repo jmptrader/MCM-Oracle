@@ -1,25 +1,23 @@
 #!/usr/bin/env perl
 
-use Mx::Config;
-use Mx::Log;
-use Mx::FileSync;
-use Data::Dumper;
+use IO::Compress::Deflate qw(deflate);
 
-#
-# read the configuration files
-#
-my $config = Mx::Config->new();
+my $inputfile  = $ARGV[0];
+my $outputfile = $ARGV[1];
 
-#
-# initialize logging
-#
-my $logger = Mx::Log->new( directory => $config->LOGDIR, keyword => 'test5' );
+open IN,  "<$inputfile";
+open OUT, ">$outputfile";
 
-my $target = $ARGV[0];
+my $cleartext;
+while ( <IN> ) {
+    $cleartext .= $_;
+}
 
-my $filesync = Mx::FileSync->new( target => $target, recursive => 1, logger => $logger );
+close(IN);
 
-$filesync->analyze();
+my $compressed_text;
+deflate \$cleartext => \$compressed_text;
 
+print OUT $compressed_text;
 
-print Dumper( $filesync );
+close(OUT);

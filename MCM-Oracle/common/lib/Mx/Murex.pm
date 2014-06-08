@@ -418,6 +418,8 @@ sub businessdate {
 
     my $datefile = $config->retrieve('DATEFILE');
 
+    return calendardate() unless -f $datefile;
+ 
     my $fh;
     unless ( $fh = IO::File->new( $datefile, '<' ) ) {
         my $message = "cannot open $datefile: $!";

@@ -1,6 +1,7 @@
 package Mx::BCT::Report;
 
 use strict;
+no warnings 'experimental::smartmatch';
 
 use v5.10;
 

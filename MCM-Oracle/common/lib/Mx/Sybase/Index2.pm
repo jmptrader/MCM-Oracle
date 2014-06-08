@@ -72,7 +72,7 @@ sub _new {
     }
 
     my $index_ref;
-    unless ( $index_ref = $index_config->retrieve("%INDEXES%$name") ) {
+    unless ( $index_ref = $index_config->retrieve("INDEXES.$name") ) {
         $logger->logdie("index '$name' is not defined in the configuration file");
     }
 

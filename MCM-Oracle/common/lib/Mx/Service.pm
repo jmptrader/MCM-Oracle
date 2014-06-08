@@ -807,8 +807,8 @@ sub _log_and_pidfile {
     my $rundir; my $logdir;
     if ( $project ) {
         my $date = Mx::Murex->calendardate();
-        $logdir = $config->retrieve_lch_logdir( $project ) . '/' . $date;
-        $rundir = $config->retrieve_lch_rundir( $project );
+        $logdir = $config->retrieve_project_logdir( $project ) . '/' . $date;
+        $rundir = $config->retrieve_project_rundir( $project );
     }
     elsif ( $name eq 'docserver' ) {
         $logdir = $rundir = $config->MXENV_ROOT . '/mxdoc_fs/logs';

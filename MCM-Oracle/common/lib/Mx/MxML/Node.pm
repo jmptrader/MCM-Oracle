@@ -241,7 +241,7 @@ sub retrieve {
 
     my @target_task_names = @{$node->{target_tasks}};
 
-    my @target_tasks = ();
+    @target_tasks = ();
     foreach my $target_task_name ( @target_task_names ) {
         push @target_tasks, Mx::MxML::Task->retrieve( taskname => $target_task_name, db_audit => $db_audit, config => $config, logger => $logger ) if $target_task_name;
     }

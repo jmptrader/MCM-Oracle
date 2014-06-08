@@ -4,7 +4,7 @@
   <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#LIST_SERVERS" MxAnchorType="Include"/>
   <MxInclude MxAnchor="murex.mxres.script.middleware.tasks.mxres#LIST_PROCESS" MxAnchorType="Include"/>
   <target name="listservers" description="list servers">
-    <murex.middleware.access.authentication user="ADMIN" password="__ADMIN:PASSWORD__" crypted="Y"/>
+    <murex.middleware.access.authentication user="ADMIN" password="__ADMIN:CRYPTEDPASSWORD__" crypted="Y"/>
     <murex.middleware.access.listServers outputFile="__$RUNDIR__/sessions.xml"/>
   </target>
 </project>

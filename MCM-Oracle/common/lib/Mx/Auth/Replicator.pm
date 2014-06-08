@@ -90,7 +90,7 @@ sub new {
     my $replication_config     = Mx::Config->new( $replication_configfile );
 
     my $replicator_ref;
-    unless ( $replicator_ref = $replication_config->retrieve("%REPLICATORS%$name") ) {
+    unless ( $replicator_ref = $replication_config->retrieve("REPLICATORS.$name") ) {
         $logger->error("replicator '$name' is not defined in the configuration file");
         return;
     }

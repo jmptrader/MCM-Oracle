@@ -1,3 +1,23 @@
+<script type="text/javascript">
+var $selectize_rw; var $selectize_ro;
+$(document).ready( function() {
+  $selectize_rw = $('.selectize_rw').selectize({
+    create: true,
+    plugins: [ 'remove_button' ]
+  });
+  $selectize_ro = $('.selectize_ro').selectize({
+    plugins: [ 'remove_button' ]
+  });
+});
+
+function clearForm() {
+  $.each( $selectize_ro, function() { this.selectize.clear(); } );
+  $.each( $selectize_ro, function() { this.selectize.refreshItems(); } );
+  $.each( $selectize_rw, function() { this.selectize.clear(); } );
+  $.each( $selectize_rw, function() { this.selectize.refreshItems(); } );
+}
+</script>
+
 <H2>Send Message</H2>
 <form onsubmit="return msubmit(this, 'send_message.html')">
   <table class="center" width="50%">
@@ -5,7 +25,7 @@
     <TR>
       <TD CLASS="description"><FONT COLOR="#FFFFFF">Type </FONT></TD>
       <TD>
-      <SELECT NAME="type">
+      <SELECT NAME="type" class="selectize_ro">
 %     while ( @types ) { 
 %       my $typ = shift @types;
 %       my $description = shift @types;
@@ -18,23 +38,23 @@
     <TR>
       <TD CLASS="description"><FONT COLOR="#FFFFFF">User </FONT></TD>
       <TD>
-      <SELECT NAME="userid">
+      <SELECT NAME="username" multiple class="selectize_ro">
         <OPTION></OPTION>
 %     foreach my $user ( @users ) {
-%       my $selected = ( $user->name eq $userid ) ? 'SELECTED' : '';
+%       my $selected = ( $user->name eq $username ) ? 'SELECTED' : '';
         <OPTION <% $selected %>><% $user->name %></OPTION>
 %     }
       </SELECT>
       </TD>
     </TR>
     <TR>
-      <TD CLASS="description"><FONT COLOR="#FFFFFF">Group </FONT></TD>
+      <TD CLASS="description"><FONT COLOR="#FFFFFF">Environment </FONT></TD>
       <TD>
-      <SELECT NAME="groupid">
+      <SELECT NAME="environment" multiple class="selectize_ro">
         <OPTION></OPTION>
-%     foreach my $group ( @groups ) {
-%       my $selected = ( $group->name eq $groupid ) ? 'SELECTED' : '';
-        <OPTION <% $selected %>><% $group->name %></OPTION>
+%     foreach my $env ( ( $ENV{MXENV} ) ) {
+%       my $selected = ( $env eq $environment ) ? 'SELECTED' : '';
+        <OPTION <% $selected %>><% $env %></OPTION>
 %     }
       </SELECT>
       </TD>
@@ -42,7 +62,7 @@
     <TR>
       <TD CLASS="description"><FONT COLOR="#FFFFFF">Priority </FONT></TD>
       <TD>
-      <SELECT NAME="priority">
+      <SELECT NAME="priority" class="selectize_ro">
 %     while ( @priorities ) { 
 %       my $prio = shift @priorities;
 %       my $description = shift @priorities;
@@ -51,10 +71,6 @@
 %     }
       </SELECT>
       </TD>
-    </TR>
-    <TR>
-      <TD CLASS="description"><FONT COLOR="#FFFFFF">Title </FONT></TD>
-      <TD CLASS="entryfield"><INPUT TYPE="text" NAME="title" SIZE=30 VALUE="<% $title %>"></TD>
     </TR>
     <TR>
       <TD CLASS="description"><FONT COLOR="#FFFFFF">Message </FONT></TD>
@@ -67,19 +83,15 @@
 </FORM>
 
 <%init>
-my @users  = Mx::Auth::User->retrieve_all( logger => $logger, config => $config, db => $auth_db );
-my @groups = Mx::Auth::Group->retrieve_all( logger => $logger, config => $config, db => $auth_db );
-@users  = sort { $a->name cmp $b->name } @users;
-@groups = sort { $a->name cmp $b->name } @groups;
-my @types = ( $Mx::Message::TYPE_SINGLE, 'Single', $Mx::Message::TYPE_MULTIPLE, 'Multiple' );
-my @priorities = ( $Mx::Message::PRIO_LOW, 'Low', $Mx::Message::PRIO_MEDIUM, 'Medium', $Mx::Message::PRIO_HIGH, 'High', $Mx::Message::PRIO_CRITICAL, 'Critical' );
+my @users      = sort { $a->name cmp $b->name } Mx::Auth::User->retrieve_all( logger => $logger, config => $config, db => $auth_db );
+my @types      = ( $Mx::Message::TYPE_USER, 'user', $Mx::Message::TYPE_ENVIRONMENT, 'environment' );
+my @priorities = ( $Mx::Message::PRIO_LOW, 'low', $Mx::Message::PRIO_MEDIUM, 'medium', $Mx::Message::PRIO_HIGH, 'high', $Mx::Message::PRIO_CRITICAL, 'critical' );
 </%init>
 
 <%args>
-$userid   => ''
-$groupid  => ''
-$type     => ''
-$priority => ''
-$title    => ''
-$message  => ''
+$username    => ''
+$environment => ''
+$type        => ''
+$priority    => ''
+$message     => ''
 </%args>

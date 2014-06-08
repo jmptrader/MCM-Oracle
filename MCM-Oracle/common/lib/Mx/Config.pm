@@ -5,10 +5,11 @@ no strict 'refs';
 use warnings;
 
 use Config::General;
-use IO::File;
+use FileHandle;
 use Carp;
 use File::Spec;
 use File::Basename;
+use Hash::Flatten;
 use XML::Simple;
 
 use vars qw($AUTOLOAD);
@@ -29,18 +30,78 @@ my $XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>';
 #-------#
 sub new {
 #-------#
-    my ($class, $configfile) = @_;
+    my ( $class, $configfile ) = @_;
+
+
+    $configfile ||= Mx::Config->configfile();
 
     my $config  = Config::General->new(
-        -ConfigFile      => $configfile || Mx::Config->configfile(),
+        -ConfigFile      => $configfile,
         -InterPolateVars => 1,
         -InterPolateEnv  => 1,
         -IncludeAgain    => 1
     );
+
     my %config = $config->getall();
-    bless { config => \%config }, $class;
+
+    bless { config => \%config, configfile => $configfile }, $class;
 }
 
+#
+# create a new Mx::Config object based on a configfile using another Mx::Config object ($self) as base.
+#
+#----------#
+sub derive {
+#----------#
+    my ( $self, $configfile ) = @_;
+
+
+    my $string;
+
+    unless ( -f $configfile ) { 
+        unless ( $configfile = $self->retrieve( $configfile, 1 ) ) {
+            croak "$configfile is not a file and not a configuration key";
+        }
+    }
+
+    my $fh;
+    unless ( $fh = FileHandle->new( $configfile, '<' ) ) {
+        croak "cannot open $configfile: $!";
+    }
+
+    while ( my $line = <$fh> ) {
+        if ( my ( $key, $value ) = $line =~ /^\s*(\w+)\s*=\s*(.*)$/ ) {
+            $value =~ s/\s+$//;
+
+            $value =~ s/\$(\w+)/$self->retrieve($1)/eg;
+
+            if ( $value =~ /\./ ) {
+                $value = $self->retrieve( $value, 1 ) || $value;
+            }
+
+            $string .= "$key = $value\n";
+        }
+        else {
+            $string .= $line;
+        }
+    }
+
+    $fh->close();
+
+    my $string_fh = FileHandle->new( \$string, '<' );
+
+    my $config  = Config::General->new(
+        -ConfigFile            => $string_fh,
+        -InterPolateVars       => 1,
+        -InterPolateEnv        => 1,
+        -MergeDuplicateOptions => 1,
+        -IncludeAgain          => 1
+    );
+
+    my %config = $config->getall();
+
+    bless { config => \%config, configfile => $configfile }, ref( $self );
+}
 
 #
 # Auto-defines accessors for all the configuration keys
@@ -48,7 +109,7 @@ sub new {
 #------------#
 sub AUTOLOAD {
 #------------#
-    my ($self) = @_;
+    my ( $self ) = @_;
 
 
     return if $AUTOLOAD =~ /DESTROY$/;
@@ -67,15 +128,15 @@ sub AUTOLOAD {
 #
 # More advanced retrieval method than the AUTOLOADER.
 # This allows for the syntax retrieve( ACCOUNTS.murexconfig.encrypted_password )
-# The corresponding value can also be a similar expression
+# The corresponding value can also be a similar expression (using % instead of . as separator)
 #
 #------------#
 sub retrieve {
 #------------#
-    my ($self, $key, $no_strict) = @_;
+    my ( $self, $key, $no_strict ) = @_;
 
 
-    my $value; 
+    my $value;
 
     if ( exists $self->{config}->{$key} ) {
         $value = $self->{config}->{$key};
@@ -83,23 +144,38 @@ sub retrieve {
     elsif ( $key =~ /\./ ) {
         my @parts = split /\./, $key;
 
-        $value = $self->{config};
-        foreach my $part ( @parts ) {
-            if ( exists $value->{$part} ) {
-                $value = $value->{$part} 
+        $value = $self->{config}; my $found = 0;
+        while ( @parts ) {
+           $found = 0;
+           for ( my $i = $#parts; $i >= 0; $i-- ) {
+                my $key = join '.', @parts[0..$i];
+
+                if ( exists $value->{$key} ) {
+                    $found = 1;
+                    $value = $value->{$key};
+                    @parts = @parts[($i + 1)..$#parts];
+                    last;
+                }
             }
-            else {
-                return if $no_strict;
-                croak("using non-existing configuration parameter: $key");
-            }
+
+            last unless $found;
+        }
+
+        unless ( $found ) {
+            return if $no_strict;
+            croak("using non-existing configuration parameter: $key");
         }
     }
     elsif ( my $service = $SERVICE_KEYS{$key} ) {
         my $location = $self->{config}->{SERVICES}->{$service}->{location};
-        my $app_srv  = $self->{config}->{APP_SRV};
-        my @app_servers = ( ref( $app_srv ) eq 'ARRAY' ) ? @{ $app_srv } : ( $app_srv );
+        if ( defined $location ) {
+            my $app_srv  = $self->{config}->{APP_SRV};
+            my @app_servers = ( ref( $app_srv ) eq 'ARRAY' ) ? @{ $app_srv } : ( $app_srv );
 
-        return $app_servers[$location];
+            return $app_servers[$location];
+        }
+
+        croak("location of service $service unknown");
     }
     else {
         return if $no_strict;
@@ -144,7 +220,7 @@ sub retrieve_as_array {
         if ( ref( $value ) eq 'ARRAY' ) {
             return @{ $value };
         }
-		return ( ( $value ) );
+        return ( ( $value ) );
     }
     return ();
 }
@@ -174,10 +250,10 @@ sub get_project_variables {
     }
     else {
         $project_directory = dirname( File::Spec->rel2abs( $0 ) );
- 
+
         $project_directory =~ s/\/bin$//;
         $project_directory =~ s/\/script$//;
- 
+
         ( undef, $project ) = $project_directory =~ /\/(kbc-scripts|framework)\/([^\/]+)$/;
 
         unless ( $project ) {
@@ -234,15 +310,15 @@ sub set_project_variables {
 #-------------------------#
     my ( $self, $project ) = @_;
 
- 
+
     my $hash = $self->get_project_variables( $project );
 
     $self->add_to_config( %{$hash} );
 }
 
-#-----------------------#
-sub retrieve_lch_logdir {
-#-----------------------#
+#---------------------------#
+sub retrieve_project_logdir {
+#---------------------------#
     my ( $self, $project ) = @_;
 
 
@@ -250,9 +326,9 @@ sub retrieve_lch_logdir {
     return "$nfsdatadir/$project/log";
 }
 
-#-----------------------#
-sub retrieve_lch_rundir {
-#-----------------------#
+#---------------------------#
+sub retrieve_project_rundir {
+#---------------------------#
     my ( $self, $project ) = @_;
 
 
@@ -268,10 +344,11 @@ sub environments {
 #----------------#
     my ( $class, $hostname ) = @_;
 
+
     my %list;
     my $envfile = $CONFIGDIR . '/environments.cfg';
     my $fh;
-    unless ( $fh = IO::File->new( $envfile, '<' ) ) {
+    unless ( $fh = FileHandle->new( $envfile, '<' ) ) {
         croak "cannot locate environment file ($envfile)";
     }
     while ( my $line = <$fh> ) {
@@ -298,10 +375,11 @@ sub users {
 #---------#
     my ( $class, $hostname ) = @_;
 
+
     my %list;
     my $envfile = $CONFIGDIR . '/environments.cfg';
     my $fh;
-    unless ( $fh = IO::File->new( $envfile, '<' ) ) {
+    unless ( $fh = FileHandle->new( $envfile, '<' ) ) {
         croak "cannot locate environment file ($envfile)";
     }
     while ( my $line = <$fh> ) {
@@ -324,11 +402,12 @@ sub users {
 #--------------#
 sub configfile {
 #--------------#
-    my ($class) = @_;
+    my ( $class ) = @_;
+
 
     my $configfile = $CONFIGDIR . '/' . $ENV{MXENV} . '.cfg';
     my $fh;
-    unless ( $fh = IO::File->new( $configfile, '<' ) ) {
+    unless ( $fh = FileHandle->new( $configfile, '<' ) ) {
         croak "cannot locate local configuration file ($configfile)";
     }
     $fh->close;
@@ -340,8 +419,24 @@ sub get_keys {
 #------------#
     my ( $self ) = @_;
 
+
     return keys %{$self->{config}};
-} 
+}
+
+#--------#
+sub hash {
+#--------#
+    my ( $self ) = @_;
+
+
+    unless ( $self->{hash} ) {
+        my $flatter = Hash::Flatten->new();
+
+        $self->{hash} = $flatter->unflatten( $self->{config} );
+    }
+
+    return $self->{hash};
+}
 
 #--------#
 sub dump {
@@ -349,10 +444,19 @@ sub dump {
     my ( $self, $file ) = @_;
 
 
-    $file ||= $self->{configfile};
+    if ( ! $file ) {
+        $file = $self->{configfile};
+        my ( $extension ) = $file =~ /\.(\w+)$/;
+        if ( $extension && $extension ne 'xml' ) {
+            $file =~ s/\.(\w+)$/.xml/;
+        }
+        else {
+            croak 'cannot decide on destination file for dump';
+        }
+    }
 
     my $fh;
-    unless ( $fh = IO::File->new( $file, '>' ) ) {
+    unless ( $fh = FileHandle->new( $file, '>' ) ) {
         croak "unable to open $file: $!";
     }
 
@@ -366,95 +470,4 @@ sub dump {
 }
 
 1;
-
-__END__
-
-=head1 NAME
-
-<Module::Name> - <One-line description of module's purpose>
-
-
-=head1 VERSION
-
-The initial template usually just has:
-
-This documentation refers to <Module::Name> version 0.0.1.
-
-
-=head1 SYNOPSIS
-
-    use <Module::Name>;
-    
-
-# Brief but working code example(s) here showing the most common usage(s)
-
-    # This section will be as far as many users bother reading,
-    # so make it as educational and exemplary as possible.
-
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-May include numerous subsections (i.e., =head2, =head3, etc.).
-
-
-=head1 SUBROUTINES/METHODS
-
-A separate section listing the public components of the module's interface.
-These normally consist of either subroutines that may be exported, or methods
-that may be called on objects belonging to the classes that the module provides.
-Name the section accordingly.
-
-In an object-oriented module, this section should begin with a sentence of the
-form "An object of this class represents...", to give the reader a high-level
-context to help them understand the methods that are subsequently described.
-
-					    
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the module can generate
-(even the ones that will "never happen"), with a full explanation of each
-problem, one or more likely causes, and any suggested remedies.
-
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-
-A full explanation of any configuration system(s) used by the module,
-including the names and locations of any configuration files, and the
-meaning of any environment variables or properties that can be set. These
-descriptions must also include details of any configuration language used.
-
-
-=head1 DEPENDENCIES
-
-A list of all the other modules that this module relies upon, including any
-restrictions on versions, and an indication of whether these required modules are
-part of the standard Perl distribution, part of the module's distribution,
-or must be installed separately.
-
-					
-=head1 INCOMPATIBILITIES
-
-A list of any modules that this module cannot be used in conjunction with.
-This may be due to name conflicts in the interface, or competition for
-system or program resources, or due to internal limitations of Perl
-(for example, many modules that use source code filters are mutually
-incompatible).
-
-
-=head1 BUGS AND LIMITATIONS
-
-A list of known problems with the module, together with some indication of
-whether they are likely to be fixed in an upcoming release.
-
-Also a list of restrictions on the features the module does provide:
-data types that cannot be handled, performance issues and the circumstances
-in which they may arise, practical limitations on the size of data sets,
-special cases that are not (yet) handled, etc.
-
-
-=head1 AUTHOR
-
-<Author name(s)>
 

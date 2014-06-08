@@ -2,7 +2,7 @@ insert into users ( id, name, first_name, last_name, password, type, disabled ) 
 
 insert into groups ( id, name, type, description, config_data ) values ( 10001, 'ADMIN', 'standard', 'Admin Group', NULL );
 
-insert into environments ( id, name, pillar, disabled ) values ( 1, 'DEMO', 'O', 'N' );
+insert into environments ( id, name, pillar, disabled ) values ( 1, '[% MXENV %]', 'O', 'N' );
 
 insert into rights ( id, name, type, description ) values ( 1, 'mon_login', 'monitoring_gui', 'Dashboard Login' );
 insert into rights ( id, name, type, description ) values ( 2, 'maf_login', 'monitoring_gui', 'Authorization Login' );

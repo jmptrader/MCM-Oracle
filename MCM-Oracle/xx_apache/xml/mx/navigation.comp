@@ -135,22 +135,6 @@
 % }
     </DIV>
   </LI>
-% if ( substr($ENV{MXENV},0,4) eq 'MX3O' ) {
-  <LI>
-    <A HREF="#" onmouseover="mopen('m14')" onmouseout="mclosetime()">Development</A>
-    <DIV ID="m14" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
-      <a href="#" onclick="mnavigate('murexstarter.html')">MurexStarter</a>
-      <A HREF="https://s08983du.servers.kbc.be:6083/svn/wmx/" target="_blank">Subversion repository</A>
-      <A HREF="#" onclick="$('#table2csv').table2CSV()">Export 2 CSV</A>
-    </DIV>
-  </LI>
-  <LI>
-    <A HREF="#" onmouseover="mopen('m15')" onmouseout="mclosetime()">MLC</A>
-    <DIV ID="m15" onmouseover="mcancelclosetime()" onmouseout="mclosetime()">
-      <a href="#" onclick="mnavigate('mlc_intraday_reset.html')">MLC Intraday Reset</a>
-    </DIV>
-  </LI>
-% }
   <LI><A HREF="logout.html">Logout</A></LI>
 </UL>
 </DIV>

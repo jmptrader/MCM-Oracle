@@ -22,7 +22,7 @@
 %   push @filesystems, @{$local_filesystems{ $server->{hostname} }};
 %   foreach my $fs ( @filesystems ) {
     <TR>
-      <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $fs->name %></FONT></TD>
+      <TD CLASS="description" WIDTH="20%" NOWRAP><FONT COLOR="#FFFFFF"><% $fs->mountpoint %></FONT></TD>
 %     if ( $fs->status eq $Mx::Filesystem::STATUS_OK ) {
       <TD ALIGN="right" WIDTH="20%"><% sprintf "%.2f", $fs->size / 1024 / 1024 %> GB</TD>
       <TD ALIGN="right" WIDTH="20%"><% sprintf "%.2f", $fs->used / 1024 / 1024 %> GB</TD>

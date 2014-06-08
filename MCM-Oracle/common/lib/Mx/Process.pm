@@ -1069,7 +1069,7 @@ sub env_variables {
     my ( $self, $pid ) = @_;
 
 
-    my $pid    = $pid || $self->{pid};
+    $pid ||= $self->{pid};
     my $ostype = $self->ostype();
 
     my %variables;

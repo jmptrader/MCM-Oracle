@@ -94,7 +94,7 @@ sub new {
 
 #get the reference to the correct index name
 		my $index_ref;
-		unless ( $index_ref = $index_config->retrieve("%INDEXES%$name", 1) ) {
+		unless ( $index_ref = $index_config->retrieve("INDEXES.$name", 1) ) {
 			$logger->error("Sybase index '$name' is not defined in the configuration file.\n Wildcards used? (Entity, run, product)?");
 			return;
 		}

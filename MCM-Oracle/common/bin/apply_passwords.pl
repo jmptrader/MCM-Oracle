@@ -46,16 +46,15 @@ unless ( $do_check or $do_db or $do_config ) {
     usage();
 }
 
-my $config = Mx::Config->new();
-my $logger = Mx::Log->new( directory => $config->LOGDIR, keyword => 'apply_passwords' );
-
-my $xmlconfig = Mx::XMLConfig->new();
+my $config    = Mx::Config->new();
+my $logger    = Mx::Log->new( directory => $config->LOGDIR, keyword => 'apply_passwords' );
+my $xmlconfig = Mx::XMLConfig->new( $config->LOCAL_DIR . '/' . $config->MXUSER . '/code/config/MurexEnv_' . $ENV{MXENV} . '.xml' );
 
 my $configfile;
 foreach my $includefile ( $xmlconfig->includes ) {
     if ( $includefile =~ /Accounts/ ) {
-		$configfile = $includefile;
-		last; 
+        $configfile = $includefile;
+        last; 
     }
 }
 
@@ -75,11 +74,11 @@ foreach my $key ( $xmlconfig->get_keys ) {
         my $name = $1;
 
         $users{$name}->{config_password} = $xmlconfig->retrieve( $key );
-		$users{$name}->{key} = $key;
+        $users{$name}->{key} = $key;
 
         if ( my $user = Mx::MxUser->retrieve( name => $name, library => $sql_library, oracle => $oracle, config => $config, logger => $logger ) ) {
-	        $users{$name}->{db_password} = $user->password;
-			$users{$name}->{user}        = $user;
+            $users{$name}->{db_password} = $user->password;
+            $users{$name}->{user}        = $user;
         }
     }
 }
@@ -91,6 +90,11 @@ my $rc = 0;
 
 print "\n"; 
 foreach my $name ( keys %users ) {
+    unless ( $users{$name}->{user} ) {
+        print "$name: not found in the database\n";
+        next;
+    }
+
     my $cfg_password = $users{$name}->{config_password};
     my $db_password  = $users{$name}->{db_password};
     my $user         = $users{$name}->{user};
@@ -100,12 +104,12 @@ foreach my $name ( keys %users ) {
 
     printf "$name: %s\n", ( $equal ? 'EQUAL' : 'NOT EQUAL' );
 
-	printf "cfg password: %s\n", ( $clear ? Mx::MxUser->decrypt( $cfg_password ) : $cfg_password );
-	printf "db  password: %s\n", ( $clear ? Mx::MxUser->decrypt( $db_password )  : $db_password );
-	print "\n";
+    printf "cfg password: %s\n", ( $clear ? Mx::MxUser->decrypt( $cfg_password ) : $cfg_password );
+    printf "db  password: %s\n", ( $clear ? Mx::MxUser->decrypt( $db_password )  : $db_password );
+    print "\n";
 
-	if ( ! $equal ) {
-		if ( $do_confirm && ( $do_db || $do_config ) ) {
+    if ( ! $equal ) {
+        if ( $do_confirm && ( $do_db || $do_config ) ) {
             my $answer;
             while ( ! $answer ) {
                 printf "\nUpdate %s? [y/N] ", ( $do_db ? 'database' : 'config file' );
@@ -133,24 +137,24 @@ foreach my $name ( keys %users ) {
                 print "database password updated\n";
             }
             else {
-				$rc = 1;
+                $rc = 1;
                 print "database password could not be updated. Please consult logfile.\n";
             }
         }
-		elsif ( $do_config ) {
+        elsif ( $do_config ) {
             $xmlconfig->set_key( $key, $db_password );
-			$dump_configfile = 1;
-		}
+            $dump_configfile = 1;
+        }
     }
 }
 
 if ( $dump_configfile ) {
     if ( $xmlconfig->dump() ) {
-		print "config file $configfile updated\n";
+        print "config file $configfile updated\n";
     }
-	else {
-		$rc = 1;
-		print "config file $configfile could not be updated. Please consult logfile\n";
+    else {
+        $rc = 1;
+        print "config file $configfile could not be updated. Please consult logfile\n";
     }
 }
 

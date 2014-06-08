@@ -30,6 +30,7 @@ our $PRIO_HIGH        = 'high';
 our $PRIO_CRITICAL    = 'critical';
 
 our $DEFAULT_VALIDITY = -1;
+our $MAX_LENGTH       = 100;
 
 my $FIELD_SEPARATOR   = '###';
 
@@ -64,6 +65,8 @@ sub new {
     unless ( $self->{message} = $args{message} ) {
         $logger->logdie("missing argument in initialisation of Murex message (message)");
     }
+
+    $self->{message} = substr( $self->{message}, 0, $MAX_LENGTH );
 
     my $priority = $args{priority} || $PRIO_LOW;
     unless ( $priority eq $PRIO_LOW or $priority eq $PRIO_MEDIUM or $priority eq $PRIO_HIGH or $priority eq $PRIO_CRITICAL ) {

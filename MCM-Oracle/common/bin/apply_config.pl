@@ -44,7 +44,7 @@ unless ( $do_check or $do_apply or $do_confirm ) {
 
 my $config    = Mx::Config->new();
 my $logger    = Mx::Log->new( directory => $config->LOGDIR, keyword => 'apply_config' );
-my $xmlconfig = Mx::XMLConfig->new();
+my $xmlconfig = Mx::XMLConfig->new( $config->LOCAL_DIR . '/' . $config->MXUSER . '/code/config/MurexEnv_' . $ENV{MXENV} . '.xml' );
 
 my $template_dir = $config->LOCAL_DIR . '/' . $config->MXUSER . '/code/apptree';
 my $target_dir   = $config->MXENV_ROOT; 

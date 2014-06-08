@@ -44,7 +44,7 @@ sub new {
     }
 
     my $argument_ref;
-    unless ( $argument_ref = $config->retrieve("%SESSIONS%$nick%ARGUMENTS%$name") ) {
+    unless ( $argument_ref = $config->retrieve("SESSIONS.$nick.ARGUMENTS.$name") ) {
         $logger->logdie("argument '$name' is not defined in the configuration file");
     }
 
@@ -92,7 +92,7 @@ sub list {
     $logger->debug("scanning the configuration file for arguments for nick '$nick'");
 
     my $arguments_ref;
-    unless ( $arguments_ref = $config->retrieve("%SESSIONS%$nick%ARGUMENTS", 1) ) {
+    unless ( $arguments_ref = $config->retrieve("SESSIONS.$nick.ARGUMENTS", 1) ) {
         $logger->warn("cannot access the arguments section for nick '$nick' in the configuration file");
         return ();
     }

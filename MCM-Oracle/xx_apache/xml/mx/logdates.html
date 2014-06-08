@@ -46,7 +46,7 @@
 my @MONTH_NAME = qw( undef January February March April May June July August September October November December );
 my %MONTHS = (); my %DAYS = ();
 
-my $logdir = ( $project) ? $config->retrieve_kbc_logdir( $project ) : $config->retrieve('LOGDIR');
+my $logdir = ( $project) ? $config->retrieve_project_logdir( $project ) : $config->retrieve('LOGDIR');
 
 if ( opendir( DH, $logdir ) ) {
   while ( my $dir = readdir(DH) ) {

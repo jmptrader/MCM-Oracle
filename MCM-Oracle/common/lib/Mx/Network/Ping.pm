@@ -36,7 +36,7 @@ sub new {
     my $ping_config     = Mx::Config->new( $ping_configfile );
 
     my $ping_ref;
-    unless ( $ping_ref = $ping_config->retrieve("%PINGS%$name") ) {
+    unless ( $ping_ref = $ping_config->retrieve("PINGS.$name") ) {
         $logger->logdie("ping '$name' is not defined in the configuration file");
     }
 

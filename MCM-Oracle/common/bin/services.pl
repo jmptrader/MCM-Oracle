@@ -241,6 +241,8 @@ if ( $do_start or $do_restart ) {
 
         my $item_name = ( $service->location ) ? $service->name . '_' . $service->location : $service->name;
 
+        my $dependency = $name ? undef : $service->dependency;
+
         $queue->add_item(
           name         => $item_name,
           instance     => $service->location,
@@ -249,7 +251,7 @@ if ( $do_start or $do_restart ) {
           pre_handler  => sub { printf "starting service %s on instance %d\n", $service->name, $service->location; },
           post_handler => sub { printf "service %s on instance %d is started\n", $service->name, $service->location; },
           fail_handler => sub { printf "! service %s on instance %d failed\n", $service->name, $service->location; },
-          dependencies => $service->dependency,
+          dependencies => $dependency,
           timeout      => 300
         );
     }

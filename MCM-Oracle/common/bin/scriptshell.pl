@@ -157,7 +157,7 @@ foreach my $psx ( @procscriptxmls ) {
     my $unit  = $psx->item_unit;
 
     my $lname;
-    if ( $unit eq 'DATAMART.REPORTING.BATCHES.FEEDERS' or $unit eq 'DATAMART.REPORTING.BATCHES.PROCEDURES' ) {
+    if ( $unit and ( $unit eq 'DATAMART.REPORTING.BATCHES.FEEDERS' or $unit eq 'DATAMART.REPORTING.BATCHES.PROCEDURES' ) ) {
         $lname = $psx->item_label;
     }
     else {
@@ -165,7 +165,7 @@ foreach my $psx ( @procscriptxmls ) {
     }
 
     my $script;
-    if ( $unit eq 'DATAMART.REPORTING.BATCHES.FEEDERS' ) {
+    if ( $unit and ( $unit eq 'DATAMART.REPORTING.BATCHES.FEEDERS' ) ) {
         my $extra_args;
         if ( $debug ) {
             $extra_args = '/SCANNER_NICKNAME:MXDEALSCANNER.ENGINEDEBUG';

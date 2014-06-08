@@ -8,7 +8,7 @@ use HTML::Mason::ApacheHandler;
 {
     package HTML::Mason::Commands;
     
-    use lib "$ENV{LCH_HOME}/$ENV{MXUSER}/projects/common/lib";
+    use lib "$ENV{LOCAL_DIR}/$ENV{MXUSER}/projects/common/lib";
     use Apache::DBI;
     require Mx::Mason::Config;
     require Mx::Mason::HTML;
@@ -81,7 +81,7 @@ use HTML::Mason::ApacheHandler;
     use vars qw( %callbacks $description $search_button $go_back_button $refresh_button $list_method $details_method @columns %columns $table_name $table_width %extra_indexes %murex_indexes );
 
     $config        = Mx::Config->new();
-    $logger        = Mx::Log->new( directory => $config->LOGDIR, keyword => 'web' );
+    $logger        = Mx::Log->new( directory => $config->retrieve_project_logdir( 'xx_apache' ), keyword => 'web' );
 
     $account       = Mx::Account->new( name => $config->FIN_DBUSER, config => $config, logger => $logger );
     $oracle_fin    = Mx::Oracle->new( database => $config->DB_FIN, username => $account->name, password => $account->password, config => $config, logger => $logger );
@@ -91,8 +91,8 @@ use HTML::Mason::ApacheHandler;
     $oracle_rep    = Mx::Oracle->new( database => $config->DB_REP, username => $account->name, password => $account->password, config => $config, logger => $logger );
 
     %schemas       = (
-	  $config->FIN_DBUSER => $oracle_fin,
-	  $config->REP_DBUSER => $oracle_rep,
+      $config->FIN_DBUSER => $oracle_fin,
+      $config->REP_DBUSER => $oracle_rep,
     );
 
     $library       = Mx::SQLLibrary->new( file => $config->SQLLIBRARY, logger => $logger );
@@ -108,8 +108,8 @@ use HTML::Mason::ApacheHandler;
 }
 
 my $ah = HTML::Mason::ApacheHandler->new(
-  comp_root => '/lch/fxclear/' . $ENV{MXUSER} . '/projects/xx_apache/xml',
-  data_dir  => '/lch/fxclear/data/' . $ENV{MXENV} . '/xx_apache/data/mason',
+  comp_root => $HTML::Mason::Commands::config->PROJECT_DIR     . '/xx_apache/xml',
+  data_dir  => $HTML::Mason::Commands::config->PROJECT_DATADIR . '/xx_apache/data/mason',
   preloads  => [ '/mx/login.html' ]
 );
 
