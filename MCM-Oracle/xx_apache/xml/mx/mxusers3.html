@@ -10,6 +10,7 @@ $(document).ready( function() {
         $('.tiptip').tipTip();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cfti',
@@ -39,14 +40,16 @@ $(document).ready( function() {
 
   installHover();
 
-  $('#result tbody tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     refresh();
   } );
 } );
+
+function installEvents() {
+  $('#result tbody tr').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function refresh() {
   oTable.fnReloadAjax();

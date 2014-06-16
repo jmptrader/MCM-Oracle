@@ -987,7 +987,7 @@ sub TO_JSON {
                 $info{23} = Mx::Util->separate_thousands( $gc{total_full_gcs} );
             }
 
-            $info{24} = ( $process->mcm_started || ( $self->{launcher} !~ /$LAUNCHER/ ) ) ? 'YES' : 'NO';
+            $info{24} = ( $process->mcm_started || ( $self->{launcher} !~ /$LAUNCHER/ ) || ( $self->{name} eq 'murexnet' ) ) ? 'YES' : 'NO';
 
             $starttime = $process->starttime;
             if ( $mxres = $process->mxres ) {

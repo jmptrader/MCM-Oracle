@@ -13,6 +13,7 @@ $(document).ready( function() {
         checkRights();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
@@ -79,23 +80,19 @@ $(document).ready( function() {
 
   installHover();
 
-  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     refresh();
   } );
 
-  $('#select').live( "click", function() {
+  $('#select').on( "click", function() {
     $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
   } );
 
-  $('#unselect').live( "click", function() {
+  $('#unselect').on( "click", function() {
     $('#result tbody tr').removeClass('row_selected');
   } );
 
-  $('#kill').live( "click", function() {
+  $('#kill').on( "click", function() {
     var sessions = selectedSessions();
 
     if ( sessions.length == 0 ) {
@@ -119,6 +116,12 @@ $(document).ready( function() {
 
 function refresh() {
   oTable.fnReloadAjax();
+}
+
+function installEvents() {
+  $('#result tbody tr:not(.row_deleted)').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
 }
 
 function displayRefreshTime() {

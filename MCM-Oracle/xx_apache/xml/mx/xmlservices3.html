@@ -8,6 +8,7 @@ $(document).ready( function() {
       $.getJSON( sSource, aoData, function (json) {
         fnCallback(json.datatables);
         displayRefreshTime(json.timestamp);
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
@@ -29,14 +30,16 @@ $(document).ready( function() {
 
   installHover();
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
+} );
 
-  $('#result tr').live( "click", function() {
+function installEvents() {
+  $('table#result tbody tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } );
-} );
+}
 
 function displayRefreshTime( timestamp ) {
   $('#refreshtime').html( 'Last Refresh: ' + timestamp );

@@ -8,6 +8,7 @@ $(document).ready( function() {
         fnCallback(json.datatables)
         displayTaskCount( json.total_nr_tasks, json.nr_blocked_tasks, json.nr_not_loading_tasks, json.nr_stopped_tasks );
         installHover();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
@@ -36,14 +37,16 @@ $(document).ready( function() {
     ],
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
+} );
 
-  $('#result tr').live( "click", function() {
+function installEvents() {
+  $('#result tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } );
-} );
+}
 
 function displayTaskCount( total_nr_tasks, nr_blocked_tasks, nr_not_loading_tasks, nr_stopped_tasks ) {
   var html = [], h = -1;

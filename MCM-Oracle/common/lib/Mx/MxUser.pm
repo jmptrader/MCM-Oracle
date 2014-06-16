@@ -27,9 +27,12 @@ sub new {
 #-------#
     my ($class, %args) = @_;
 
+
     my $logger = $args{logger} or croak 'no logger defined';
+
     my $self = {};
     $self->{logger} = $logger;
+
     #
     # check the arguments
     #
@@ -38,6 +41,7 @@ sub new {
         $logger->logdie("missing argument in initialisation of user (name)");
     }
     $self->{name} = $name;
+
     my $config;
     unless ( $config = $args{config} ) {
         $logger->logdie("missing argument in initialisation of user (config)");
@@ -45,7 +49,9 @@ sub new {
     unless ( ref($config) eq 'Mx::Config' ) {
         $logger->logdie("config argument is not of type Mx::Config");
     }
+
     $self->{config}        = $config;
+    $self->{oracle}        = $args{oracle};
     $self->{library}       = $args{library};
     $self->{id}            = $args{id};
     $self->{description}   = $args{description};
@@ -96,7 +102,7 @@ sub retrieve {
     my $result = $oracle->query( query => $query, values => [ $name ], quiet => 1 );
 
     if ( my ($id, $description, $password, $mdate, $locked, $suspended, $suspend_start, $suspend_end) = $result->next ) {
-        return Mx::MxUser->new( name => $name, id => $id, description => $description, password => $password, mdate => $mdate, locked => $locked, suspended => $suspended, suspend_start => $suspend_start, suspend_end => $suspend_end, library => $library, logger => $logger, config => $config );
+        return Mx::MxUser->new( name => $name, id => $id, description => $description, password => $password, mdate => $mdate, locked => $locked, suspended => $suspended, suspend_start => $suspend_start, suspend_end => $suspend_end, oracle => $oracle, library => $library, logger => $logger, config => $config );
     }
 }
 
@@ -138,7 +144,7 @@ sub retrieve_all {
 
     my @list;
     while ( my ($id, $name, $description, $password, $mdate, $locked, $suspended, $suspend_start, $suspend_end) = $result->next ) {
-        push @list, Mx::MxUser->new( name => $name, id => $id, description => $description, password => $password, mdate => $mdate, locked => $locked, suspended => $suspended, suspend_start => $suspend_start, suspend_end => $suspend_end, library => $library, logger => $logger, config => $config );
+        push @list, Mx::MxUser->new( name => $name, id => $id, description => $description, password => $password, mdate => $mdate, locked => $locked, suspended => $suspended, suspend_start => $suspend_start, suspend_end => $suspend_end, oracle => $oracle, library => $library, logger => $logger, config => $config );
     }
 
     return @list;
@@ -150,7 +156,7 @@ sub update_password {
     my ( $self, %args ) = @_;
 
 
-	my $name = $self->{name};
+    my $name = $self->{name};
 
     my $password;
     unless ( $password = $args{password} ) {
@@ -159,14 +165,14 @@ sub update_password {
 
     my $statement = $self->{library}->query('update_mx_user_password');
 
-	if ( $self->{oracle}->do( statement => $statement, values => [ $password, $name ] ) ) {
-		$self->{logger}->info("password of user $name updated");
-		$self->{password} = $password;
-		return 1;
+    if ( $self->{oracle}->do( statement => $statement, values => [ $password, $name ] ) ) {
+        $self->{logger}->info("password of user $name updated");
+        $self->{password} = $password;
+        return 1;
     }
-	else {
-		$self->{logger}->error("password of user $name could not be updated");
-		return 0;
+    else {
+        $self->{logger}->error("password of user $name could not be updated");
+        return 0;
     }
 }
 
@@ -338,8 +344,8 @@ sub TO_JSON {
     return {
       0  => $self->{id},
       1  => $self->{name},
-      2  => $self->{description},
-      3  => ( $self->{suspended} ) ? $self->{suspend_start} : '',
+      2  => $self->{description} || '',
+      3  => ( $self->{suspended} ) ? ( $self->{suspend_start} || '' ) : '',
       4  => ( $self->{locked} ) ? 'YES' : 'NO',
       5  => $self->{mdate},
       6  => $self->{password},

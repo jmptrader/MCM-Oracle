@@ -20,7 +20,7 @@ $(document).ready( function() {
         installHover();
         installContextMenu();
         installModal();
-        installToggle();
+        installEvents();
       } );
     },
     "fnCreatedRow": function( nRow, aData, iDataIndex ) {
@@ -70,13 +70,13 @@ $(document).ready( function() {
     "aaSorting":    [[ 2, "asc" ]]
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 } );
 
-function installToggle() {
-  $('#result tr').live( "click", function() {
+function installEvents() {
+  $('#result tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } );
 }

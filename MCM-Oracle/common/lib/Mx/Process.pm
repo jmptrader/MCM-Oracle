@@ -1638,7 +1638,7 @@ sub _analyze_cmdline {
     elsif ( $cmdline_a->[0] eq 'mx' ) {
         $self->{type} = $MX_UNKNOWN;
     }
-    elsif ( $cmdline_a->[0] eq 'java' ) {
+    elsif ( $cmdline_a->[0] eq 'java' or $cmdline_a->[0] =~ /\/java$/ ) {
         $self->{type} = $JAVA_UNKNOWN;
     }
     else {

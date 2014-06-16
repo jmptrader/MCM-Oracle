@@ -11,6 +11,7 @@ $(document).ready( function() {
         installModal();
         installHover();
         installContextMenu();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cf<"clear">Wtip',
@@ -50,16 +51,18 @@ $(document).ready( function() {
     }
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
-  } );
-
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
   } );
 
   installResetButton();
 } );
+
+function installEvents() {
+  $('#result tr').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function refresh() {
   oTable.fnReloadAjax();
@@ -229,9 +232,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 
 function displayRefreshTime() {

@@ -22,6 +22,7 @@ $(document).ready( function() {
         installHover();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "fnCreatedRow": function( nRow, aData, iDataIndex ) {
@@ -62,11 +63,7 @@ $(document).ready( function() {
     "aaSorting":    [[ 2, "desc" ]]
   } );
 
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 
@@ -78,6 +75,12 @@ $(document).ready( function() {
     this.target = 'MXML';
   } );
 } );
+
+function installEvents() {
+  $('#result tr').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function showBodies( reference_id, workflow, archived ) {
   var request = $.ajax({
@@ -255,9 +258,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 
 function displayRefreshTime() {

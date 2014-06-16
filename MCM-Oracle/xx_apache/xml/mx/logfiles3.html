@@ -57,12 +57,12 @@ $(document).ready( function() {
     "aaSorting":    [[ 4, "desc" ]]
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 
   $('#logging_form').submit( function() {
-    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    popupWindow( '', 'LOGGING', '<% $config->WS_LOGGING_WIDTH %>', '<% $config->WS_LOGGING_HEIGHT %>', 'yes', 'center' );
     this.target = 'LOGGING';
   } );
 } );

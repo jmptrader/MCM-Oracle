@@ -18,6 +18,7 @@ $(document).ready( function() {
         checkRights();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
@@ -56,7 +57,7 @@ $(document).ready( function() {
     "aaSorting": [[ 1, "asc" ], [ 2, "asc" ]]
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 
@@ -67,11 +68,13 @@ $(document).ready( function() {
   $('#types').change( function() {
     oTable.fnReloadAjax();
   } );
+} );
 
-  $('#result tr').live( "click", function() {
+function installEvents() {
+  $('#result tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } );
-} );
+}
 
 function displayRefreshTime() {
   var d = new Date();
@@ -166,9 +169,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 
 function drawIndexAction( action, type, name, table, schema ){

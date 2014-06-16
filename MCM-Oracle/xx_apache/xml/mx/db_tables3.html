@@ -14,6 +14,7 @@ $(document).ready( function() {
         installHover();
         installContextMenu(); 
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
@@ -61,18 +62,20 @@ $(document).ready( function() {
     "aaSorting":    [[7, "desc"]]
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
-  } );
-
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
   } );
 
   $('#schemas').change( function() {
     oTable.fnReloadAjax();
   } );
 } );
+
+function installEvents() {
+  $('#result tr').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function refresh() {
   oTable.fnReloadAjax();
@@ -455,9 +458,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 </script>
 

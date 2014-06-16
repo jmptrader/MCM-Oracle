@@ -14,6 +14,7 @@ $(document).ready( function() {
         checkRights();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cfti',
@@ -43,7 +44,7 @@ $(document).ready( function() {
       { "sClass": "center",       "aTargets": [ 1,10 ] },
       { "sClass": "ralign",       "aTargets": [ 9 ] },
 
-	  { "bVisible": false,        "aTargets": [ 9,10 ] },
+      { "bVisible": false,        "aTargets": [ 9,10 ] },
 
       { "sWidth": "60px",         "aTargets": [ 4 ] },
       { "sWidth": "70px",         "aTargets": [ 1,9 ] },
@@ -57,23 +58,19 @@ $(document).ready( function() {
 
   installHover();
 
-  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     refresh();
   } );
 
-  $('#select').live( "click", function() {
+  $('#select').on( "click", function() {
     $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
   } );
 
-  $('#unselect').live( "click", function() {
+  $('#unselect').on( "click", function() {
     $('#result tbody tr').removeClass('row_selected');
   } );
 
-  $('#kill').live( "click", function() {
+  $('#kill').on( "click", function() {
     var connections = selectedConnections();
 
     if ( connections.length == 0 ) {
@@ -95,6 +92,12 @@ $(document).ready( function() {
   } );
 
 } );
+
+function installEvents() {
+  $('#result tbody tr:not(.row_deleted)').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function refresh() {
   oTable.fnReloadAjax();

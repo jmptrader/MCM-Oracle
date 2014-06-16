@@ -14,6 +14,7 @@ $(document).ready( function() {
         checkRights();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "fnCreatedRow": function( nRow, aData, iDataIndex ) {
@@ -103,24 +104,19 @@ $(document).ready( function() {
 
   installHover();
 
-  $('table#result tbody tr').live( "click", function() {
-    var service = $(this).attr('service');
-    $('table#result tbody tr[service="' + service + '"]').toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 
-  $('#select').live( "click", function() {
+  $('#select').on( "click", function() {
     $('table#result tbody tr').addClass('row_selected');
   } );
 
-  $('#unselect').live( "click", function() {
+  $('#unselect').on( "click", function() {
     $('table#result tbody tr').removeClass('row_selected');
   } );
 
-  $('#stop_selected').live( "click", function() {
+  $('#stop_selected').on( "click", function() {
     fullstop = false;
     var services = selectedServices();
 
@@ -142,7 +138,7 @@ $(document).ready( function() {
     } );
   } );
 
-  $('#full_stop').live( "click", function() {
+  $('#full_stop').on( "click", function() {
     fullstop = true;
     var services = allServices();
 
@@ -159,7 +155,7 @@ $(document).ready( function() {
     } );
   } );
 
-  $('#start_selected').live( "click", function() {
+  $('#start_selected').on( "click", function() {
     var services = selectedServices();
 
     if ( services.length == 0 ) {
@@ -181,18 +177,25 @@ $(document).ready( function() {
   } );
 
   $('#logging_form').submit( function() {
-    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    popupWindow( '', 'LOGGING', '<% $config->WS_LOGGING_WIDTH %>', '<% $config->WS_LOGGING_HEIGHT %>', 'yes', 'center' );
     this.target = 'LOGGING';
   } );
 
   $('#raw_logging_form').submit( function() {
-    popupWindow( '', 'LOGGING', '1800', '1000', 'yes', 'center' );
+    popupWindow( '', 'LOGGING', '<% $config->WS_LOGGING_WIDTH %>', '<% $config->WS_LOGGING_HEIGHT %>', 'yes', 'center' );
     this.target = 'LOGGING';
   } );
 } );
 
 function refresh() {
   oTable.fnReloadAjax();
+}
+
+function installEvents() {
+  $('table#result tbody tr').on( "click", function() {
+    var service = $(this).attr('service');
+    $('table#result tbody tr[service="' + service + '"]').toggleClass('row_selected');
+  } );
 }
 
 function displayRefreshTime() {

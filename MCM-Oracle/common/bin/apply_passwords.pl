@@ -83,8 +83,6 @@ foreach my $key ( $xmlconfig->get_keys ) {
     }
 }
 
-$oracle->close;
-
 my $dump_configfile = 0;
 my $rc = 0;
 
@@ -134,11 +132,11 @@ foreach my $name ( keys %users ) {
 
         if ( $do_db ) {
             if ( $user->update_password( password => $cfg_password ) ) {
-                print "database password updated\n";
+                print "database password updated\n\n";
             }
             else {
                 $rc = 1;
-                print "database password could not be updated. Please consult logfile.\n";
+                print "database password could not be updated. Please consult logfile.\n\n";
             }
         }
         elsif ( $do_config ) {
@@ -157,5 +155,7 @@ if ( $dump_configfile ) {
         print "config file $configfile could not be updated. Please consult logfile\n";
     }
 }
+
+$oracle->close;
 
 exit $rc;

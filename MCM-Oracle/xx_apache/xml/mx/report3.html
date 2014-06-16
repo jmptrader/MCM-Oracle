@@ -28,6 +28,7 @@ $(document).ready( function() {
           fnCallback(json.datatables)
           installModal();
           installHover();
+          installEvents(); 
           bReset = false;
         }
       } );
@@ -64,23 +65,19 @@ $(document).ready( function() {
     }
   } );
 
-  $("input.filter").live( "blur", function() {
+  $("input.filter").on( "blur", function() {
     add_filter( $(this).attr('fname'), this.value );
   } );
 
-  $("select.filter").live( "change", function() {
+  $("select.filter").on( "change", function() {
     add_filter( $(this).attr('fname'), $(this).val() );
   } );
 
-  $("th.sort").live( "click", function() {
+  $("th.sort").on( "click", function() {
     add_sort( $(this).attr('sname') );
   } );
 
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('img.filter').live( {
+  $('img.filter').on( {
     mouseover: function() {
       $(this).attr( "src", "../images/collection_hover.png" );
     },
@@ -103,11 +100,11 @@ $(document).ready( function() {
     }
   } );
 
-  $("button#redraw").live( "click", function() {
+  $("button#redraw").on( "click", function() {
     oTable.fnDraw();
   } );
 
-  $("button#process").live( "click", function() {
+  $("button#process").on( "click", function() {
     $("input.filter,select.filter").each( function() {
       if ( $(this).val() ) {
         $(this).prop( "disabled", true );
@@ -121,7 +118,7 @@ $(document).ready( function() {
     $("button#save").css({ "display" : "" });
   } );
 
-  $("button#reset").live( "click", function() {
+  $("button#reset").on( "click", function() {
     aFilters = [];
     display_filters();
 
@@ -144,18 +141,24 @@ $(document).ready( function() {
     oTable.fnDraw();
   } );
 
-  $("button#save").live( "click", function() {
+  $("button#save").on( "click", function() {
     $('#dummytrigger').attr( 'action', 'store' );
     $('#modalWindow').jqmShow();
   } );
 
-  $("button#store").live( "click", function() {
+  $("button#store").on( "click", function() {
     store_report();
   } );
 
   setInterval( "keepSessionAlive()", 50000 );
   
 } );
+
+function installEvents() {
+  $('#result tr').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
+}
 
 function get_select_options( element, name ) {
   var column = name.replace( 'filter_', '' );
@@ -386,9 +389,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 
 function keepSessionAlive() {

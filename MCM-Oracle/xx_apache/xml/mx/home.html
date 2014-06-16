@@ -1,8 +1,100 @@
 <script type="text/javascript">
 $(document).ready( function() {
   checkRights();
-});
+  installModal();
+} );
+
+function installModal() {
+  $('#modalWindow').jqm( {
+    modal: true,
+    trigger: '#dummytrigger',
+    target: '#jqmContent',
+    onShow:  loadInModal,
+    onHide:  unloadModal
+  } );
+}
+
+function loadInModal( hash ) {
+  var $modal = $(hash.w);
+
+  $('#jqmTitleText').text( 'Change password' );
+  $modal.jqmShow();
+  changePassword();
+}
+
+function unloadModal( hash ) {
+  hash.o.remove();
+  $('.jqmWindow').css( 'display', 'none' );
+  $('#jqmContent').html( '' );
+}
+
+function changePassword() {
+  $('#jqmContent').css( 'width', '300px' );
+  $('#jqmContent').css( 'height', '200px' );
+  $('.jqmWindow').css( 'display', 'block' );
+
+  var html = [], h = -1;
+  html[++h] = '<p><div>';
+  html[++h] = '<form onsubmit="submitPassword(); return false;">';
+  html[++h] = '<table border=0">';
+  html[++h] = '<tr><td>Enter old password:</td>';
+  html[++h] = '<td><input type="password" name="old_password" id="old_password"></input></td></tr>';
+  html[++h] = '<tr><td>Enter new password:</td>';
+  html[++h] = '<td><input type="password" name="new_password_1" id="new_password_1"></input></td></tr>';
+  html[++h] = '<tr><td>Enter new password again:</td>';
+  html[++h] = '<td><input type="password" name="new_password_2" id="new_password_2"></input></td></tr>';
+  html[++h] = '</table>';
+  html[++h] = '<p><input type="submit" class="button" value="Submit"></input>';
+  html[++h] = '</form>';
+  html[++h] = '</div>';
+  html[++h] = '<div style="clear: both; margin-top: 50px" id="password_feedback"></div>';
+
+  $('#jqmContent')[0].innerHTML = html.join('');
+}
+
+function submitPassword() {
+  var old_password   = $('#old_password').val();
+  var new_password_1 = $('#new_password_1').val();
+  var new_password_2 = $('#new_password_2').val();
+
+  if ( old_password == '' || new_password_1 == '' || new_password_2 == '' ) {
+    $('#password_feedback').html('<font color="red">empty password</font>');
+    return false;
+  }
+
+  if ( new_password_1 != new_password_2 ) {
+    $('#password_feedback').html('<font color="red">new passwords are different</font>');
+    return false;
+  }
+
+  var request = $.ajax({
+    type:     'POST',
+    dataType: 'html',
+    url:      '/mx/submitpassword2.html',
+    data:     { 'old_password': old_password, 'new_password': new_password_1 },
+    error:    function( jqXHR, textStatus, errorThrown ) {
+      alert( textStatus + ': ' + errorThrown );
+    }
+  } );
+
+  request.done( function( text ) {
+    $('#password_feedback').html('<font color="red">' + text + '</font>');
+  } );
+
+  return false;
+}
 </script>
+
+<div id="dummytrigger"></div>
+
+<div id="modalWindow" class="jqmWindow" style="text-align: left;">
+  <div id="jqmTitle">
+    <span id="jqmTitleText"></span>
+    <a href="#" class="jqmClose"><em>Close</em></a>
+  </div>
+  <div id="jqmContent">
+  </div>
+</div>
 
 <table class="center_nb" width="800">
 <tr>
@@ -12,7 +104,7 @@ $(document).ready( function() {
     You are logged in as <B><% $m->session->{username} %></B><BR>
     <p>
 % if ( $auth_replicator_type eq 'master' ) {
-      <a href="#" onClick="window.open('password.html', 'password', 'resizable,width=400,height=250')">Click here to change your password</a>
+      <a href="#" onClick="$('#modalWindow').jqmShow();">Click here to change your password</a>
 % }
     <br><br><br>
     <b><u>Important !</u></b>

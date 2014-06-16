@@ -27,13 +27,13 @@ $(document).ready( function() {
   installHover();
   $('.tiptip').tipTip();
 
-  $('#duration').live( "click", function() {
+  $('#duration').on( "click", function() {
     $('.button').removeClass('active');
     $('#duration').addClass('active');
     oTable.fnFilter( '_d_u_r_', 4 );
   } );
 
-  $('#cpu_seconds').live( "click", function() {
+  $('#cpu_seconds').on( "click", function() {
     $('.button').removeClass('active');
     $('#cpu_seconds').addClass('active');
     oTable.fnFilter( '_c_p_u_', 4 );
@@ -41,7 +41,7 @@ $(document).ready( function() {
     $('.tiptip').tipTip();
   } );
 
-  $('#vsize').live( "click", function() {
+  $('#vsize').on( "click", function() {
     $('.button').removeClass('active');
     $('#vsize').addClass('active');
     oTable.fnFilter( '_m_e_m_', 4 );
@@ -49,7 +49,7 @@ $(document).ready( function() {
     $('.tiptip').tipTip();
   } );
 
-  $('#result tr').live( "click", function() {
+  $('#result tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } ); 
 } );

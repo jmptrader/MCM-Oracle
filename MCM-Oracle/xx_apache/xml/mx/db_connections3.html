@@ -14,6 +14,7 @@ $(document).ready( function() {
         checkRights(); 
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cfti',
@@ -24,7 +25,7 @@ $(document).ready( function() {
     "bStateSave":   false,
     "sScrollY":     "600px",
     "sScrollX":     "100%",
-	"aaSorting":    [[8,'asc'],[9,'asc']],
+    "aaSorting":    [[8,'asc'],[9,'asc']],
 
     "fnFooterCallback": function( nRow, aaData, iStart, iEnd, aiDisplay ) {
       if ( refresh_footer ) {
@@ -89,23 +90,19 @@ $(document).ready( function() {
 
   installHover();
 
-  $('#result tbody tr:not(.row_deleted)').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
-
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     refresh();
   } );
 
-  $('#select').live( "click", function() {
+  $('#select').on( "click", function() {
     $('#result tbody tr:not(.row_deleted)').addClass('row_selected');
   } );
 
-  $('#unselect').live( "click", function() {
+  $('#unselect').on( "click", function() {
     $('#result tbody tr').removeClass('row_selected');
   } );
 
-  $('#kill').live( "click", function() {
+  $('#kill').on( "click", function() {
     var connections = selectedConnections();
 
     if ( connections.length == 0 ) {
@@ -130,6 +127,12 @@ $(document).ready( function() {
 
 function refresh() {
   oTable.fnReloadAjax();
+}
+
+function installEvents() {
+  $('#result tbody tr:not(.row_deleted)').on( "click", function() {
+    $(this).toggleClass('row_selected');
+  } );
 }
 
 function displayRefreshTime() {
@@ -275,7 +278,7 @@ function killConnections( connections ) {
   if ( ( killing == true ) && ( connection = connections.shift() ) ) {
     var schema = connection.schema;
     var sid    = connection.sid;
-	var serial = connection.serial;
+    var serial = connection.serial;
 
     $('#jqmContent').append( 'sid ' + sid + '...' );
     $('#modalWindow').scrollTop(

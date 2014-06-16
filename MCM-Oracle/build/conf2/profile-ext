@@ -1,0 +1,39 @@
+LOCAL_DIR=/lch/fxclear
+MXCOMMON=$LOCAL_DIR/common
+MXVERSION=2.00
+MXUSER=$LOGNAME
+export LOCAL_DIR MXCOMMON MXVERSION MXUSER
+
+PATH=$LOCAL_DIR/$MXUSER/projects/common/bin:$LOCAL_DIR/$MXUSER/projects/common/scripts:$MXCOMMON/$MXVERSION/perl/bin:$MXCOMMON/$MXVERSION/apache/bin:$MXCOMMON/$MXVERSION/git/bin:$MXCOMMON/$MXVERSION/openssl/bin:$MXCOMMON/$MXVERSION/tools/rrdtool/bin:/usr/bin:/bin:$LOCAL_DIR/$MXUSER/bin
+export PATH
+
+LD_LIBRARY_PATH=$MXCOMMON/$MXVERSION/lib:/opt/oracle/product/10.2.0.4/lib:$MXCOMMON/$MXVERSION/tools/rrdtool/lib
+export LD_LIBRARY_PATH
+
+PERL5LIB=$LOCAL_DIR/$MXUSER/projects/common/lib
+export PERL5LIB
+
+read ORACLE_HOME MXENV_ROOT JAVA_HOME PROJECT_DIR LOGDIR DB_MON DB_FIN DB_REP MON_DBUSER FIN_DBUSER REP_DBUSER <<< `get_config.pl ORACLE_HOME MXENV_ROOT JAVA_HOME PROJECT_DIR LOGDIR DB_MON DB_FIN DB_REP MON_DBUSER FIN_DBUSER REP_DBUSER`
+read MON_PASS FIN_PASS REP_PASS <<< `get_config.pl ACCOUNTS.$MON_DBUSER.murex_password ACCOUNTS.$FIN_DBUSER.murex_password ACCOUNTS.$REP_DBUSER.murex_password`
+
+PATH=$PATH:$ORACLE_HOME/bin:$JAVA_HOME/bin
+
+export PATH ORACLE_HOME JAVA_HOME PROJECT_DIR LOGDIR
+
+MON_PASS=`mx_decrypt.pl $MON_PASS`
+FIN_PASS=`mx_decrypt.pl $FIN_PASS`
+REP_PASS=`mx_decrypt.pl $REP_PASS`
+
+alias sqlm="sqlplus $MON_DBUSER/$MON_PASS@$DB_MON"
+alias sqlf="sqlplus $FIN_DBUSER/$FIN_PASS@$DB_FIN"
+alias sqlr="sqlplus $REP_DBUSER/$REP_PASS@$DB_REP"
+
+alias proj="cd $PROJECT_DIR"
+alias cdl="cd $LOGDIR/today"
+alias cdmx="cd $MXENV_ROOT"
+
+GIT_PAGER=more
+export GIT_PAGER
+
+PS1="\e[0;36m$MXENV\e[m@\e[0;32m\h\e[m \w> "
+export PS1

@@ -46,7 +46,7 @@ $(document).ready( function() {
     "sPaginationType": "full_numbers",
     "bSort":           false,
     "bStateSave":      false,
-    "sScrollY":        "900px",
+    "sScrollY":        "<% $config->WS_LOGGING_HEIGHT - 160 %>px",
     "sScrollX":        "100%",
     "sScrollXInner":   "1650px",
     "iDisplayStart":   <% $display_start %>,
@@ -73,7 +73,7 @@ $(document).ready( function() {
     ],
   } );
 
-  $('button#refresh').live( "click", function() {
+  $('button#refresh').on( "click", function() {
     scrollPos = $(".dataTables_scrollBody").scrollTop();
     oTable.fnStandingRedraw();
   } );

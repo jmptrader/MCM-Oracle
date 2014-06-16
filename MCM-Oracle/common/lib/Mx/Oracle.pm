@@ -5,11 +5,14 @@ use warnings;
 
 use Mx::Database::ResultSet;
 use Mx::Database::Index;
+use Mx::Process;
 use String::CRC::Cksum qw( cksum );
 use Carp;
 use DBI qw( :sql_types );
 use DBD::Oracle qw( :ora_types );
 use Time::HiRes qw( time );
+use File::Temp;
+use Text::CSV_XS;
 
 use constant OPEN   => 1;
 use constant CLOSED => 2;
@@ -265,9 +268,9 @@ sub do {
         @bind_bl_values = @{$args{bl_values}};
     }
 
-	if ( @bind_io_params != @bind_io_values ) {
-		$self->{logger}->error('number of I/O placeholders does not match number of I/O values');
-		return;
+    if ( @bind_io_params != @bind_io_values ) {
+        $self->{logger}->error('number of I/O placeholders does not match number of I/O values');
+        return;
     }
 
     #
@@ -328,7 +331,7 @@ sub query {
 
 
 
-	$args{nocache} = 1;
+    $args{nocache} = 1;
 
     my $query;
     unless ( $query = $args{query} ) {
@@ -373,7 +376,7 @@ sub query {
         }
 
         foreach my $nr ( @bind_params ) {
-			my ( $value ) = splice @bind_values, $nr -1, 1;
+            my ( $value ) = splice @bind_values, $nr -1, 1;
             $sth->bind_param( $nr, $value, ORA_NUMBER );
         }
 
@@ -580,7 +583,7 @@ sub kill_all {
     my ( $self ) = @_;
 
 
-	my $schema = $self->{username};
+    my $schema = $self->{username};
 
     $self->{logger}->debug("trying to kill all connections to schema $schema");
 
@@ -593,7 +596,7 @@ sub kill_all {
         return;
     }
 
-	my @connections = $result->all_rows();
+    my @connections = $result->all_rows();
 
     if ( my $nr_connections = @connections ) {
         $self->{logger}->debug("numbers of connections to schema $schema: $nr_connections");
@@ -603,10 +606,10 @@ sub kill_all {
         return 1;
     }
 
-	my $rc = 1;
-	foreach my $connection ( @connections ) {
-	    my $sid    = $connection->[0];
-	    my $serial = $connection->[1];
+    my $rc = 1;
+    foreach my $connection ( @connections ) {
+        my $sid    = $connection->[0];
+        my $serial = $connection->[1];
         my $statement = "ALTER SYSTEM KILL SESSION '$sid,$serial' IMMEDIATE";
 
         if ( $self->do( statement => $statement ) ) {
@@ -618,7 +621,7 @@ sub kill_all {
         }
     }
 
-	return $rc;
+    return $rc;
 }
 
 #--------#
@@ -627,8 +630,8 @@ sub kill {
     my ( $self, %args ) = @_;
 
 
-	my $sid    = $args{sid};
-	my $serial = $args{serial};
+    my $sid    = $args{sid};
+    my $serial = $args{serial};
 
     $self->{logger}->debug("trying to kill connection with sid $sid and serial $serial");
 
@@ -639,11 +642,11 @@ sub kill {
 
     if ( $self->do( statement => $statement ) ) {
         $self->{logger}->debug("connection with sid $sid and serial $serial killed");
-		return 1; 
+        return 1; 
     }
     else {
         $self->{logger}->error("cannot kill the connection with sid $sid and serial $serial");
-		return 0; 
+        return 0; 
     }
 }
 
@@ -659,28 +662,28 @@ sub connections {
     my $schema = $args{schema} || $self->{username};
 
     my $query = "SELECT 
-	  s1.schemaname,
-	  s1.sid,
-	  s1.serial#,
+      s1.schemaname,
+      s1.sid,
+      s1.serial#,
       s1.username,
-	  s1.osuser,
-	  s1.machine,
-	  s1.process,
-	  s1.program,
-	  to_char(s1.logon_time, 'YYYY-MM-DD HH24:MI:SS'),
-	  s1.status,
-	  s1.last_call_et,
+      s1.osuser,
+      s1.machine,
+      s1.process,
+      s1.program,
+      to_char(s1.logon_time, 'YYYY-MM-DD HH24:MI:SS'),
+      s1.status,
+      s1.last_call_et,
       c1.command_name,
-	  ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 16 ) as cpu,
-	  ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 11 ) as lreads,
-	  ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 75 ) as preads,
-	  ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 86 ) as pwrites,
-	  s1.blocking_session,
-	  s1.wait_time,
-	  s1.seconds_in_wait
-	  FROM v\$session s1
-	  INNER JOIN v\$sqlcommand c1 ON ( s1.command = c1.command_type )
-	  WHERE s1.schemaname = ?";
+      ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 16 ) as cpu,
+      ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 11 ) as lreads,
+      ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 75 ) as preads,
+      ( select value from v\$sesstat p1 where p1.sid = s1.sid and p1.statistic# = 86 ) as pwrites,
+      s1.blocking_session,
+      s1.wait_time,
+      s1.seconds_in_wait
+      FROM v\$session s1
+      INNER JOIN v\$sqlcommand c1 ON ( s1.command = c1.command_type )
+      WHERE s1.schemaname = ?";
 
     my @values = ( $schema );
 
@@ -703,38 +706,38 @@ sub sql_text {
     my ( $self, %args ) = @_;
 
 
-	my $sid    = $args{sid};
-	my $serial = $args{serial};
+    my $sid    = $args{sid};
+    my $serial = $args{serial};
 
-	my $prev_sql_text; my @prev_bind_values; my $sql_text; my @bind_values;
+    my $prev_sql_text; my @prev_bind_values; my $sql_text; my @bind_values;
 
-	if ( $args{previous} ) {
-	    my $query = 'select a.sql_fulltext, b.name, b.value_string
-	      from v$session s
+    if ( $args{previous} ) {
+        my $query = 'select a.sql_fulltext, b.name, b.value_string
+          from v$session s
           join v$sql a on              ( a.hash_value = s.prev_hash_value and a.address = s.prev_sql_addr and a.child_number = s.prev_child_number )
           join v$sql_bind_capture b on ( b.hash_value = s.prev_hash_value and b.address = s.prev_sql_addr and b.child_number = s.prev_child_number )
-	      where s.sid = ?
-	      and s.serial# = ?
+          where s.sid = ?
+          and s.serial# = ?
         ';
 
-	    my $result = $self->query( query => $query, values => [ $sid, $serial ], quiet => 1 );
+        my $result = $self->query( query => $query, values => [ $sid, $serial ], quiet => 1 );
 
         while ( my $row = $result->nextref ) {
-			last unless @{$row}; 
+            last unless @{$row}; 
             $prev_sql_text = $row->[0] unless $prev_sql_text;
             push @prev_bind_values, { $row->[1] => $row->[2] };
         }
     }
 
-	my $query = 'select a.sql_fulltext, b.name, b.value_string
-	  from v$session s
+    my $query = 'select a.sql_fulltext, b.name, b.value_string
+      from v$session s
       join v$sql a on              ( a.hash_value = s.sql_hash_value and a.address = s.sql_address and a.child_number = s.sql_child_number )
       join v$sql_bind_capture b on ( b.hash_value = s.sql_hash_value and b.address = s.sql_address and b.child_number = s.sql_child_number )
-	  where s.sid = ?
-	  and s.serial# = ?
+      where s.sid = ?
+      and s.serial# = ?
     ';
 
-	my $result = $self->query( query => $query, values => [ $sid, $serial ], quiet => 1 );
+    my $result = $self->query( query => $query, values => [ $sid, $serial ], quiet => 1 );
 
     while ( my $row = $result->nextref ) {
         last unless @{$row}; 
@@ -742,7 +745,7 @@ sub sql_text {
         push @bind_values, { $row->[1] => $row->[2] };
     }
 
-	return ( $sql_text, \@bind_values, $prev_sql_text, \@prev_bind_values );
+    return ( $sql_text, \@bind_values, $prev_sql_text, \@prev_bind_values );
 }
 
 #------------#
@@ -751,62 +754,62 @@ sub sql_plan {
     my ( $self, %args ) = @_;
 
 
-	my $sid    = $args{sid};
-	my $serial = $args{serial};
+    my $sid    = $args{sid};
+    my $serial = $args{serial};
 
-	$self->do( statement => 'delete from plan_table' ); 
+    $self->do( statement => 'delete from plan_table' ); 
 
-	my $statement = "insert into plan_table select
-	  'my_query',
-	  p.child_number,
-	  sysdate,
+    my $statement = "insert into plan_table select
+      'my_query',
+      p.child_number,
+      sysdate,
       '',
-	  p.operation,
-	  p.options,
-	  p.object_node,
-	  p.object_owner,
-	  p.object_name,
-	  p.object_alias,
-	  0,
-	  p.object_type,
-	  p.optimizer,
-	  p.search_columns,
-	  p.id,
-	  p.parent_id,
-	  p.depth,
-	  p.position,
-	  p.cost,
-	  p.cardinality,
-	  p.bytes,
-	  p.other_tag,
-	  p.partition_start,
-	  p.partition_stop,
-	  p.partition_id,
-	  p.other,
-	  p.other_xml,
-	  p.distribution,
-	  p.cpu_cost,
-	  p.io_cost,
-	  p.temp_space,
-	  p.access_predicates,
-	  p.filter_predicates,
-	  p.projection,
-	  p.time,
-	  p.qblock_name
+      p.operation,
+      p.options,
+      p.object_node,
+      p.object_owner,
+      p.object_name,
+      p.object_alias,
+      0,
+      p.object_type,
+      p.optimizer,
+      p.search_columns,
+      p.id,
+      p.parent_id,
+      p.depth,
+      p.position,
+      p.cost,
+      p.cardinality,
+      p.bytes,
+      p.other_tag,
+      p.partition_start,
+      p.partition_stop,
+      p.partition_id,
+      p.other,
+      p.other_xml,
+      p.distribution,
+      p.cpu_cost,
+      p.io_cost,
+      p.temp_space,
+      p.access_predicates,
+      p.filter_predicates,
+      p.projection,
+      p.time,
+      p.qblock_name
     from v\$sql_plan p join v\$session s on (
-	  s.sql_address = p.address and
-	  s.sql_hash_value = p.hash_value and
-	  s.sql_child_number = p.child_number
-	  )
+      s.sql_address = p.address and
+      s.sql_hash_value = p.hash_value and
+      s.sql_child_number = p.child_number
+      )
     where s.sid = ? and s.serial# = ?";
 
-	$self->do( statement => $statement, values => [ $sid, $serial ] );
+    $self->do( statement => $statement, values => [ $sid, $serial ] );
 
-	my $query = "select * from table(dbms_xplan.display('plan_table', 'my_query', 'ALL'))"; 
+    my $query = "select * from table(dbms_xplan.display('plan_table', 'my_query', 'ALL'))"; 
 
-	my $result = $self->query( query => $query, quiet => 1 );
+    my $result = $self->query( query => $query, quiet => 1 );
 
-	return map { $_->[0] } $result->all_rows;
+    return map { $_->[0] } $result->all_rows;
 }
 
 #---------#
@@ -822,34 +825,34 @@ sub locks {
 
     my $result;
     unless ( $result = $self->query( query => "SELECT
-	  s1.schemaname,
-	  s1.sid,
-	  s1.serial#,
-	  s1.username,
-	  s1.machine,
-	  s1.process,
-	  s1.program,
-	  l1.type,
-	  o1.object_name,
-	  decode( l1.lmode,
-		1,'No Lock',
-		2,'Row Share',
-		3,'Row Exclusive',
-		4,'Share',
-		5,'Share Row Exclusive',
-		6,'Exclusive',
-		'NONE') lmode,
-	  l1.ctime
-	  FROM v\$lock l1
-	  INNER JOIN v\$session s1 ON s1.sid = l1.sid
-	  INNER JOIN dba_objects o1 ON o1.object_id = l1.id1
-	  WHERE s1.schemaname = ?
-	  AND l1.type IN ('TM', 'TX', 'UL')", values => [ $schema ], quiet => 1 ) ) {
+      s1.schemaname,
+      s1.sid,
+      s1.serial#,
+      s1.username,
+      s1.machine,
+      s1.process,
+      s1.program,
+      l1.type,
+      o1.object_name,
+      decode( l1.lmode,
+        1,'No Lock',
+        2,'Row Share',
+        3,'Row Exclusive',
+        4,'Share',
+        5,'Share Row Exclusive',
+        6,'Exclusive',
+        'NONE') lmode,
+      l1.ctime
+      FROM v\$lock l1
+      INNER JOIN v\$session s1 ON s1.sid = l1.sid
+      INNER JOIN dba_objects o1 ON o1.object_id = l1.id1
+      WHERE s1.schemaname = ?
+      AND l1.type IN ('TM', 'TX', 'UL')", values => [ $schema ], quiet => 1 ) ) {
         $self->{logger}->error("cannot get list of locks in schema $schema");
         return;
     };
 
-	return $result->all_rows();
+    return $result->all_rows();
 }
 
 #---------------------#
@@ -928,10 +931,10 @@ sub table_ddl {
         $ddl .= $column->{name} . ' ';
 
         if ( $column->{type} eq 'NUMBER' ) {
-			if ( $column->{precision} == 0 ) {
+            if ( $column->{precision} == 0 ) {
                 $ddl .= $column->{type} . '(' . $column->{length} . ')';
             }
-			else { 
+            else { 
                 $ddl .= $column->{type} . '(' . $column->{length} . ',' . $column->{precision} . ')';
             }
         }
@@ -1003,7 +1006,7 @@ sub table_size_info {
     }
  
     my $result;
-	unless ( $args{no_existence_check} ) {
+    unless ( $args{no_existence_check} ) {
         unless ( $result = $self->query( query => "SELECT num_rows FROM user_tables WHERE table_name = ?", values => [ $table ], quiet => 1 ) ) {
             $logger->error("cannot determine table existence");
             return;
@@ -1052,14 +1055,14 @@ sub table_space_info {
       ( SELECT NVL(TRUNC(SUM(s.bytes)/1024),0) FROM dba_segments s, dba_indexes i WHERE s.segment_name = i.index_name AND i.table_name = ? AND i.owner = ? AND s.owner = ? AND s.segment_type = 'INDEX' ) AS indexsize,
       ( SELECT NVL(TRUNC(SUM(s.bytes)/1024),0) FROM dba_segments s, dba_lobs l WHERE s.segment_name = l.segment_name AND l.table_name = ? AND l.owner = ? AND s.owner = ? AND s.segment_type = 'LOBSEGMENT' ) AS lobsize,
       ( SELECT NVL(TRUNC(SUM(s.bytes)/1024),0) FROM dba_segments s, dba_lobs l WHERE s.segment_name = l.index_name AND l.table_name = ? AND l.owner = ? AND s.owner = ? AND s.segment_type = 'LOBINDEX' ) AS lobindexsize
-	  FROM DUAL", values => [ $table, $schema, $table, $schema, $schema, $table, $schema, $schema, $table, $schema, $schema ], quiet => 1 ) ) {
+      FROM DUAL", values => [ $table, $schema, $table, $schema, $schema, $table, $schema, $schema, $table, $schema, $schema ], quiet => 1 ) ) {
         $logger->error("cannot determine size of table $table in schema $schema");
         return;
     }
 
-	my ( $tablesize, $indexsize, $lobsize, $lobindexsize ) = $result->next();
+    my ( $tablesize, $indexsize, $lobsize, $lobindexsize ) = $result->next();
 
-	return ( data => $tablesize, indexes => $indexsize, lobs => $lobsize, lobindexes => $lobindexsize, total_size => $tablesize + $indexsize + $lobsize + $lobindexsize );
+    return ( data => $tablesize, indexes => $indexsize, lobs => $lobsize, lobindexes => $lobindexsize, total_size => $tablesize + $indexsize + $lobsize + $lobindexsize );
 }
 
 #---------------#
@@ -1128,11 +1131,11 @@ sub all_tables {
 
     my @tables = $self->{dbh}->tables( $schema, $schema, '%', 'TABLE' );
 
-	my @formatted_tables = ();
-	foreach my $entry ( @tables ) {
+    my @formatted_tables = ();
+    foreach my $entry ( @tables ) {
       my ( $schema, $table ) = split '\.', $entry;
       $table =~ s/^"(.+)"$/$1/;
-	  push @formatted_tables, $table
+      push @formatted_tables, $table
     }
 
     return @formatted_tables;
@@ -1146,7 +1149,7 @@ sub size_info {
 
     my $schema = $args{schema} || $self->{username};
 
-	my $query = 'select
+    my $query = 'select
       A.default_tablespace as tablespace,
       ( select sum(bytes)/(1024*1024*1024) from dba_data_files where tablespace_name = A.default_tablespace ) as total,
       ( select sum(bytes)/(1024*1024*1024) from dba_segments   where tablespace_name = A.default_tablespace ) as used,
@@ -1156,15 +1159,15 @@ sub size_info {
 
     my $result = $self->query( query => $query, values => [ $schema ], quiet => 1 );
 
-	my $row = $result->nextref;
+    my $row = $result->nextref;
 
-	my %info;
-	$info{tablespace} = $row->[0];
-	$info{total}      = sprintf "%.2f", $row->[1];
-	$info{used}       = sprintf "%.2f", $row->[2];
-	$info{free}       = sprintf "%.2f", $row->[3];
+    my %info;
+    $info{tablespace} = $row->[0];
+    $info{total}      = sprintf "%.2f", $row->[1];
+    $info{used}       = sprintf "%.2f", $row->[2];
+    $info{free}       = sprintf "%.2f", $row->[3];
 
-	return %info;
+    return %info;
 }
 
 #-------------------#
@@ -1184,6 +1187,131 @@ sub connection_info {
     }
 
     return %info;
+}
+
+#
+# Arguments:
+#
+# database:    defaults to $self->{database} if not supplied
+# file:        full path to the file to bcp in
+# table:       table name to bcp into
+# delimiter:   defaults to ; if not supplied
+#
+#----------#
+sub bcp_in {
+#----------#
+    my( $self, %args ) = @_;
+
+
+    my $logger = $self->{logger};
+    my $config = $self->{config};
+
+    my $database = $args{database} || $self->{database};
+
+    my $file;
+    unless ( $file = $args{file} ) {
+        $logger->logdie("missing argument (file)");
+    }
+
+    my $table;
+    unless ( $table = $args{table} ) {
+        $logger->logdie("missing argument (table)");
+    }
+
+    my $delimiter = $args{delimiter} || ';';
+
+    $logger->info("bulk copy $file into $database.$table");
+
+    my @columns = $self->table_column_info( table => $table );
+
+    my $control = File::Temp->new( SUFFIX => '.ctl' );
+
+    print  $control "load data\n";
+    print  $control "infile '$file'\n";
+    print  $control "truncate\n";
+    print  $control "into table $table\n";
+    print  $control "fields terminated by '$delimiter' optionally enclosed by '\"'\n";
+    printf $control "(%s)", ( join ',', map { $_->{name} } @columns );
+
+    my $command = $config->ORACLE_HOME . '/bin/sqlldr ' . $self->{username} . '@' . $self->{database} . '/' . $self->{password} . ' control=' . $control->filename;
+
+    my ( $success, $errorcode, $output ) = Mx::Process->run( command => $command, logger => $logger, config => $config );
+
+    if ( ! $success or $errorcode or $output =~ /failed/ ) {
+        $logger->error("bulk copy failed");
+        return;
+    }
+
+    $logger->info("bulk copy succeeded");
+
+    return 1;
+}
+
+#
+# Arguments:
+#
+# database:    defaults to $self->{database} if not supplied
+# table:       table name to bcp out
+# file:        full path to the file to bcp out
+# delimiter:   defaults to ; if not supplied
+#
+#-----------#
+sub bcp_out {
+#-----------#
+    my( $self, %args ) = @_;
+
+
+    my $logger = $self->{logger};
+    my $config = $self->{config};
+
+    my $database = $args{database} || $self->{database};
+
+    my $file;
+    unless ( $file = $args{file} ) {
+        $logger->logdie("missing argument (file)");
+    }
+
+    my $table;
+    unless ( $table = $args{table} ) {
+        $logger->logdie("missing argument (table)");
+    }
+
+    my $delimiter = $args{delimiter} || ';';
+
+    $logger->info("bulk copy $database.$table into $file");
+
+    my @columns = $self->table_column_info( table => $table );
+
+    my $fh;
+    unless ( $fh = IO::File->new( $file, ">" ) ) {
+        $logger->logdie("cannot open $file: $!");
+    }
+
+    my $csv = Text::CSV_XS->new( { binary => 1, always_quote => 0, sep_char => $delimiter } );
+
+    my $query = sprintf "select %s from $table", ( join ',', map { $_->{name} } @columns );
+
+    my $sth = $self->{dbh}->prepare( $query );
+
+    $sth->execute();
+
+    my $nr_rows = 0;
+    while ( my $row = $sth->fetchrow_arrayref ) {
+        if ( $csv->combine( @{$row} ) ) {
+            print $fh $csv->string() . "\n";
+            $nr_rows++;
+        }
+        else {
+            my $err = $csv->error_input();
+            $logger->error("csv combine failed: $err");
+        }
+    }
+
+    $sth->finish();
+
+    $logger->info("bulk copy succeeded ($nr_rows rows)");
+
+    return 1;
 }
     
 #-------#

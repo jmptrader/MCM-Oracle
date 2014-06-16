@@ -6,17 +6,18 @@ $(document).ready( function() {
     "fnServerData": function ( sSource, aoData, fnCallback ) {
       $.getJSON( sSource, aoData, function (json) { 
         fnCallback(json.datatables)
-		displayJobCount( json.nr_jobs );
+        displayJobCount( json.nr_jobs );
         displayRefreshTime();
         installHover();
         installContextMenu();
         installModal();
+        installEvents();
       } );
     },
     "sDom":         'r<"clear">Cft',
     "bProcessing":  true,
     "sAjaxSource":  '/mx/ctrlm_jobs2.html',
-	"bServerSide":  false,
+    "bServerSide":  false,
     "bPaginate":    false,
     "sScrollY":     "800px",
     "sScrollX":     "100%",
@@ -51,15 +52,17 @@ $(document).ready( function() {
     }
   } );
 
-  $('#refresh').live( "click", function() {
+  $('#refresh').on( "click", function() {
     oTable.fnReloadAjax();
   } );
 
-  $('#result tr').live( "click", function() {
+} );
+
+function installEvents() {
+  $('#result tr').on( "click", function() {
     $(this).toggleClass('row_selected');
   } );
-
-} );
+}
 
 function fnCreateSelect( aData ) {
     var r = '<select><option value=""></option>', i, iLen = aData.length;
@@ -151,9 +154,6 @@ function unloadModal( hash ) {
   hash.o.remove();
   $('.jqmWindow').css( 'display', 'none' );
   $('#jqmContent').html( '' );
-  $('#result tr').live( "click", function() {
-    $(this).toggleClass('row_selected');
-  } );
 }
 
 function showXML( path ) {

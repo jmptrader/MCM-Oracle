@@ -140,6 +140,7 @@ my %no_visu = (
   'ctrlm_jobs2.html'         => 1,
   'ctrlm_job2.html'          => 1,
   'histmessage_details2.html' => 1,
+  'submitpassword2.html'     => 1,
 );
 
 my %no_auth = (
@@ -161,6 +162,8 @@ my %no_navi = (
   'raw_logging3.html'        => 1,
   'mxml_route3.html'         => 1,
   'webcommand.html'          => 1,
+  'notloggedon.html'         => 1,
+  'password.html'            => 1,
 );
 
 $db_audit = Mx::DBaudit->new( config => $config, logger => $logger );

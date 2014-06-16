@@ -75,7 +75,7 @@ $(document).ready( function() {
     <TD STYLE="background-color: #70C070;"><A CLASS="tiptip" HREF="#" onclick="mnavigate('histsession_details.html', { session_id:<% $session_id %>, pid:<% $pid %>, mx_pid:<% $mx_pid %> }, { <% join ',', @nav_args %> });" title="Nick: <% $process->[25] %>  </br> PID: <% $pid %>"><% $session_id %></A</TD>
 %   }
 %   else {
-    <TD><A CLASS="tiptip" HREF="#" onclick="mnavigate('histsession_details.html', { session_id:<% $session_id %> }, { <% join ',', @nav_args %> });" title="Nick: <% $process->[25] %>"><% $session_id %></A</TD>
+    <TD><A CLASS="tiptip" HREF="#" onclick="$('#tiptip_holder').remove(); mnavigate('histsession_details.html', { session_id:<% $session_id %> }, { <% join ',', @nav_args %> });" title="Nick: <% $process->[25] %>"><% $session_id %></A</TD>
 %   }
 %   if ( $milestone ) {
     <TD COLSPAN=3>MILESTONE</TD>
